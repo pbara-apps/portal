@@ -1,0 +1,81 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #1b2452;
+  --color-gold: #c8a84b;
+  --color-background: #f4f6fa;
+  --color-surface: #ffffff;
+  --color-text-dark: #1a1a2e;
+  --color-text-muted: #6b7280;
+  --font-heading: "Outfit", sans-serif;
+  --font-body: "Outfit", sans-serif;
+}
+
+@layer base {
+  * {
+    @apply border-text-dark/10;
+  }
+
+  body {
+    @apply bg-background text-text-dark font-[family-name:var(--font-body)] antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-[family-name:var(--font-heading)];
+  }
+}
+
+.focus-ring {
+  @apply outline-none focus-visible:ring-2 focus-visible:ring-gold/60 focus-visible:ring-offset-2;
+}
+
+@keyframes aurora-1 {
+  0% {
+    transform: translate(0%, 0%) scale(1);
+    opacity: 0.45;
+  }
+  33% {
+    transform: translate(8%, -6%) scale(1.08);
+    opacity: 0.6;
+  }
+  66% {
+    transform: translate(-5%, 8%) scale(0.96);
+    opacity: 0.4;
+  }
+  100% {
+    transform: translate(0%, 0%) scale(1);
+    opacity: 0.45;
+  }
+}
+
+@keyframes aurora-2 {
+  0% {
+    transform: translate(0%, 0%) scale(1.05);
+    opacity: 0.35;
+  }
+  33% {
+    transform: translate(-10%, 5%) scale(0.95);
+    opacity: 0.5;
+  }
+  66% {
+    transform: translate(6%, -8%) scale(1.1);
+    opacity: 0.3;
+  }
+  100% {
+    transform: translate(0%, 0%) scale(1.05);
+    opacity: 0.35;
+  }
+}
+
+.aurora-blob-1 {
+  animation: aurora-1 14s ease-in-out infinite;
+}
+
+.aurora-blob-2 {
+  animation: aurora-2 18s ease-in-out infinite;
+}
