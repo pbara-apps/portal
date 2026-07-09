@@ -32,7 +32,12 @@ dayjs.extend(relativeTime);
 function mapActivity(item: DashboardActivityItem): ActivityEntry {
   return {
     id: item.id,
-    kind: item.action === "deleted" ? "publish" : item.action === "updated" ? "update" : "upload",
+    kind:
+      item.action === "deleted"
+        ? "publish"
+        : item.action === "updated"
+          ? "update"
+          : "upload",
     message: (
       <>
         <span className="font-semibold capitalize">{item.action}</span>{" "}
@@ -87,21 +92,45 @@ export function AdminDashboardContent() {
   const activity = data.recentActivity.map(mapActivity);
 
   return (
-    <div className="space-y-6 min-w-0 max-w-full lg:space-y-8">
+    <div className="w-full min-w-0 max-w-full space-y-6 lg:space-y-8">
       <WelcomeHeader />
 
-      <section className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-4">
-        <div className="space-y-6 lg:col-span-2">
+      <section className="grid w-full min-w-0 grid-cols-1 gap-6 lg:grid-cols-5 lg:gap-4">
+        <div className="min-w-0 space-y-6 lg:col-span-3">
           <div
             aria-label="Key metrics"
-            className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:gap-5"
+            className="grid w-full min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:gap-5"
           >
-            <KpiCard label="Published News" value={data.publishedNews} icon={LuNewspaper} />
-            <KpiCard label="Upcoming Events" value={data.upcomingEvents} icon={LuCalendar} />
-            <KpiCard label="Gallery Items" value={data.activeGallery} icon={LuImage} />
-            <KpiCard label="Registered Offices" value={data.totalOffices} icon={LuBriefcase} />
-            <KpiCard label="Active Officers" value={data.activeExecutives} icon={LuUsers} />
-            <KpiCard label="Total Chapters" value={data.totalChapters} icon={LuNetwork} />
+            <KpiCard
+              label="Published News"
+              value={data.publishedNews}
+              icon={LuNewspaper}
+            />
+            <KpiCard
+              label="Upcoming Events"
+              value={data.upcomingEvents}
+              icon={LuCalendar}
+            />
+            <KpiCard
+              label="Gallery Items"
+              value={data.activeGallery}
+              icon={LuImage}
+            />
+            <KpiCard
+              label="Registered Offices"
+              value={data.totalOffices}
+              icon={LuBriefcase}
+            />
+            <KpiCard
+              label="Active Officers"
+              value={data.activeExecutives}
+              icon={LuUsers}
+            />
+            <KpiCard
+              label="Total Chapters"
+              value={data.totalChapters}
+              icon={LuNetwork}
+            />
           </div>
 
           <ActivityFeed
@@ -110,7 +139,7 @@ export function AdminDashboardContent() {
           />
         </div>
 
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6 lg:col-span-2">
           <DirectorDeskPreview />
           <QuickActions actions={quickActions} />
           <SystemStatus />

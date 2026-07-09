@@ -66,12 +66,15 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
       <div
         className={cn(
-          "flex min-h-screen w-full min-w-0 max-w-full flex-col overflow-x-hidden transition-[margin] duration-300 ease-out",
-          collapsed ? "lg:ml-[76px]" : "lg:ml-[280px]",
+          "flex min-h-screen min-w-0 flex-col overflow-x-hidden transition-[margin,width] duration-300 ease-out",
+          "w-full",
+          collapsed
+            ? "lg:ml-[76px] lg:w-[calc(100%-76px)]"
+            : "lg:ml-[280px] lg:w-[calc(100%-280px)]",
         )}
       >
         <Topbar onOpenMobileSidebar={() => setMobileOpen(true)} />
-        <main className="flex-1 w-full min-w-0 max-w-full overflow-x-hidden px-4 py-6 pb-24 sm:px-6 lg:px-8 lg:py-8 lg:pb-28">
+        <main className="min-w-0 flex-1 overflow-x-hidden px-4 py-6 pb-24 sm:px-6 lg:px-8 lg:py-8 lg:pb-28">
           {children}
         </main>
       </div>
