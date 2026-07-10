@@ -7,6 +7,9 @@ export interface UserType {
   role: ExecutiveRole;
   token: string;
   phone?: string;
+  image?: string | null;
+  title?: string;
+  description?: string;
   officeId?: string;
   officeName?: string;
   churchId?: string;

@@ -9,6 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { SheetBody, SheetFooter, SheetHeader } from "@/components/ui/sheet";
+import { DrawerFormShell } from "@/features/admin/components/shared/DrawerFormShell";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -102,7 +103,7 @@ export function EventFormDrawer({ mode, initial, onClose }: EventFormDrawerProps
   };
 
   return (
-    <>
+    <DrawerFormShell>
       <SheetHeader className="bg-background/40">
         <h3 className="text-lg font-semibold text-primary">
           {mode === "create" ? "Create Event" : "Edit Event"}
@@ -235,6 +236,6 @@ export function EventFormDrawer({ mode, initial, onClose }: EventFormDrawerProps
           Save
         </Button>
       </SheetFooter>
-    </>
+    </DrawerFormShell>
   );
 }

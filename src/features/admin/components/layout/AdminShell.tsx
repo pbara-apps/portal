@@ -56,7 +56,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-background text-text-dark">
+    <div className="minh-screen overflo-xhidden bg-background text-text-dark">
       <Sidebar
         collapsed={collapsed}
         mobileOpen={mobileOpen}
@@ -66,7 +66,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
       <div
         className={cn(
-          "flex min-h-screen min-w-0 flex-col overflow-x-hidden transition-[margin,width] duration-300 ease-out",
+          "flex min-h-screen min-w-0 flex-col overflow-xhidden transition-[margin,width] duration-300 ease-out",
           "w-full",
           collapsed
             ? "lg:ml-[76px] lg:w-[calc(100%-76px)]"

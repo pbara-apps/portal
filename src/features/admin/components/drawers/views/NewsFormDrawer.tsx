@@ -9,6 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { SheetBody, SheetFooter, SheetHeader } from "@/components/ui/sheet";
+import { DrawerFormShell } from "@/features/admin/components/shared/DrawerFormShell";
 import { Textarea } from "@/components/ui/textarea";
 import {
   errorToast,
@@ -77,7 +78,7 @@ export function NewsFormDrawer({ mode, initial, onClose }: NewsFormDrawerProps) 
   };
 
   return (
-    <>
+    <DrawerFormShell>
       <SheetHeader className="bg-background/40">
         <h3 className="text-lg font-semibold text-primary">
           {mode === "create" ? "Create News Article" : "Edit News Article"}
@@ -176,6 +177,6 @@ export function NewsFormDrawer({ mode, initial, onClose }: NewsFormDrawerProps) 
           {mode === "create" ? "Publish" : "Save"}
         </Button>
       </SheetFooter>
-    </>
+    </DrawerFormShell>
   );
 }

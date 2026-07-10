@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SheetBody, SheetFooter, SheetHeader } from "@/components/ui/sheet";
+import { DrawerFormShell } from "@/features/admin/components/shared/DrawerFormShell";
 import { Textarea } from "@/components/ui/textarea";
 import {
   errorToast,
@@ -90,7 +91,7 @@ const DirectorDeskView = ({ onClose }: DirectorDeskViewProps) => {
   const canSave = title.trim().length > 0 && description.trim().length > 0;
 
   return (
-    <>
+    <DrawerFormShell>
       <SheetHeader className="flex flex-col gap-1 bg-background/40">
         <h3 className="text-lg font-semibold tracking-tight text-primary">
           Director&apos;s Desk
@@ -253,7 +254,7 @@ const DirectorDeskView = ({ onClose }: DirectorDeskViewProps) => {
           {saving ? "Saving…" : "Update Director's Desk"}
         </Button>
       </SheetFooter>
-    </>
+    </DrawerFormShell>
   );
 };
 

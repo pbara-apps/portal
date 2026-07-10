@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { SheetBody, SheetFooter, SheetHeader } from "@/components/ui/sheet";
+import { DrawerFormShell } from "@/features/admin/components/shared/DrawerFormShell";
 import { Textarea } from "@/components/ui/textarea";
 import {
   errorToast,
@@ -17,10 +18,7 @@ import {
 } from "@/components/shared/toast-notification";
 import { ImageUploadField } from "@/features/admin/components/shared/ImageUploadField";
 import { useGetChapters } from "@/lib/api/church";
-import {
-  useCreateExecutive,
-  useUpdateExecutive,
-} from "@/lib/api/executive";
+import { useCreateExecutive, useUpdateExecutive } from "@/lib/api/executive";
 import { useGetOffices } from "@/lib/api/office";
 import type { AdminExecutive, ExecutiveFormPayload } from "@/types/admin";
 import { EXECUTIVE_STATUSES } from "@/types/admin";
@@ -33,7 +31,9 @@ interface ExecutiveFormDrawerProps {
 
 const currentYear = new Date().getFullYear();
 
-function toForm(initial?: AdminExecutive): ExecutiveFormPayload & { id?: string } {
+function toForm(
+  initial?: AdminExecutive,
+): ExecutiveFormPayload & { id?: string } {
   return {
     id: initial?.id,
     name: initial?.name ?? "",
@@ -66,8 +66,10 @@ export function ExecutiveFormDrawer({
     setForm(toForm(initial));
   }, [initial]);
 
-  const update = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) =>
-    setForm((f) => ({ ...f, [key]: value }));
+  const update = <K extends keyof typeof form>(
+    key: K,
+    value: (typeof form)[K],
+  ) => setForm((f) => ({ ...f, [key]: value }));
 
   const saving = createExecutive.isPending || updateExecutive.isPending;
   const isCreate = mode === "create";
@@ -83,7 +85,12 @@ export function ExecutiveFormDrawer({
 
   const handleSave = async (options?: { closeAfterSave?: boolean }) => {
     const closeAfterSave = options?.closeAfterSave ?? true;
-    if (!form.name.trim() || !form.office_id || !form.church_id || !form.phone.trim()) {
+    if (
+      !form.name.trim() ||
+      !form.office_id ||
+      !form.church_id ||
+      !form.phone.trim()
+    ) {
       errorToast("Please complete all required fields.", "Validation");
       return;
     }
@@ -134,14 +141,14 @@ export function ExecutiveFormDrawer({
   };
 
   return (
-    <>
+    <DrawerFormShell>
       <SheetHeader className="flex flex-col gap-1 bg-background/40">
         <h3 className="text-lg font-semibold tracking-tight text-primary">
           {isCreate ? "Add New Executive" : "Edit Executive"}
         </h3>
         <p className="text-xs text-text-muted">
-          Assign office, chapter, and contact details. Active executives appear on
-          the public site.
+          Assign office, chapter, and contact details. Active executives appear
+          on the public site.
         </p>
       </SheetHeader>
 
@@ -213,17 +220,23 @@ export function ExecutiveFormDrawer({
             type="number"
             label="Start Year"
             value={String(form.start_year)}
-            onChange={(e) => update("start_year", Number(e.target.value) || currentYear)}
+            onChange={(e) =>
+              update("start_year", Number(e.target.value) || currentYear)
+            }
           />
           <Input
             type="number"
             label="End Year"
             placeholder="Optional"
             value={form.end_year ? String(form.end_year) : ""}
-            onChange={(e) => update("end_year", e.target.value ? Number(e.target.value) : null)}
+            onChange={(e) =>
+              update("end_year", e.target.value ? Number(e.target.value) : null)
+            }
           />
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-text-dark">Status</label>
+            <label className="text-xs font-semibold text-text-dark">
+              Status
+            </label>
             <Select
               value={form.status}
               onValueChange={(v) => update("status", v as typeof form.status)}
@@ -233,7 +246,11 @@ export function ExecutiveFormDrawer({
               </SelectTrigger>
               <SelectContent>
                 {EXECUTIVE_STATUSES.map((status) => (
-                  <SelectItem key={status} value={status} className="capitalize">
+                  <SelectItem
+                    key={status}
+                    value={status}
+                    className="capitalize"
+                  >
                     {status}
                   </SelectItem>
                 ))}
@@ -273,7 +290,9 @@ export function ExecutiveFormDrawer({
         <Input
           type={isCreate ? "password" : "text"}
           label={isCreate ? "Login Password" : "Reset Password (optional)"}
-          placeholder={isCreate ? "Enter a secure password" : "Leave blank to keep current"}
+          placeholder={
+            isCreate ? "Enter a secure password" : "Leave blank to keep current"
+          }
           value={form.password ?? ""}
           onChange={(e) => update("password", e.target.value)}
         />
@@ -316,6 +335,6 @@ export function ExecutiveFormDrawer({
           </Button>
         )}
       </SheetFooter>
-    </>
+    </DrawerFormShell>
   );
 }

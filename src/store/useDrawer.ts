@@ -13,7 +13,8 @@ export type DrawerView =
   | "edit-event"
   | "create-gallery"
   | "edit-gallery"
-  | "edit-director-desk";
+  | "edit-director-desk"
+  | "edit-profile";
 
 export type DrawerSize =
   | "xs"
@@ -43,6 +44,7 @@ const FORM_DRAWER_VIEWS: DrawerView[] = [
   "create-gallery",
   "edit-gallery",
   "edit-director-desk",
+  "edit-profile",
 ];
 
 const DEFAULT_CONFIG = {
