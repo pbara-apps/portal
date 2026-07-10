@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
+import useCurrentUser from "@/hooks/useCurrentUser";
 import { cn } from "@/lib/utils";
 import { useDrawer } from "@/store/useDrawer";
 import type {
@@ -11,10 +12,12 @@ import type {
   AdminOffice,
 } from "@/types/admin";
 import type { UserType } from "@/types/user";
+import { canWriteAdminContent } from "@/types/user";
 import DirectorDeskView from "../director-desk/DirectorDeskView";
 import { ChapterFormDrawer } from "./views/ChapterFormDrawer";
 import { EventFormDrawer } from "./views/EventFormDrawer";
 import { ExecutiveFormDrawer } from "./views/ExecutiveFormDrawer";
+import { ExecutiveViewDrawer } from "./views/ExecutiveViewDrawer";
 import { GalleryFormDrawer } from "./views/GalleryFormDrawer";
 import { NewsFormDrawer } from "./views/NewsFormDrawer";
 import { OfficeFormDrawer } from "./views/OfficeFormDrawer";
@@ -24,6 +27,8 @@ export function GlobalDrawer() {
   const view = useDrawer((s) => s.view);
   const body = useDrawer((s) => s.body);
   const closeDrawer = useDrawer((s) => s.closeDrawer);
+  const { user } = useCurrentUser();
+  const canManage = canWriteAdminContent(user?.role);
   const isOpen = view !== null;
   const [isMobile, setIsMobile] = useState(false);
 
@@ -55,6 +60,13 @@ export function GlobalDrawer() {
               mode="edit"
               initial={body as unknown as AdminExecutive | undefined}
               onClose={onClose}
+            />
+          )}
+          {view === "view-executive" && (
+            <ExecutiveViewDrawer
+              executive={body as unknown as AdminExecutive | undefined}
+              onClose={onClose}
+              canEdit={canManage}
             />
           )}
           {view === "create-office" && <OfficeFormDrawer mode="create" onClose={onClose} />}

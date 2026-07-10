@@ -23,7 +23,6 @@ import {
   ROLE_LABELS,
   canManageDirectorDesk,
   canWriteAdminContent,
-  isSuperAdmin,
 } from "@/types/user";
 
 function initials(name?: string) {

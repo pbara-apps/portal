@@ -144,7 +144,7 @@ export function ProfileFormDrawer({
 
         <Textarea
           label="Bio / Description"
-          minRows={4}
+          rows={4}
           value={form.description ?? ""}
           onChange={(e) => update("description", e.target.value)}
           placeholder="Professional bio shown on the public site…"

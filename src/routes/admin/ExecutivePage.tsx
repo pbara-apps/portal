@@ -1,5 +1,12 @@
 import { useMemo, useState } from "react";
-import { LuPencil, LuPlus, LuSearch, LuTrash2, LuUsers } from "react-icons/lu";
+import {
+  LuEye,
+  LuPencil,
+  LuPlus,
+  LuSearch,
+  LuTrash2,
+  LuUsers,
+} from "react-icons/lu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -321,10 +328,9 @@ export default function ExecutiveAdminPage() {
                       <TableRow
                         key={exec.id}
                         className="cursor-pointer hover:bg-background/60"
-                        onClick={() => {
-                          if (canManage)
-                            openDrawer("edit-executive", { body: exec });
-                        }}
+                        onClick={() =>
+                          openDrawer("view-executive", { body: exec })
+                        }
                       >
                         <TableCell onClick={(e) => e.stopPropagation()}>
                           <Checkbox
@@ -390,6 +396,14 @@ export default function ExecutiveAdminPage() {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    openDrawer("view-executive", { body: exec })
+                                  }
+                                >
+                                  <LuEye size={14} />
+                                  View
+                                </DropdownMenuItem>
                                 <DropdownMenuItem
                                   disabled={!canManage}
                                   onClick={() =>
