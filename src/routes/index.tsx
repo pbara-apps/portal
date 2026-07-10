@@ -1,5 +1,6 @@
 import { lazy } from "react";
 import { createBrowserRouter, Navigate, Outlet } from "react-router-dom";
+import { RouteErrorPage } from "@/components/RouteErrorPage";
 import { SessionExpiredModal } from "@/components/SessionExpiredModal";
 import { AdminLayout } from "./layouts/AdminLayout";
 import { GuestGuard } from "./layouts/GuestGuard";
@@ -17,7 +18,9 @@ const MessagesPage = lazy(() => import("./admin/MessagesPage"));
 const ProfilePage = lazy(() => import("./admin/ProfilePage"));
 const AuditPage = lazy(() => import("./admin/AuditPage"));
 const SettingsPage = lazy(() => import("./admin/SettingsPage"));
-const MemberHomePage = lazy(() => import("../features/member/pages/MemberHomePage"));
+const MemberHomePage = lazy(
+  () => import("../features/member/pages/MemberHomePage"),
+);
 
 function AppRoot() {
   return (
@@ -31,44 +34,45 @@ function AppRoot() {
 export const router = createBrowserRouter([
   {
     element: <AppRoot />,
-    children: [
-  {
-    path: "/login",
-    element: (
-      <GuestGuard>
-        <LoginPage />
-      </GuestGuard>
-    ),
-  },
-  {
-    path: "/admin",
-    element: <AdminLayout />,
-    children: [
-      { index: true, element: <DashboardPage /> },
-      { path: "executive", element: <ExecutivePage /> },
-      { path: "office", element: <OfficePage /> },
-      { path: "chapter", element: <ChapterPage /> },
-      { path: "news", element: <NewsPage /> },
-      { path: "event", element: <EventPage /> },
-      { path: "gallery", element: <GalleryPage /> },
-      { path: "administrative", element: <AdministrativePage /> },
-      { path: "messages", element: <MessagesPage /> },
-      { path: "profile", element: <ProfilePage /> },
-      { path: "audit", element: <AuditPage /> },
-      { path: "settings", element: <SettingsPage /> },
-    ],
-  },
-  {
-    path: "/member",
+    errorElement: <RouteErrorPage />,
     children: [
       {
-        index: true,
-        element: <MemberHomePage />,
+        path: "/login",
+        element: (
+          <GuestGuard>
+            <LoginPage />
+          </GuestGuard>
+        ),
       },
-    ],
-  },
-  { path: "/", element: <Navigate to="/admin" replace /> },
-  { path: "*", element: <Navigate to="/admin" replace /> },
+      {
+        path: "/admin",
+        element: <AdminLayout />,
+        children: [
+          { index: true, element: <DashboardPage /> },
+          { path: "executive", element: <ExecutivePage /> },
+          { path: "office", element: <OfficePage /> },
+          { path: "chapter", element: <ChapterPage /> },
+          { path: "news", element: <NewsPage /> },
+          { path: "event", element: <EventPage /> },
+          { path: "gallery", element: <GalleryPage /> },
+          { path: "administrative", element: <AdministrativePage /> },
+          { path: "messages", element: <MessagesPage /> },
+          { path: "profile", element: <ProfilePage /> },
+          { path: "audit", element: <AuditPage /> },
+          { path: "settings", element: <SettingsPage /> },
+        ],
+      },
+      {
+        path: "/member",
+        children: [
+          {
+            index: true,
+            element: <MemberHomePage />,
+          },
+        ],
+      },
+      { path: "/", element: <Navigate to="/admin" replace /> },
+      { path: "*", element: <Navigate to="/admin" replace /> },
     ],
   },
 ]);
