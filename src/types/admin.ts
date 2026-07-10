@@ -12,6 +12,8 @@ export interface AdminExecutive {
   churchId: string;
   chapterName: string;
   churchName: string;
+  rankId?: string | null;
+  rankName?: string;
   status: ExecutiveStatus;
   role: ExecutiveRole;
   description: string;
@@ -24,6 +26,14 @@ export interface AdminOffice {
   id: string;
   name: string;
   description: string;
+}
+
+export interface AdminRank {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  image?: string | null;
 }
 
 export interface AdminChapter {
@@ -42,6 +52,7 @@ export interface ExecutiveFormPayload {
   phone: string;
   office_id: string;
   church_id: string;
+  rank_id?: string | null;
   start_year: number;
   end_year?: number | null;
   status: ExecutiveStatus;

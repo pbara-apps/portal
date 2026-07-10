@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Controller, useForm, type SubmitHandler } from "react-hook-form";
 import {
   LuArrowRight,
@@ -18,7 +18,9 @@ import {
   successToast,
 } from "@/components/shared/toast-notification";
 import { useLogin } from "@/lib/api/auth";
+import { normalizeReturnPath } from "@/lib/auth/redirect";
 import useCurrentUser from "@/hooks/useCurrentUser";
+import { useSession } from "@/store/useSession";
 
 interface LoginFormValues {
   email: string;
@@ -30,6 +32,8 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const returnTo = normalizeReturnPath(searchParams.get("from"));
   const [showPassword, setShowPassword] = useState(false);
 
   const {
@@ -60,11 +64,13 @@ export default function LoginPage() {
         phone?: string;
         office_id?: string;
         church_id?: string;
+        rank_id?: string | null;
         start_year?: number;
         end_year?: number | null;
         status?: "active" | "inactive" | "completed";
         office?: { _id?: string; name?: string };
         church?: { _id?: string; name?: string; chapter?: string };
+        rank?: { _id?: string; name?: string };
         role?: "super_admin" | "admin" | "editor" | "viewer";
       };
       setCurrentUser({
@@ -78,6 +84,8 @@ export default function LoginPage() {
           churchId: user.church_id ?? user.church?._id ?? "",
           churchName: user.church?.name ?? "",
           chapterName: user.church?.chapter ?? "",
+          rankId: user.rank_id ?? user.rank?._id ?? null,
+          rankName: user.rank?.name ?? "",
           status: user.status ?? "active",
           startYear: user.start_year,
           endYear: user.end_year ?? null,
@@ -86,7 +94,8 @@ export default function LoginPage() {
         },
         token: response.token,
       });
-      navigate("/admin");
+      useSession.getState().clearSessionExpired();
+      navigate(returnTo, { replace: true });
       successToast("Login successful", "Sign in successful");
     } catch (err) {
       console.log(err);
@@ -110,10 +119,10 @@ export default function LoginPage() {
   });
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-dvh max-h-dvh overflow-hidden lg:min-h-screen lg:max-h-none">
       <AuthBrandPanel />
 
-      <section className="relative flex w-full items-center justify-center overflow-hidden bg-background p-4 lg:w-1/2 lg:bg-surface lg:p-8">
+      <section className="relative flex w-full min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain bg-background px-4 py-6 sm:px-6 lg:w-1/2 lg:justify-center lg:overflow-hidden lg:bg-surface lg:p-8">
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 lg:hidden"
@@ -122,38 +131,36 @@ export default function LoginPage() {
           <div className="aurora-blob-2 absolute -bottom-32 -left-24 h-[300px] w-[300px] rounded-full bg-gradient-to-br from-gold/15 to-transparent blur-3xl" />
         </div>
 
-        <div className="relative z-10 w-full max-w-xl">
-          <div className="mb-8 flex flex-col items-center text-center lg:hidden">
-            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl">
+        <div className="relative z-10 mx-auto w-full max-w-xl py-2 lg:py-0">
+          <div className="mb-4 flex flex-col items-center text-center sm:mb-6 lg:hidden">
+            <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-2xl">
               <img
                 src="/images/ra-logo.png"
                 alt="RA logo"
-                width={100}
-                height={100}
-                className="rounded-full object-cover"
+                className="h-12 w-12 rounded-full object-cover"
               />
             </div>
-            <h1 className="text-3xl font-bold tracking-tight text-primary">
+            <h1 className="text-xl font-bold tracking-tight text-primary sm:text-2xl">
               Royal Ambassadors
             </h1>
-            <h3 className="text-xl font-bold tracking-tight text-primary">
+            <p className="text-sm font-bold tracking-tight text-primary sm:text-base">
               Pentecost Baptist Association
-            </h3>
+            </p>
           </div>
 
-          <div className="rounded-2xl borde border-text-dark/[0.05] bg-surface p-6 sm:p-8">
-            <header className="mb-6 sm:mb-8">
-              <h2 className="text-2xl font-bold tracking-tight text-primary sm:text-5xl">
+          <div className="rounded-2xl border border-text-dark/[0.05] bg-surface p-4 sm:p-6 lg:p-8">
+            <header className="mb-4 sm:mb-6">
+              <h2 className="text-2xl font-bold tracking-tight text-primary sm:text-3xl lg:text-4xl">
                 Welcome Back
               </h2>
-              <p className="mt-1.5 text-base text-text-muted">
+              <p className="mt-1.5 text-sm text-text-muted sm:text-base">
                 Access the Institutional Administration Portal.
               </p>
             </header>
 
             <form
               onSubmit={handleSubmit(onSubmit)}
-              className="flex flex-col gap-y-8 mt-16"
+              className="mt-6 flex flex-col gap-y-5 sm:mt-8 sm:gap-y-6"
               noValidate
             >
               <Input
@@ -233,14 +240,14 @@ export default function LoginPage() {
               </Button>
             </form>
 
-            <footer className="mt-8 border-t border-text-dark/[0.05] pt-5 text-center">
+            <footer className="mt-6 border-t border-text-dark/[0.05] pt-4 text-center sm:mt-8 sm:pt-5">
               <p className="text-sm text-text-muted">
                 Authorized personnel only.
               </p>
             </footer>
           </div>
 
-          <div className="mt-5 flex justify-center">
+          <div className="mt-4 flex justify-center pb-2 sm:mt-5">
             <button
               type="button"
               className="inline-flex items-center gap-1.5 text-xs text-text-muted transition-colors hover:text-primary"

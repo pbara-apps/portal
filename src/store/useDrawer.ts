@@ -3,6 +3,7 @@ import { create } from "zustand";
 export type DrawerView =
   | "create-executive"
   | "edit-executive"
+  | "view-executive"
   | "create-office"
   | "edit-office"
   | "create-church"
@@ -13,7 +14,8 @@ export type DrawerView =
   | "edit-event"
   | "create-gallery"
   | "edit-gallery"
-  | "edit-director-desk";
+  | "edit-director-desk"
+  | "edit-profile";
 
 export type DrawerSize =
   | "xs"
@@ -32,6 +34,7 @@ export type DrawerPlacement = "right" | "left" | "top" | "bottom";
 const FORM_DRAWER_VIEWS: DrawerView[] = [
   "create-executive",
   "edit-executive",
+  "view-executive",
   "create-office",
   "edit-office",
   "create-church",
@@ -43,6 +46,7 @@ const FORM_DRAWER_VIEWS: DrawerView[] = [
   "create-gallery",
   "edit-gallery",
   "edit-director-desk",
+  "edit-profile",
 ];
 
 const DEFAULT_CONFIG = {

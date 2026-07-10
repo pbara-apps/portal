@@ -14,12 +14,12 @@ React + Vite application for the **admin CMS** and future **member portal** feat
 
 ## Routes
 
-| Path | Purpose |
-|------|---------|
-| `/login` | Admin authentication |
-| `/admin` | Dashboard |
-| `/admin/executive`, `/office`, `/chapter`, … | CMS modules |
-| `/member` | Member portal placeholder (future product features) |
+| Path                                         | Purpose                                             |
+| -------------------------------------------- | --------------------------------------------------- |
+| `/login`                                     | Admin authentication                                |
+| `/admin`                                     | Dashboard                                           |
+| `/admin/executive`, `/office`, `/chapter`, … | CMS modules                                         |
+| `/member`                                    | Member portal placeholder (future product features) |
 
 ## Development
 
@@ -34,8 +34,8 @@ Ensure the API is running (`back/` on port 3004 by default).
 
 ## Environment
 
-| Variable | Description |
-|----------|-------------|
+| Variable       | Description                                             |
+| -------------- | ------------------------------------------------------- |
 | `VITE_API_URL` | Backend API base URL (e.g. `http://localhost:3004/api`) |
 
 ## Folder structure
@@ -61,13 +61,5 @@ portal/
 
 ## Deployment
 
-Deploy independently from `front/`. Recommended hostnames:
-
 - `www.pbara.org.ng` → Next.js marketing site
-- `portal.pbara.org.ng` or `app.pbara.org.ng` → this Vite app
-
-Both apps share the same `back/` API.
-
-## Repo note
-
-`portal/` can be split into its own git repository later. For now it stays in `pbara-web` while `front/` keeps its own repo for SEO-focused releases.
+- `portal.pbara.org.ng` → this portal app

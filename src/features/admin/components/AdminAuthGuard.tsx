@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { Spinner } from "@/components/ui/spinner";
+import { buildLoginPath } from "@/lib/auth/redirect";
 import useCurrentUser from "@/hooks/useCurrentUser";
 
 export function AdminAuthGuard({ children }: { children: React.ReactNode }) {
   const token = useCurrentUser((s) => s.token);
+  const location = useLocation();
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -21,7 +23,8 @@ export function AdminAuthGuard({ children }: { children: React.ReactNode }) {
   }
 
   if (!token) {
-    return <Navigate to="/login" replace />;
+    const returnTo = `${location.pathname}${location.search}${location.hash}`;
+    return <Navigate to={buildLoginPath(returnTo)} replace />;
   }
 
   return <>{children}</>;

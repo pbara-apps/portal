@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SheetBody, SheetFooter, SheetHeader } from "@/components/ui/sheet";
+import { DrawerFormShell } from "@/features/admin/components/shared/DrawerFormShell";
 import { Textarea } from "@/components/ui/textarea";
 import {
   errorToast,
@@ -66,7 +67,7 @@ export function OfficeFormDrawer({
   };
 
   return (
-    <>
+    <DrawerFormShell>
       <SheetHeader className="flex flex-col gap-1 bg-background/40">
         <h3 className="text-lg font-semibold tracking-tight text-primary">
           {isCreate ? "Add Office / Position" : "Edit Office / Position"}
@@ -107,6 +108,6 @@ export function OfficeFormDrawer({
           {isCreate ? "Create Office" : "Save Changes"}
         </Button>
       </SheetFooter>
-    </>
+    </DrawerFormShell>
   );
 }

@@ -9,6 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { SheetBody, SheetFooter, SheetHeader } from "@/components/ui/sheet";
+import { DrawerFormShell } from "@/features/admin/components/shared/DrawerFormShell";
 import {
   errorToast,
   successToast,
@@ -86,7 +87,7 @@ export function ChapterFormDrawer({
   };
 
   return (
-    <>
+    <DrawerFormShell>
       <SheetHeader className="flex flex-col gap-1 bg-background/40">
         <h3 className="text-lg font-semibold tracking-tight text-primary">
           {isCreate ? "Register Chapter" : "Edit Chapter"}
@@ -169,6 +170,6 @@ export function ChapterFormDrawer({
           {isCreate ? "Create Chapter" : "Save Changes"}
         </Button>
       </SheetFooter>
-    </>
+    </DrawerFormShell>
   );
 }

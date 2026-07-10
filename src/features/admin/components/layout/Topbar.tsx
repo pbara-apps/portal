@@ -11,11 +11,13 @@ export function Topbar({ onOpenMobileSidebar }: TopbarProps) {
   const all = [...adminNav, ...adminFooterNav];
   const current =
     all.find(
-      (n) => n.href === pathname || (n.href !== "/admin" && pathname.startsWith(n.href + "/")),
+      (n) =>
+        n.href === pathname ||
+        (n.href !== "/admin" && pathname.startsWith(n.href + "/")),
     ) ?? all[0];
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 min-w-0 items-center gap-2 border-b border-text-dark/[0.06] bg-surface/80 px-4 backdrop-blur-md sm:gap-3 sm:px-6 lg:px-8">
+    <header className="sticky w-full top-0 z-30 flex h-16 min-w-0 items-center gap-2 border-b border-text-dark/6 bg-surface/80 px-4 backdrop-blur-md sm:gap-3 sm:px-6 lg:px-8">
       <button
         type="button"
         onClick={onOpenMobileSidebar}
@@ -30,8 +32,13 @@ export function Topbar({ onOpenMobileSidebar }: TopbarProps) {
         className="flex min-w-0 flex-1 items-center gap-2 text-sm text-text-muted"
       >
         <span className="hidden shrink-0 font-medium sm:inline">RAPBA</span>
-        <LuChevronRight size={14} className="hidden shrink-0 sm:inline opacity-50" />
-        <span className="truncate font-semibold text-primary">{current.label}</span>
+        <LuChevronRight
+          size={14}
+          className="hidden shrink-0 sm:inline opacity-50"
+        />
+        <span className="truncate font-semibold text-primary">
+          {current.label}
+        </span>
       </nav>
 
       <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3">

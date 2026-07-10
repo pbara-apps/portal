@@ -1,5 +1,7 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { LuChevronLeft, LuLogOut, LuX } from "react-icons/lu";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverClose, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import useCurrentUser from "@/hooks/useCurrentUser";
 import { useGetUnreadMessageCount } from "@/lib/api/message";
@@ -141,20 +143,13 @@ export function Sidebar({
                 {user?.role ? ROLE_LABELS[user.role] : "Admin"}
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => {
+            <LogoutButton
+              collapsed={collapsed}
+              onConfirm={() => {
                 removeCurrentUser();
                 navigate("/login", { replace: true });
               }}
-              className={cn(
-                "focus-ring shrink-0 rounded-md p-1.5 text-white/60 transition-colors hover:bg-white/10 hover:text-white",
-                collapsed && "lg:hidden",
-              )}
-              aria-label="Sign out"
-            >
-              <LuLogOut size={16} />
-            </button>
+            />
           </div>
         </div>
 
@@ -173,6 +168,49 @@ export function Sidebar({
         </button>
       </aside>
     </>
+  );
+}
+
+function LogoutButton({
+  collapsed,
+  onConfirm,
+}: {
+  collapsed: boolean;
+  onConfirm: () => void;
+}) {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className={cn(
+            "focus-ring shrink-0 rounded-md p-1.5 text-white/60 transition-colors hover:bg-white/10 hover:text-white",
+            collapsed && "lg:hidden",
+          )}
+          aria-label="Sign out"
+        >
+          <LuLogOut size={16} />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent side="right" align="end" className="w-64">
+        <p className="text-sm font-semibold text-primary">Sign out?</p>
+        <p className="mt-1 text-xs text-text-muted">
+          You will need to sign in again to access the admin portal.
+        </p>
+        <div className="mt-4 flex justify-end gap-2">
+          <PopoverClose asChild>
+            <Button size="sm" variant="outline">
+              Cancel
+            </Button>
+          </PopoverClose>
+          <PopoverClose asChild>
+            <Button size="sm" variant="destructive" onClick={onConfirm}>
+              Sign out
+            </Button>
+          </PopoverClose>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
 

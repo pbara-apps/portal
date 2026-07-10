@@ -7,11 +7,16 @@ export interface UserType {
   role: ExecutiveRole;
   token: string;
   phone?: string;
+  image?: string | null;
+  title?: string;
+  description?: string;
   officeId?: string;
   officeName?: string;
   churchId?: string;
   churchName?: string;
   chapterName?: string;
+  rankId?: string | null;
+  rankName?: string;
   status?: "active" | "inactive" | "completed";
   startYear?: number;
   endYear?: number | null;

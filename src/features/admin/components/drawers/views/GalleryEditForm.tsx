@@ -9,6 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { SheetBody, SheetFooter, SheetHeader } from "@/components/ui/sheet";
+import { DrawerFormShell } from "@/features/admin/components/shared/DrawerFormShell";
 import {
   errorToast,
   successToast,
@@ -64,7 +65,7 @@ export function GalleryEditForm({ initial, onClose }: GalleryEditFormProps) {
   };
 
   return (
-    <>
+    <DrawerFormShell>
       <SheetHeader className="bg-background/40">
         <h3 className="text-lg font-semibold text-primary">Edit Gallery Item</h3>
       </SheetHeader>
@@ -152,6 +153,6 @@ export function GalleryEditForm({ initial, onClose }: GalleryEditFormProps) {
           Save
         </Button>
       </SheetFooter>
-    </>
+    </DrawerFormShell>
   );
 }

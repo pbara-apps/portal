@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import {
+  LuEye,
   LuPencil,
   LuPlus,
   LuSearch,
@@ -73,7 +74,12 @@ export default function ExecutiveAdminPage() {
   const openDrawer = useDrawer((s) => s.openDrawer);
   const { user } = useCurrentUser();
   const canManage = canWriteAdminContent(user?.role);
-  const { data: executives = [], isLoading, isError, refetch } = useGetExecutives();
+  const {
+    data: executives = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useGetExecutives();
   const { data: offices = [] } = useGetOffices();
   const { data: chapters = [] } = useGetChapters();
   const deleteExecutive = useDeleteExecutive();
@@ -82,7 +88,9 @@ export default function ExecutiveAdminPage() {
   const [search, setSearch] = useState("");
   const [officeFilter, setOfficeFilter] = useState<string>("all");
   const [chapterFilter, setChapterFilter] = useState<string>("all");
-  const [statusFilter, setStatusFilter] = useState<ExecutiveStatus | "all">("all");
+  const [statusFilter, setStatusFilter] = useState<ExecutiveStatus | "all">(
+    "all",
+  );
   const [page, setPage] = useState(1);
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
   const [deleteTarget, setDeleteTarget] = useState<{
@@ -114,7 +122,8 @@ export default function ExecutiveAdminPage() {
   }, [filtered, page]);
 
   const pageIds = pageItems.map((e) => e.id);
-  const allPageSelected = pageIds.length > 0 && pageIds.every((id) => selectedKeys.has(id));
+  const allPageSelected =
+    pageIds.length > 0 && pageIds.every((id) => selectedKeys.has(id));
 
   const activeCount = executives.filter((e) => e.status === "active").length;
 
@@ -172,7 +181,9 @@ export default function ExecutiveAdminPage() {
         actionDisabledText="Your role does not permit executive updates."
         stats={
           <>
-            <Badge className="bg-primary/10 text-primary">{executives.length} total</Badge>
+            <Badge className="bg-primary/10 text-primary">
+              {executives.length} total
+            </Badge>
             <Badge variant="success">{activeCount} active</Badge>
           </>
         }
@@ -204,7 +215,9 @@ export default function ExecutiveAdminPage() {
           <SelectContent>
             <SelectItem value="all">All Offices</SelectItem>
             {offices.map((o) => (
-              <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>
+              <SelectItem key={o.id} value={o.id}>
+                {o.name}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -242,7 +255,9 @@ export default function ExecutiveAdminPage() {
           <SelectContent>
             <SelectItem value="all">All Status</SelectItem>
             {EXECUTIVE_STATUSES.map((s) => (
-              <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>
+              <SelectItem key={s} value={s} className="capitalize">
+                {s}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -256,7 +271,9 @@ export default function ExecutiveAdminPage() {
         ) : isError ? (
           <div className="flex flex-col items-center gap-4 py-20 text-center">
             <p className="text-sm text-rose-600">Unable to load executives.</p>
-            <Button size="sm" onClick={() => refetch()}>Retry</Button>
+            <Button size="sm" onClick={() => refetch()}>
+              Retry
+            </Button>
           </div>
         ) : (
           <>
@@ -287,10 +304,19 @@ export default function ExecutiveAdminPage() {
                             <LuUsers size={20} />
                           </div>
                           <div>
-                            <p className="text-sm font-semibold text-text-dark">No executives found</p>
-                            <p className="mt-1 text-xs text-text-muted">Add your first executive or adjust filters.</p>
+                            <p className="text-sm font-semibold text-text-dark">
+                              No executives found
+                            </p>
+                            <p className="mt-1 text-xs text-text-muted">
+                              Add your first executive or adjust filters.
+                            </p>
                           </div>
-                          <Button size="sm" className="bg-primary text-white" onClick={() => openDrawer("create-executive")} disabled={!canManage}>
+                          <Button
+                            size="sm"
+                            className="bg-primary text-white"
+                            onClick={() => openDrawer("create-executive")}
+                            disabled={!canManage}
+                          >
                             <LuPlus size={14} />
                             Add Executive
                           </Button>
@@ -302,36 +328,53 @@ export default function ExecutiveAdminPage() {
                       <TableRow
                         key={exec.id}
                         className="cursor-pointer hover:bg-background/60"
-                        onClick={() => {
-                          if (canManage) openDrawer("edit-executive", { body: exec });
-                        }}
+                        onClick={() =>
+                          openDrawer("view-executive", { body: exec })
+                        }
                       >
                         <TableCell onClick={(e) => e.stopPropagation()}>
                           <Checkbox
                             checked={selectedKeys.has(exec.id)}
-                            onCheckedChange={(v) => toggleRowSelection(exec.id, v === true)}
+                            onCheckedChange={(v) =>
+                              toggleRowSelection(exec.id, v === true)
+                            }
                             aria-label={`Select ${exec.name}`}
                           />
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-3">
-                            <Avatar className="h-8 w-8 bg-gradient-to-br from-primary to-[#040e3d] text-[11px] font-bold text-white">
-                              <AvatarImage src={exec.image ?? undefined} alt={exec.name} />
-                              <AvatarFallback>{exec.name.slice(0, 2).toUpperCase()}</AvatarFallback>
+                            <Avatar className="h-10 w-10 bg-linear-to-br from-primary to-[#040e3d] text-[14px] font-bold text-white">
+                              <AvatarImage
+                                src={exec.image ?? undefined}
+                                alt={exec.name}
+                              />
+                              <AvatarFallback>
+                                {exec.name.slice(0, 2).toUpperCase()}
+                              </AvatarFallback>
                             </Avatar>
                             <div className="min-w-0">
-                              <p className="truncate text-sm font-semibold text-primary">{exec.name}</p>
-                              <p className="truncate text-[11px] text-text-muted">{exec.email || exec.phone}</p>
+                              <p className="truncate text-sm font-semibold text-primary">
+                                {exec.name}
+                              </p>
+                              <p className="truncate text-[11px] text-text-muted">
+                                {exec.email || exec.phone}
+                              </p>
                             </div>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <span className="text-sm font-medium text-text-dark">{exec.officeName || "—"}</span>
+                          <span className="text-sm font-medium text-text-dark">
+                            {exec.officeName || "—"}
+                          </span>
                         </TableCell>
                         <TableCell>
                           <div className="min-w-0">
-                            <p className="truncate text-sm text-text-dark">{exec.chapterName}</p>
-                            <p className="truncate text-[11px] text-text-muted">{exec.churchName}</p>
+                            <p className="truncate text-sm text-text-dark">
+                              {exec.chapterName}
+                            </p>
+                            <p className="truncate text-[11px] text-text-muted">
+                              {exec.churchName}
+                            </p>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -343,14 +386,29 @@ export default function ExecutiveAdminPage() {
                           <div className="flex justify-end">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" aria-label="Open actions" className="text-text-muted">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  aria-label="Open actions"
+                                  className="text-text-muted"
+                                >
                                   ⋮
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
                                 <DropdownMenuItem
+                                  onClick={() =>
+                                    openDrawer("view-executive", { body: exec })
+                                  }
+                                >
+                                  <LuEye size={14} />
+                                  View
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
                                   disabled={!canManage}
-                                  onClick={() => openDrawer("edit-executive", { body: exec })}
+                                  onClick={() =>
+                                    openDrawer("edit-executive", { body: exec })
+                                  }
                                 >
                                   <LuPencil size={14} />
                                   Edit profile
@@ -360,7 +418,10 @@ export default function ExecutiveAdminPage() {
                                   className="text-rose-600 focus:text-rose-600"
                                   onClick={() => {
                                     if (!canManage) return;
-                                    setDeleteTarget({ ids: [exec.id], label: exec.name });
+                                    setDeleteTarget({
+                                      ids: [exec.id],
+                                      label: exec.name,
+                                    });
                                   }}
                                 >
                                   <LuTrash2 size={14} />
@@ -388,10 +449,16 @@ export default function ExecutiveAdminPage() {
                   {Math.min(page * PAGE_SIZE, filtered.length)}
                 </span>{" "}
                 of{" "}
-                <span className="font-semibold text-text-dark">{filtered.length}</span>{" "}
+                <span className="font-semibold text-text-dark">
+                  {filtered.length}
+                </span>{" "}
                 executives
               </p>
-              <Pagination page={page} totalPages={pages} onPageChange={setPage} />
+              <Pagination
+                page={page}
+                totalPages={pages}
+                onPageChange={setPage}
+              />
             </div>
           </>
         )}
