@@ -56,7 +56,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="minh-screen overflo-xhidden bg-background text-text-dark">
+    <div className="minh-screen overflow-xhidden bg-background text-text-dark">
       <Sidebar
         collapsed={collapsed}
         mobileOpen={mobileOpen}
