@@ -1,4 +1,5 @@
 import {
+  LuAward,
   LuBriefcase,
   LuBuilding2,
   LuCalendar,
@@ -127,7 +128,9 @@ export default function AdminProfilePage() {
                       {user?.name ?? "—"}
                     </h2>
                     <p className="mt-1 text-sm text-white/75">
-                      {user?.officeName || "No office assigned"}
+                      {[user?.rankName, user?.officeName]
+                        .filter(Boolean)
+                        .join(" · ") || "No office assigned"}
                     </p>
                   </div>
 
@@ -193,6 +196,11 @@ export default function AdminProfilePage() {
                   label="Office / Post"
                   value={user?.officeName}
                   icon={<LuBriefcase size={14} />}
+                />
+                <ProfileDetail
+                  label="Rank"
+                  value={user?.rankName}
+                  icon={<LuAward size={14} />}
                 />
                 <ProfileDetail
                   label="Public Title"

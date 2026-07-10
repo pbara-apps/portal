@@ -15,6 +15,8 @@ export interface UserType {
   churchId?: string;
   churchName?: string;
   chapterName?: string;
+  rankId?: string | null;
+  rankName?: string;
   status?: "active" | "inactive" | "completed";
   startYear?: number;
   endYear?: number | null;

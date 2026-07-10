@@ -20,6 +20,7 @@ import { ImageUploadField } from "@/features/admin/components/shared/ImageUpload
 import { useGetChapters } from "@/lib/api/church";
 import { useCreateExecutive, useUpdateExecutive } from "@/lib/api/executive";
 import { useGetOffices } from "@/lib/api/office";
+import { useGetRanks } from "@/lib/api/rank";
 import type { AdminExecutive, ExecutiveFormPayload } from "@/types/admin";
 import { EXECUTIVE_STATUSES } from "@/types/admin";
 
@@ -30,6 +31,7 @@ interface ExecutiveFormDrawerProps {
 }
 
 const currentYear = new Date().getFullYear();
+const NO_RANK = "__none__";
 
 function toForm(
   initial?: AdminExecutive,
@@ -41,6 +43,7 @@ function toForm(
     phone: initial?.phone ?? "",
     office_id: initial?.officeId ?? "",
     church_id: initial?.churchId ?? "",
+    rank_id: initial?.rankId ?? null,
     start_year: initial?.startYear ?? currentYear,
     end_year: initial?.endYear ?? null,
     status: initial?.status ?? "active",
@@ -59,6 +62,7 @@ export function ExecutiveFormDrawer({
   const [form, setForm] = useState(toForm(initial));
   const { data: offices = [], isLoading: officesLoading } = useGetOffices();
   const { data: chapters = [], isLoading: chaptersLoading } = useGetChapters();
+  const { data: ranks = [], isLoading: ranksLoading } = useGetRanks();
   const createExecutive = useCreateExecutive();
   const updateExecutive = useUpdateExecutive();
 
@@ -101,6 +105,7 @@ export function ExecutiveFormDrawer({
       phone: form.phone.trim(),
       office_id: form.office_id,
       church_id: form.church_id,
+      rank_id: form.rank_id || null,
       start_year: Number(form.start_year),
       end_year: form.end_year ? Number(form.end_year) : null,
       status: form.status,
@@ -147,8 +152,8 @@ export function ExecutiveFormDrawer({
           {isCreate ? "Add New Executive" : "Edit Executive"}
         </h3>
         <p className="text-xs text-text-muted">
-          Assign office, chapter, and contact details. Active executives appear
-          on the public site.
+          Assign office, chapter, rank, and contact details. Active executives
+          appear on the public site.
         </p>
       </SheetHeader>
 
@@ -213,6 +218,30 @@ export function ExecutiveFormDrawer({
               </SelectContent>
             </Select>
           </div>
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-xs font-semibold text-text-dark">Rank</label>
+          <Select
+            value={form.rank_id || NO_RANK}
+            onValueChange={(v) =>
+              update("rank_id", v === NO_RANK ? null : v)
+            }
+            disabled={ranksLoading}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select rank (optional)" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={NO_RANK}>No rank</SelectItem>
+              {ranks.map((rank) => (
+                <SelectItem key={rank.id} value={rank.id}>
+                  {rank.name}
+                  {rank.category ? ` · ${rank.category}` : ""}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -287,15 +316,19 @@ export function ExecutiveFormDrawer({
           />
         </div>
 
-        <Input
-          type={isCreate ? "password" : "text"}
-          label={isCreate ? "Login Password" : "Reset Password (optional)"}
-          placeholder={
-            isCreate ? "Enter a secure password" : "Leave blank to keep current"
-          }
-          value={form.password ?? ""}
-          onChange={(e) => update("password", e.target.value)}
-        />
+        {isCreate && (
+          <Input
+            type={isCreate ? "password" : "text"}
+            label={isCreate ? "Login Password" : "Reset Password (optional)"}
+            placeholder={
+              isCreate
+                ? "Enter a secure password"
+                : "Leave blank to keep current"
+            }
+            value={form.password ?? ""}
+            onChange={(e) => update("password", e.target.value)}
+          />
+        )}
       </SheetBody>
 
       <SheetFooter className="bg-background/40">

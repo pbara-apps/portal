@@ -7,6 +7,7 @@ import type {
   AdminMessage,
   AdminNews,
   AdminOffice,
+  AdminRank,
 } from "@/types/admin";
 import { eventEndTimestamp } from "@/lib/event-date";
 import type { Chapter, EventItem, Executive, NewsDetail, NewsItem } from "@/types";
@@ -25,8 +26,10 @@ type RawExecutive = {
   phone?: string;
   office_id?: string;
   church_id?: string;
+  rank_id?: string | null;
   office?: PopulatedRef;
   church?: PopulatedRef;
+  rank?: PopulatedRef;
   status: AdminExecutive["status"];
   role?: AdminExecutive["role"];
   description?: string;
@@ -40,6 +43,15 @@ type RawOffice = {
   id?: string;
   name: string;
   description: string;
+};
+
+type RawRank = {
+  _id?: string;
+  id?: string;
+  name: string;
+  description: string;
+  category: string;
+  image?: string | null;
 };
 
 type RawChapter = {
@@ -68,6 +80,8 @@ export function mapExecutive(raw: RawExecutive): AdminExecutive {
     churchId: raw.church_id?.toString() ?? raw.church?._id?.toString() ?? "",
     chapterName: raw.church?.chapter ?? "",
     churchName: raw.church?.name ?? "",
+    rankId: raw.rank_id?.toString() ?? raw.rank?._id?.toString() ?? null,
+    rankName: raw.rank?.name ?? "",
     status: raw.status,
     role: raw.role ?? "admin",
     description: raw.description ?? "",
@@ -82,6 +96,16 @@ export function mapOffice(raw: RawOffice): AdminOffice {
     id: toId(raw),
     name: raw.name,
     description: raw.description,
+  };
+}
+
+export function mapRank(raw: RawRank): AdminRank {
+  return {
+    id: toId(raw),
+    name: raw.name,
+    description: raw.description,
+    category: raw.category,
+    image: raw.image ?? null,
   };
 }
 
