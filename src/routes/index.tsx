@@ -1,5 +1,6 @@
 import { lazy } from "react";
-import { createBrowserRouter, Navigate } from "react-router-dom";
+import { createBrowserRouter, Navigate, Outlet } from "react-router-dom";
+import { SessionExpiredModal } from "@/components/SessionExpiredModal";
 import { AdminLayout } from "./layouts/AdminLayout";
 import { GuestGuard } from "./layouts/GuestGuard";
 
@@ -18,7 +19,19 @@ const AuditPage = lazy(() => import("./admin/AuditPage"));
 const SettingsPage = lazy(() => import("./admin/SettingsPage"));
 const MemberHomePage = lazy(() => import("../features/member/pages/MemberHomePage"));
 
+function AppRoot() {
+  return (
+    <>
+      <Outlet />
+      <SessionExpiredModal />
+    </>
+  );
+}
+
 export const router = createBrowserRouter([
+  {
+    element: <AppRoot />,
+    children: [
   {
     path: "/login",
     element: (
@@ -56,4 +69,6 @@ export const router = createBrowserRouter([
   },
   { path: "/", element: <Navigate to="/admin" replace /> },
   { path: "*", element: <Navigate to="/admin" replace /> },
+    ],
+  },
 ]);

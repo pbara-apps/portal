@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Controller, useForm, type SubmitHandler } from "react-hook-form";
 import {
   LuArrowRight,
@@ -18,7 +18,9 @@ import {
   successToast,
 } from "@/components/shared/toast-notification";
 import { useLogin } from "@/lib/api/auth";
+import { normalizeReturnPath } from "@/lib/auth/redirect";
 import useCurrentUser from "@/hooks/useCurrentUser";
+import { useSession } from "@/store/useSession";
 
 interface LoginFormValues {
   email: string;
@@ -30,6 +32,8 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const returnTo = normalizeReturnPath(searchParams.get("from"));
   const [showPassword, setShowPassword] = useState(false);
 
   const {
@@ -86,7 +90,8 @@ export default function LoginPage() {
         },
         token: response.token,
       });
-      navigate("/admin");
+      useSession.getState().clearSessionExpired();
+      navigate(returnTo, { replace: true });
       successToast("Login successful", "Sign in successful");
     } catch (err) {
       console.log(err);
