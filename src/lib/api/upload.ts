@@ -6,6 +6,7 @@ export type UploadFolder =
   | "executives"
   | "events"
   | "chapters"
+  | "patrons"
   | "gallery"
   | "general";
 

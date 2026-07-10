@@ -32,7 +32,11 @@ function hasDateRange(initial?: AdminEvent) {
   return Boolean(initial?.endDate && initial.endDate !== initial.date);
 }
 
-export function EventFormDrawer({ mode, initial, onClose }: EventFormDrawerProps) {
+export function EventFormDrawer({
+  mode,
+  initial,
+  onClose,
+}: EventFormDrawerProps) {
   const [isRange, setIsRange] = useState(hasDateRange(initial));
   const [form, setForm] = useState<EventFormPayload>({
     title: initial?.title ?? "",
@@ -78,7 +82,10 @@ export function EventFormDrawer({ mode, initial, onClose }: EventFormDrawerProps
         return;
       }
       if (form.endDate < form.date) {
-        errorToast("End date must be on or after the start date.", "Validation");
+        errorToast(
+          "End date must be on or after the start date.",
+          "Validation",
+        );
         return;
       }
     }
@@ -98,7 +105,10 @@ export function EventFormDrawer({ mode, initial, onClose }: EventFormDrawerProps
       }
       onClose();
     } catch (err) {
-      errorToast((err as { message?: string })?.message ?? "Save failed.", "Error");
+      errorToast(
+        (err as { message?: string })?.message ?? "Save failed.",
+        "Error",
+      );
     }
   };
 
@@ -124,7 +134,9 @@ export function EventFormDrawer({ mode, initial, onClose }: EventFormDrawerProps
           required
         />
         <div className="space-y-2">
-          <label className="text-xs font-semibold text-text-dark">Category</label>
+          <label className="text-xs font-semibold text-text-dark">
+            Category
+          </label>
           <Select
             value={form.category}
             onValueChange={(v) => setForm((f) => ({ ...f, category: v }))}
@@ -224,15 +236,26 @@ export function EventFormDrawer({ mode, initial, onClose }: EventFormDrawerProps
           label="Description"
           rows={5}
           value={form.description}
-          onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+          onChange={(e) =>
+            setForm((f) => ({ ...f, description: e.target.value }))
+          }
           required
         />
       </SheetBody>
       <SheetFooter>
-        <Button variant="outline" onClick={onClose} disabled={saving} className="w-full sm:w-auto">
+        <Button
+          variant="outline"
+          onClick={onClose}
+          disabled={saving}
+          className="w-full sm:w-auto"
+        >
           Cancel
         </Button>
-        <Button onClick={handleSave} loading={saving} className="w-full bg-primary text-white sm:w-auto">
+        <Button
+          onClick={handleSave}
+          loading={saving}
+          className="w-full bg-primary text-white sm:w-auto"
+        >
           Save
         </Button>
       </SheetFooter>

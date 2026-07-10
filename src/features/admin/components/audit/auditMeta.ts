@@ -1,5 +1,6 @@
 import type { IconType } from "react-icons";
 import {
+  LuAward,
   LuBriefcase,
   LuCalendar,
   LuImage,
@@ -43,6 +44,7 @@ const entityIcons: Record<string, IconType> = {
   executive: LuUsers,
   chapter: LuNetwork,
   office: LuBriefcase,
+  patron: LuAward,
 };
 
 const actionBubbleClass: Record<AuditAction, string> = {

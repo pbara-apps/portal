@@ -10,6 +10,7 @@ import type {
   AdminGalleryItem,
   AdminNews,
   AdminOffice,
+  AdminPatron,
 } from "@/types/admin";
 import type { UserType } from "@/types/user";
 import { canWriteAdminContent } from "@/types/user";
@@ -21,6 +22,7 @@ import { ExecutiveViewDrawer } from "./views/ExecutiveViewDrawer";
 import { GalleryFormDrawer } from "./views/GalleryFormDrawer";
 import { NewsFormDrawer } from "./views/NewsFormDrawer";
 import { OfficeFormDrawer } from "./views/OfficeFormDrawer";
+import { PatronFormDrawer } from "./views/PatronFormDrawer";
 import { ProfileFormDrawer } from "./views/ProfileFormDrawer";
 
 export function GlobalDrawer() {
@@ -82,6 +84,16 @@ export function GlobalDrawer() {
             <ChapterFormDrawer
               mode="edit"
               initial={body as unknown as AdminChapter | undefined}
+              onClose={onClose}
+            />
+          )}
+          {view === "create-patron" && (
+            <PatronFormDrawer mode="create" onClose={onClose} />
+          )}
+          {view === "edit-patron" && (
+            <PatronFormDrawer
+              mode="edit"
+              initial={body as unknown as AdminPatron | undefined}
               onClose={onClose}
             />
           )}
