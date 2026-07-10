@@ -119,20 +119,20 @@ export default function LoginPage() {
   });
 
   return (
-    <div className="flex min-h-dvh max-h-dvh overflow-hidden lg:min-h-screen lg:max-h-none">
+    <div className="flex min-h-dvh w-full max-w-[100vw] overflow-x-hidden lg:min-h-screen">
       <AuthBrandPanel />
 
-      <section className="relative flex w-full min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain bg-background px-4 py-6 sm:px-6 lg:w-1/2 lg:justify-center lg:overflow-hidden lg:bg-surface lg:p-8">
+      <section className="relative flex w-full min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto overscroll-contain bg-background px-4 py-5 sm:px-6 sm:py-6 lg:w-1/2 lg:justify-center lg:overflow-hidden lg:bg-surface lg:p-8">
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 lg:hidden"
+          className="pointer-events-none absolute inset-0 overflow-hidden lg:hidden"
         >
-          <div className="aurora-blob-1 absolute -right-32 -top-32 h-[360px] w-[360px] rounded-full bg-gradient-to-br from-primary/10 to-transparent blur-3xl" />
-          <div className="aurora-blob-2 absolute -bottom-32 -left-24 h-[300px] w-[300px] rounded-full bg-gradient-to-br from-gold/15 to-transparent blur-3xl" />
+          <div className="aurora-blob-1 absolute -right-32 -top-32 h-[280px] w-[280px] rounded-full bg-gradient-to-br from-primary/10 to-transparent blur-3xl sm:h-[360px] sm:w-[360px]" />
+          <div className="aurora-blob-2 absolute -bottom-32 -left-24 h-[240px] w-[240px] rounded-full bg-gradient-to-br from-gold/15 to-transparent blur-3xl sm:h-[300px] sm:w-[300px]" />
         </div>
 
-        <div className="relative z-10 mx-auto w-full max-w-xl py-2 lg:py-0">
-          <div className="mb-4 flex flex-col items-center text-center sm:mb-6 lg:hidden">
+        <div className="relative z-10 mx-auto w-full min-w-0 max-w-xl py-1 sm:py-2 lg:py-0">
+          <div className="mb-3 flex flex-col items-center text-center sm:mb-6 lg:hidden">
             <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-2xl">
               <img
                 src="/images/ra-logo.png"
@@ -148,7 +148,7 @@ export default function LoginPage() {
             </p>
           </div>
 
-          <div className="rounded-2xl border border-text-dark/[0.05] bg-surface p-4 sm:p-6 lg:p-8">
+          <div className="min-w-0 rounded-2xl border border-text-dark/5 bg-surface p-4 sm:p-6 lg:p-8">
             <header className="mb-4 sm:mb-6">
               <h2 className="text-2xl font-bold tracking-tight text-primary sm:text-3xl lg:text-4xl">
                 Welcome Back
@@ -160,7 +160,7 @@ export default function LoginPage() {
 
             <form
               onSubmit={handleSubmit(onSubmit)}
-              className="mt-6 flex flex-col gap-y-5 sm:mt-8 sm:gap-y-6"
+              className="mt-5 flex min-w-0 flex-col gap-y-4 sm:mt-8 sm:gap-y-6"
               noValidate
             >
               <Input
@@ -177,12 +177,12 @@ export default function LoginPage() {
                 {...passwordReg}
                 type={showPassword ? "text" : "password"}
                 label={
-                  <div className="flex w-full items-center justify-between gap-2">
-                    <span>Password</span>
+                  <div className="flex w-full min-w-0 items-center justify-between gap-2">
+                    <span className="shrink-0">Password</span>
                     <button
                       type="button"
                       onClick={() => navigate("/forgot-password")}
-                      className="text-[11px] font-semibold text-primary transition-colors hover:text-gold"
+                      className="shrink-0 text-[11px] font-semibold text-primary transition-colors hover:text-gold"
                     >
                       Forgot password?
                     </button>
@@ -196,7 +196,7 @@ export default function LoginPage() {
                   <button
                     type="button"
                     onClick={() => setShowPassword((v) => !v)}
-                    className="text-text-muted transition-colors hover:text-text-dark focus:outline-none focus-visible:text-text-dark"
+                    className="shrink-0 text-text-muted transition-colors hover:text-text-dark focus:outline-none focus-visible:text-text-dark"
                     aria-label={
                       showPassword ? "Hide password" : "Show password"
                     }
@@ -222,7 +222,10 @@ export default function LoginPage() {
                       checked={field.value}
                       onCheckedChange={field.onChange}
                     />
-                    <label htmlFor="remember" className="text-sm text-text-muted">
+                    <label
+                      htmlFor="remember"
+                      className="text-sm text-text-muted"
+                    >
                       Remember this device
                     </label>
                   </div>
@@ -240,7 +243,7 @@ export default function LoginPage() {
               </Button>
             </form>
 
-            <footer className="mt-6 border-t border-text-dark/[0.05] pt-4 text-center sm:mt-8 sm:pt-5">
+            <footer className="mt-5 border-t border-text-dark/5 pt-4 text-center sm:mt-8 sm:pt-5">
               <p className="text-sm text-text-muted">
                 Authorized personnel only.
               </p>
@@ -250,10 +253,10 @@ export default function LoginPage() {
           <div className="mt-4 flex justify-center pb-2 sm:mt-5">
             <button
               type="button"
-              className="inline-flex items-center gap-1.5 text-xs text-text-muted transition-colors hover:text-primary"
+              className="inline-flex max-w-full items-center gap-1.5 px-1 text-center text-xs text-text-muted transition-colors hover:text-primary"
             >
-              <LuCircleHelp size={14} />
-              Need assistance with your account?
+              <LuCircleHelp size={14} className="shrink-0" />
+              <span>Need assistance with your account?</span>
             </button>
           </div>
         </div>
