@@ -1,5 +1,6 @@
 const ADMIN_SEGMENTS = new Set([
   "executive",
+  "patron",
   "office",
   "chapter",
   "news",

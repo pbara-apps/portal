@@ -46,6 +46,19 @@ export interface AdminChapter {
   image?: string | null;
 }
 
+export type PatronStatus = "active" | "inactive";
+
+export interface AdminPatron {
+  id: string;
+  name: string;
+  role: string;
+  quote: string;
+  description?: string | null;
+  image?: string | null;
+  status: PatronStatus;
+  sortOrder: number;
+}
+
 export interface ExecutiveFormPayload {
   name: string;
   email?: string;
@@ -76,6 +89,16 @@ export interface ChapterFormPayload {
   image?: string | null;
 }
 
+export interface PatronFormPayload {
+  name: string;
+  role: string;
+  quote: string;
+  description?: string | null;
+  image?: string | null;
+  status: PatronStatus;
+  sort_order?: number;
+}
+
 export const EXECUTIVE_STATUSES: ExecutiveStatus[] = [
   "active",
   "inactive",
@@ -83,6 +106,8 @@ export const EXECUTIVE_STATUSES: ExecutiveStatus[] = [
 ];
 
 export const CHAPTER_STATUSES: ChapterStatus[] = ["active", "inactive"];
+
+export const PATRON_STATUSES: PatronStatus[] = ["active", "inactive"];
 
 export type NewsStatus = "draft" | "published";
 export type EventStatus = "open" | "completed" | "cancelled";

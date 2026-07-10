@@ -12,6 +12,7 @@ import {
   LuFileText,
   LuUser,
   LuShield,
+  LuAward,
 } from "react-icons/lu";
 
 export type NavItem = {
@@ -25,6 +26,7 @@ export const adminNav: NavItem[] = [
   { label: "Dashboard", href: "/admin", icon: LuLayoutDashboard },
 
   { label: "Executives", href: "/admin/executive", icon: LuUsers },
+  { label: "Patrons", href: "/admin/patron", icon: LuAward },
   { label: "Offices", href: "/admin/office", icon: LuBriefcase },
   { label: "Chapters", href: "/admin/chapter", icon: LuNetwork },
   { label: "News", href: "/admin/news", icon: LuNewspaper },
