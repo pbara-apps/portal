@@ -21,7 +21,18 @@ export const registrationKeys = {
   programParticipants: (programId: string) =>
     [...registrationKeys.all, "program-participants", programId] as const,
   participantCounts: ["registrations", "participant-counts"] as const,
+  pendingCount: ["registrations", "pending-count"] as const,
 };
+
+export const useGetPendingRegistrationCount = () =>
+  useQuery({
+    queryKey: registrationKeys.pendingCount,
+    queryFn: async () => {
+      const res = await http.get("/registration/pending-count");
+      return (res.data?.count ?? 0) as number;
+    },
+    refetchInterval: 60_000,
+  });
 
 export const useGetRegistrations = (params: RegistrationListParams = {}) =>
   useQuery({
@@ -95,7 +106,13 @@ export const useUpdateRegistrationStatus = () => {
       qc.setQueriesData<RegistrationListResult>(
         { queryKey: registrationKeys.all },
         (current) => {
-          if (!current || !("items" in current)) return current;
+          if (
+            !current ||
+            typeof current !== "object" ||
+            !("items" in current)
+          ) {
+            return current;
+          }
           return {
             ...current,
             items: current.items.map((item) =>
@@ -105,6 +122,7 @@ export const useUpdateRegistrationStatus = () => {
         },
       );
       qc.setQueryData(registrationKeys.detail(updated.id), updated);
+      qc.invalidateQueries({ queryKey: registrationKeys.pendingCount });
       qc.invalidateQueries({ queryKey: registrationKeys.participantCounts });
       if (updated.programId) {
         qc.invalidateQueries({
