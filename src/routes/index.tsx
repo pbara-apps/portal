@@ -14,6 +14,8 @@ const PatronPage = lazy(() => import("./admin/PatronPage"));
 const NewsPage = lazy(() => import("./admin/NewsPage"));
 const EventPage = lazy(() => import("./admin/EventPage"));
 const GalleryPage = lazy(() => import("./admin/GalleryPage"));
+const ProgramPage = lazy(() => import("./admin/ProgramPage"));
+const RegistrationPage = lazy(() => import("./admin/RegistrationPage"));
 const AdministrativePage = lazy(() => import("./admin/AdministrativePage"));
 const MessagesPage = lazy(() => import("./admin/MessagesPage"));
 const ProfilePage = lazy(() => import("./admin/ProfilePage"));
@@ -57,6 +59,8 @@ export const router = createBrowserRouter([
           { path: "news", element: <NewsPage /> },
           { path: "event", element: <EventPage /> },
           { path: "gallery", element: <GalleryPage /> },
+          { path: "programs", element: <ProgramPage /> },
+          { path: "registrations", element: <RegistrationPage /> },
           { path: "administrative", element: <AdministrativePage /> },
           { path: "messages", element: <MessagesPage /> },
           { path: "profile", element: <ProfilePage /> },

@@ -244,3 +244,124 @@ export interface ContactFormPayload {
   subject: string;
   message: string;
 }
+
+export type RegistrationMode = "single" | "bulk" | "both";
+export type RegistrationType = "single" | "bulk";
+export type RegistrationStatus = "pending" | "verified" | "rejected";
+
+export interface ProgramBankDetails {
+  bankName: string;
+  accountName: string;
+  accountNumber: string;
+}
+
+export interface AdminProgram {
+  id: string;
+  title: string;
+  slug: string;
+  category: string;
+  description?: string | null;
+  flyerImageUrl?: string | null;
+  amount: number;
+  bankDetails: ProgramBankDetails;
+  registrationMode: RegistrationMode;
+  registrationDeadline?: string | null;
+  isActive: boolean;
+  termsAndConditions?: string | null;
+  createdAt: string;
+}
+
+export interface ProgramFormPayload {
+  title: string;
+  slug?: string;
+  category: string;
+  description?: string | null;
+  flyerImageUrl?: string | null;
+  amount: number;
+  bankDetails: ProgramBankDetails;
+  registrationMode: RegistrationMode;
+  registrationDeadline?: string | null;
+  isActive?: boolean;
+  termsAndConditions?: string | null;
+}
+
+export interface AdminRegistrationEntry {
+  name: string;
+  rankId: string;
+  rankName: string;
+  churchId: string;
+  churchName: string;
+  churchChapter?: string;
+}
+
+export interface ProgramParticipantRow {
+  id: string;
+  registrationId: string;
+  participantName: string;
+  rankName: string;
+  churchName: string;
+  churchChapter?: string;
+  registrantName: string;
+  registrantPhone: string;
+  status: RegistrationStatus;
+  submittedAt: string;
+  registrationType: RegistrationType;
+}
+
+export interface AdminRegistrationProgramRef {
+  id: string;
+  title: string;
+  slug: string;
+  category: string;
+  amount?: number;
+  isActive?: boolean;
+}
+
+export interface AdminRegistration {
+  id: string;
+  programId: string;
+  program: AdminRegistrationProgramRef | null;
+  registrantName: string;
+  registrantPhone: string;
+  proofOfPaymentUrl: string;
+  registrationType: RegistrationType;
+  entries: AdminRegistrationEntry[];
+  status: RegistrationStatus;
+  adminNote?: string | null;
+  createdAt: string;
+}
+
+export interface RegistrationStatusPayload {
+  status: "verified" | "rejected";
+  adminNote?: string | null;
+}
+
+export interface RegistrationListParams {
+  programId?: string;
+  category?: string;
+  status?: RegistrationStatus;
+  page?: number;
+  limit?: number;
+}
+
+export interface RegistrationListResult {
+  items: AdminRegistration[];
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export const REGISTRATION_MODES: RegistrationMode[] = ["single", "bulk", "both"];
+export const REGISTRATION_TYPES: RegistrationType[] = ["single", "bulk"];
+export const REGISTRATION_STATUSES: RegistrationStatus[] = [
+  "pending",
+  "verified",
+  "rejected",
+];
+
+export const REGISTRATION_MODE_LABELS: Record<RegistrationMode, string> = {
+  single: "Single only",
+  bulk: "Bulk only",
+  both: "Both",
+};

@@ -122,7 +122,7 @@ export default function LoginPage() {
     <div className="flex min-h-dvh w-full max-w-[100vw] overflow-x-hidden lg:min-h-screen">
       <AuthBrandPanel />
 
-      <section className="relative flex w-full min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto overscroll-contain bg-background px-4 py-5 sm:px-6 sm:py-6 lg:w-1/2 lg:justify-center lg:overflow-hidden lg:bg-surface lg:p-8">
+      <section className="relative flex w-full min-w-0 flex-1 flex-col items-center overflow-x-hidden overflow-y-auto overscroll-contain bg-background px-4 py-5 sm:px-6 sm:py-6 lg:w-1/2 justify-center lg:overflow-hidden lg:bg-surface lg:p-8">
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 overflow-hidden lg:hidden"
@@ -242,12 +242,6 @@ export default function LoginPage() {
                 {!isLoginPending ? <LuArrowRight size={18} /> : null}
               </Button>
             </form>
-
-            <footer className="mt-5 border-t border-text-dark/5 pt-4 text-center sm:mt-8 sm:pt-5">
-              <p className="text-sm text-text-muted">
-                Authorized personnel only.
-              </p>
-            </footer>
           </div>
 
           <div className="mt-4 flex justify-center pb-2 sm:mt-5">

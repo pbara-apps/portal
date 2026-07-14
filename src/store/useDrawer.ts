@@ -16,6 +16,10 @@ export type DrawerView =
   | "edit-event"
   | "create-gallery"
   | "edit-gallery"
+  | "create-program"
+  | "edit-program"
+  | "view-registration"
+  | "view-program-participants"
   | "edit-director-desk"
   | "edit-profile";
 
@@ -49,6 +53,10 @@ const FORM_DRAWER_VIEWS: DrawerView[] = [
   "edit-event",
   "create-gallery",
   "edit-gallery",
+  "create-program",
+  "edit-program",
+  "view-registration",
+  "view-program-participants",
   "edit-director-desk",
   "edit-profile",
 ];
