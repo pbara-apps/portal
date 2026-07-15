@@ -18,6 +18,7 @@ type UploadFolder =
   | "chapters"
   | "patrons"
   | "gallery"
+  | "programs"
   | "general";
 
 interface ImageUploadFieldProps {

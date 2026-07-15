@@ -8,7 +8,11 @@ import type {
   AdminNews,
   AdminOffice,
   AdminPatron,
+  AdminProgram,
   AdminRank,
+  AdminRegistration,
+  AdminRegistrationEntry,
+  AdminRegistrationProgramRef,
 } from "@/types/admin";
 import { eventEndTimestamp } from "@/lib/event-date";
 import type {
@@ -202,6 +206,14 @@ type RawNews = {
   createdAt?: string;
 };
 
+type RawRegistrationProgram = {
+  _id?: string;
+  id?: string;
+  title?: string;
+  slug?: string;
+  isActive?: boolean;
+};
+
 type RawEvent = {
   _id?: string;
   title: string;
@@ -212,6 +224,7 @@ type RawEvent = {
   description: string;
   image?: string | null;
   status: AdminEvent["status"];
+  registrationProgramId?: string | RawRegistrationProgram | null;
 };
 
 type RawGallery = {
@@ -258,6 +271,29 @@ function isPastEvent(
   return endTs < Date.now();
 }
 
+function mapEventProgramLink(raw: RawEvent) {
+  const ref = raw.registrationProgramId;
+  if (!ref) {
+    return {
+      registrationProgramId: null as string | null,
+      registrationProgramSlug: null as string | null,
+      registrationProgramTitle: null as string | null,
+    };
+  }
+  if (typeof ref === "string") {
+    return {
+      registrationProgramId: ref,
+      registrationProgramSlug: null as string | null,
+      registrationProgramTitle: null as string | null,
+    };
+  }
+  return {
+    registrationProgramId: ref._id ?? ref.id ?? null,
+    registrationProgramSlug: ref.slug ?? null,
+    registrationProgramTitle: ref.title ?? null,
+  };
+}
+
 export function mapNews(raw: RawNews): AdminNews {
   return {
     id: toId(raw),
@@ -296,6 +332,7 @@ export function mapPublicNewsDetail(raw: RawNews): NewsDetail {
 }
 
 export function mapEvent(raw: RawEvent): AdminEvent {
+  const program = mapEventProgramLink(raw);
   return {
     id: toId(raw),
     title: raw.title,
@@ -307,11 +344,13 @@ export function mapEvent(raw: RawEvent): AdminEvent {
     image: raw.image ?? null,
     status: raw.status,
     isPast: isPastEvent(raw.date, raw.status, raw.endDate),
+    ...program,
   };
 }
 
 export function mapPublicEvent(raw: RawEvent): EventItem {
   const isPast = isPastEvent(raw.date, raw.status, raw.endDate);
+  const program = mapEventProgramLink(raw);
   return {
     id: toId(raw),
     title: raw.title,
@@ -323,6 +362,7 @@ export function mapPublicEvent(raw: RawEvent): EventItem {
     image: raw.image ?? undefined,
     status: raw.status,
     isPast,
+    registrationProgramSlug: program.registrationProgramSlug,
   };
 }
 
@@ -398,5 +438,166 @@ export function mapMessage(raw: RawMessage): AdminMessage {
     isRead: Boolean(raw.is_read),
     readAt,
     createdAt,
+  };
+}
+
+type RawBankDetails = {
+  bankName?: string;
+  accountName?: string;
+  accountNumber?: string;
+};
+
+type RawProgram = {
+  _id?: string;
+  id?: string;
+  title: string;
+  slug: string;
+  programCode?: string | null;
+  category: string;
+  description?: string | null;
+  flyerImageUrl?: string | null;
+  amount: number;
+  bankDetails?: RawBankDetails;
+  registrationMode: AdminProgram["registrationMode"];
+  registrationDeadline?: string | Date | null;
+  isActive?: boolean;
+  termsAndConditions?: string | null;
+  createdAt?: string | Date;
+};
+
+function toIsoDate(value?: string | Date | null): string {
+  if (!value) return "";
+  if (value instanceof Date) return value.toISOString();
+  return String(value);
+}
+
+function toDateInput(value?: string | Date | null): string | null {
+  if (!value) return null;
+  const iso = toIsoDate(value);
+  if (!iso) return null;
+  return iso.slice(0, 10);
+}
+
+export function mapProgram(raw: RawProgram): AdminProgram {
+  return {
+    id: toId(raw),
+    title: raw.title,
+    slug: raw.slug,
+    programCode: raw.programCode ?? null,
+    category: raw.category,
+    description: raw.description ?? null,
+    flyerImageUrl: raw.flyerImageUrl ?? null,
+    amount: Number(raw.amount ?? 0),
+    bankDetails: {
+      bankName: raw.bankDetails?.bankName ?? "",
+      accountName: raw.bankDetails?.accountName ?? "",
+      accountNumber: raw.bankDetails?.accountNumber ?? "",
+    },
+    registrationMode: raw.registrationMode,
+    registrationDeadline: toDateInput(raw.registrationDeadline),
+    isActive: raw.isActive !== false,
+    termsAndConditions: raw.termsAndConditions ?? null,
+    createdAt: toIsoDate(raw.createdAt),
+  };
+}
+
+type RawRegistrationEntry = {
+  name: string;
+  registrationCode?: string;
+  rank?: { _id?: string; id?: string; name?: string } | string;
+  church?: {
+    _id?: string;
+    id?: string;
+    name?: string;
+    chapter?: string;
+  } | string;
+};
+
+type RawRegistration = {
+  _id?: string;
+  id?: string;
+  programId?:
+    | {
+        _id?: string;
+        id?: string;
+        title?: string;
+        slug?: string;
+        category?: string;
+        amount?: number;
+        isActive?: boolean;
+      }
+    | string;
+  registrantName: string;
+  registrantPhone: string;
+  proofOfPaymentUrl: string;
+  registrationType: AdminRegistration["registrationType"];
+  entries?: RawRegistrationEntry[];
+  status: AdminRegistration["status"];
+  adminNote?: string | null;
+  createdAt?: string | Date;
+};
+
+function mapRegistrationEntry(raw: RawRegistrationEntry): AdminRegistrationEntry {
+  const rank =
+    typeof raw.rank === "object" && raw.rank !== null ? raw.rank : null;
+  const church =
+    typeof raw.church === "object" && raw.church !== null ? raw.church : null;
+
+  return {
+    name: raw.name,
+    registrationCode: raw.registrationCode,
+    rankId:
+      typeof raw.rank === "string"
+        ? raw.rank
+        : rank
+          ? toId(rank)
+          : "",
+    rankName: rank?.name ?? "—",
+    churchId:
+      typeof raw.church === "string"
+        ? raw.church
+        : church
+          ? toId(church)
+          : "",
+    churchName: church?.name ?? "—",
+    churchChapter: church?.chapter,
+  };
+}
+
+function mapRegistrationProgramRef(
+  programId: RawRegistration["programId"],
+): { programId: string; program: AdminRegistrationProgramRef | null } {
+  if (!programId) return { programId: "", program: null };
+  if (typeof programId === "string") {
+    return { programId, program: null };
+  }
+  const id = toId(programId);
+  return {
+    programId: id,
+    program: {
+      id,
+      title: programId.title ?? "—",
+      slug: programId.slug ?? "",
+      category: programId.category ?? "",
+      amount: programId.amount,
+      isActive: programId.isActive,
+    },
+  };
+}
+
+export function mapRegistration(raw: RawRegistration): AdminRegistration {
+  const { programId, program } = mapRegistrationProgramRef(raw.programId);
+  return {
+    id: toId(raw),
+    programId,
+    program,
+    registrantName: raw.registrantName,
+    registrantPhone: raw.registrantPhone,
+    proofOfPaymentUrl: raw.proofOfPaymentUrl,
+    registrationType: raw.registrationType,
+    entries: (raw.entries ?? []).map(mapRegistrationEntry),
+    status: raw.status,
+    adminNote: raw.adminNote ?? null,
+    createdAt: toIsoDate(raw.createdAt),
   };
 }

@@ -19,6 +19,7 @@ import {
 import { ImageUploadField } from "@/features/admin/components/shared/ImageUploadField";
 import { isIsoDate } from "@/lib/event-date";
 import { useCreateEvent, useUpdateEvent } from "@/lib/api/event";
+import { useGetPrograms } from "@/lib/api/program";
 import type { AdminEvent, EventFormPayload } from "@/types/admin";
 import { EVENT_CATEGORIES, EVENT_STATUSES } from "@/types/admin";
 
@@ -28,17 +29,14 @@ interface EventFormDrawerProps {
   onClose: () => void;
 }
 
+const NO_PROGRAM = "__none__";
+
 function hasDateRange(initial?: AdminEvent) {
   return Boolean(initial?.endDate && initial.endDate !== initial.date);
 }
 
-export function EventFormDrawer({
-  mode,
-  initial,
-  onClose,
-}: EventFormDrawerProps) {
-  const [isRange, setIsRange] = useState(hasDateRange(initial));
-  const [form, setForm] = useState<EventFormPayload>({
+function toForm(initial?: AdminEvent): EventFormPayload {
+  return {
     title: initial?.title ?? "",
     category: initial?.category ?? "Golden Ambassador",
     date: initial?.date ?? "",
@@ -47,25 +45,31 @@ export function EventFormDrawer({
     description: initial?.description ?? "",
     image: initial?.image ?? null,
     status: initial?.status ?? "open",
-  });
+    registrationProgramId: initial?.registrationProgramId ?? null,
+  };
+}
+
+export function EventFormDrawer({
+  mode,
+  initial,
+  onClose,
+}: EventFormDrawerProps) {
+  const [isRange, setIsRange] = useState(hasDateRange(initial));
+  const [form, setForm] = useState<EventFormPayload>(toForm(initial));
+  const { data: programs = [], isLoading: programsLoading } = useGetPrograms();
   const createEvent = useCreateEvent();
   const updateEvent = useUpdateEvent();
 
   useEffect(() => {
     setIsRange(hasDateRange(initial));
-    setForm({
-      title: initial?.title ?? "",
-      category: initial?.category ?? "Golden Ambassador",
-      date: initial?.date ?? "",
-      endDate: initial?.endDate ?? null,
-      venue: initial?.venue ?? "",
-      description: initial?.description ?? "",
-      image: initial?.image ?? null,
-      status: initial?.status ?? "open",
-    });
+    setForm(toForm(initial));
   }, [initial]);
 
   const saving = createEvent.isPending || updateEvent.isPending;
+
+  const programOptions = programs.filter(
+    (p) => p.isActive || p.id === form.registrationProgramId,
+  );
 
   const handleSave = async () => {
     if (!form.title.trim() || !form.venue.trim()) {
@@ -93,6 +97,7 @@ export function EventFormDrawer({
     const payload: EventFormPayload = {
       ...form,
       endDate: isRange ? form.endDate : null,
+      registrationProgramId: form.registrationProgramId || null,
     };
 
     try {
@@ -225,6 +230,40 @@ export function EventFormDrawer({
               ))}
             </SelectContent>
           </Select>
+        </div>
+        <div className="space-y-2">
+          <label className="text-xs font-semibold text-text-dark">
+            Registration program
+          </label>
+          <Select
+            value={form.registrationProgramId ?? NO_PROGRAM}
+            onValueChange={(v) =>
+              setForm((f) => ({
+                ...f,
+                registrationProgramId: v === NO_PROGRAM ? null : v,
+              }))
+            }
+            disabled={programsLoading}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="None — interest form only" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={NO_PROGRAM}>
+                None — use interest form
+              </SelectItem>
+              {programOptions.map((p) => (
+                <SelectItem key={p.id} value={p.id}>
+                  {p.title}
+                  {!p.isActive ? " (inactive)" : ""}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-text-muted">
+            When linked, the public &quot;Register Now&quot; button opens this
+            program&apos;s registration page.
+          </p>
         </div>
         <Input
           label="Venue"

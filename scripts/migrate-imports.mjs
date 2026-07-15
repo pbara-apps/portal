@@ -32,5 +32,3 @@ for (const file of walk(ROOT)) {
   }
   if (next !== content) fs.writeFileSync(file, next);
 }
-
-console.log("Path migration complete.");

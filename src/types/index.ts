@@ -66,6 +66,7 @@ export interface EventItem {
   image?: string;
   status: string;
   isPast: boolean;
+  registrationProgramSlug?: string | null;
 }
 
 export interface HeroStat {

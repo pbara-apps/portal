@@ -8,6 +8,7 @@ export type UploadFolder =
   | "chapters"
   | "patrons"
   | "gallery"
+  | "programs"
   | "general";
 
 export interface UploadResult {

@@ -5,6 +5,7 @@ import { Popover, PopoverClose, PopoverContent, PopoverTrigger } from "@/compone
 import { cn } from "@/lib/utils";
 import useCurrentUser from "@/hooks/useCurrentUser";
 import { useGetUnreadMessageCount } from "@/lib/api/message";
+import { useGetPendingRegistrationCount } from "@/lib/api/registration";
 import { ROLE_LABELS } from "@/types/user";
 import { adminFooterNav, adminNav, isNavActive, type NavItem } from "./nav";
 
@@ -34,12 +35,21 @@ export function Sidebar({
   const { user, removeCurrentUser } = useCurrentUser();
   const userInitials = getUserInitials(user?.name);
   const { data: unreadCount = 0 } = useGetUnreadMessageCount();
+  const { data: pendingRegistrationCount = 0 } =
+    useGetPendingRegistrationCount();
 
-  const navItems = adminNav.map((item) =>
-    item.href === "/admin/messages" && unreadCount > 0
-      ? { ...item, badge: unreadCount }
-      : item,
-  );
+  const navItems = adminNav.map((item) => {
+    if (item.href === "/admin/messages" && unreadCount > 0) {
+      return { ...item, badge: unreadCount };
+    }
+    if (
+      item.href === "/admin/registrations" &&
+      pendingRegistrationCount > 0
+    ) {
+      return { ...item, badge: pendingRegistrationCount };
+    }
+    return item;
+  });
 
   return (
     <>
@@ -258,8 +268,14 @@ function SidebarLink({
       </span>
       {item.badge != null && item.badge > 0 && !collapsed && (
         <span className="ml-auto rounded-full bg-gold/15 px-2 py-0.5 text-[10px] font-bold text-gold">
-          {item.badge}
+          {item.badge > 99 ? "99+" : item.badge}
         </span>
+      )}
+      {item.badge != null && item.badge > 0 && collapsed && (
+        <span
+          className="absolute right-2 top-2 hidden h-2 w-2 rounded-full bg-gold lg:block"
+          aria-label={`${item.badge} pending`}
+        />
       )}
       {active && (
         <span

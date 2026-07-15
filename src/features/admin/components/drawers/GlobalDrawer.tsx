@@ -11,6 +11,8 @@ import type {
   AdminNews,
   AdminOffice,
   AdminPatron,
+  AdminProgram,
+  AdminRegistration,
 } from "@/types/admin";
 import type { UserType } from "@/types/user";
 import { canWriteAdminContent } from "@/types/user";
@@ -24,6 +26,10 @@ import { NewsFormDrawer } from "./views/NewsFormDrawer";
 import { OfficeFormDrawer } from "./views/OfficeFormDrawer";
 import { PatronFormDrawer } from "./views/PatronFormDrawer";
 import { ProfileFormDrawer } from "./views/ProfileFormDrawer";
+import { ProgramFormDrawer } from "./views/ProgramFormDrawer";
+import { CreateRegistrationDrawer } from "./views/CreateRegistrationDrawer";
+import { ProgramParticipantsDrawer } from "./views/ProgramParticipantsDrawer";
+import { RegistrationDetailDrawer } from "./views/RegistrationDetailDrawer";
 
 export function GlobalDrawer() {
   const view = useDrawer((s) => s.view);
@@ -118,6 +124,37 @@ export function GlobalDrawer() {
             <GalleryFormDrawer
               mode="edit"
               initial={body as unknown as AdminGalleryItem | undefined}
+              onClose={onClose}
+            />
+          )}
+          {view === "create-program" && (
+            <ProgramFormDrawer mode="create" onClose={onClose} />
+          )}
+          {view === "edit-program" && (
+            <ProgramFormDrawer
+              mode="edit"
+              initial={body as unknown as AdminProgram | undefined}
+              onClose={onClose}
+            />
+          )}
+          {view === "view-registration" && (
+            <RegistrationDetailDrawer
+              registration={body as unknown as AdminRegistration | undefined}
+              canManage={canManage}
+              onClose={onClose}
+            />
+          )}
+          {view === "create-registration" && (
+            <CreateRegistrationDrawer
+              initialProgramId={
+                (body as { programId?: string | null } | undefined)?.programId
+              }
+              onClose={onClose}
+            />
+          )}
+          {view === "view-program-participants" && (
+            <ProgramParticipantsDrawer
+              program={body as unknown as AdminProgram | undefined}
               onClose={onClose}
             />
           )}

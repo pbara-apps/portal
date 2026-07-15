@@ -13,6 +13,8 @@ import {
   LuUser,
   LuShield,
   LuAward,
+  LuClipboardList,
+  LuClipboardCheck,
 } from "react-icons/lu";
 
 export type NavItem = {
@@ -32,6 +34,12 @@ export const adminNav: NavItem[] = [
   { label: "News", href: "/admin/news", icon: LuNewspaper },
   { label: "Events", href: "/admin/event", icon: LuCalendar },
   { label: "Gallery", href: "/admin/gallery", icon: LuImage },
+  { label: "Programs", href: "/admin/programs", icon: LuClipboardList },
+  {
+    label: "Registrations",
+    href: "/admin/registrations",
+    icon: LuClipboardCheck,
+  },
   { label: "Administrative", href: "/admin/administrative", icon: LuShield },
   {
     label: "Messages",
