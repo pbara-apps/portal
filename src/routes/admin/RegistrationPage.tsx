@@ -37,11 +37,13 @@ import { useGetPrograms } from "@/lib/api/program";
 import { useGetRegistrations } from "@/lib/api/registration";
 import { cn } from "@/lib/utils";
 import { useDrawer, useDrawerBody } from "@/store/useDrawer";
+import useCurrentUser from "@/hooks/useCurrentUser";
 import type {
   AdminRegistration,
   RegistrationStatus,
 } from "@/types/admin";
 import { REGISTRATION_STATUSES } from "@/types/admin";
+import { canWriteAdminContent } from "@/types/user";
 import dayjs from "dayjs";
 
 const PAGE_SIZE = 20;
@@ -51,6 +53,8 @@ export default function RegistrationAdminPage() {
   const openDrawer = useDrawer((s) => s.openDrawer);
   const drawerView = useDrawer((s) => s.view);
   const drawerRegistration = useDrawerBody<AdminRegistration>();
+  const { user } = useCurrentUser();
+  const canManage = canWriteAdminContent(user?.role);
   const { data: programs = [] } = useGetPrograms();
 
   const [programId, setProgramId] = useState(
@@ -128,6 +132,17 @@ export default function RegistrationAdminPage() {
       <AdminPageHeader
         title="Registrations"
         description="Review payment proofs and verify or reject registration submissions."
+        actionLabel="New Registration"
+        onAction={() =>
+          openDrawer("create-registration", {
+            body: {
+              programId: programId !== "all" ? programId : null,
+            },
+            config: { size: "3xl" },
+          })
+        }
+        actionDisabled={!canManage}
+        actionDisabledText="Your role does not permit creating registrations."
         stats={
           <>
             <Badge className="bg-primary/10 text-primary">{total} total</Badge>

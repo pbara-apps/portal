@@ -27,6 +27,7 @@ import { OfficeFormDrawer } from "./views/OfficeFormDrawer";
 import { PatronFormDrawer } from "./views/PatronFormDrawer";
 import { ProfileFormDrawer } from "./views/ProfileFormDrawer";
 import { ProgramFormDrawer } from "./views/ProgramFormDrawer";
+import { CreateRegistrationDrawer } from "./views/CreateRegistrationDrawer";
 import { ProgramParticipantsDrawer } from "./views/ProgramParticipantsDrawer";
 import { RegistrationDetailDrawer } from "./views/RegistrationDetailDrawer";
 
@@ -140,6 +141,14 @@ export function GlobalDrawer() {
             <RegistrationDetailDrawer
               registration={body as unknown as AdminRegistration | undefined}
               canManage={canManage}
+              onClose={onClose}
+            />
+          )}
+          {view === "create-registration" && (
+            <CreateRegistrationDrawer
+              initialProgramId={
+                (body as { programId?: string | null } | undefined)?.programId
+              }
               onClose={onClose}
             />
           )}
