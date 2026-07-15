@@ -224,9 +224,7 @@ export function ExecutiveFormDrawer({
           <label className="text-xs font-semibold text-text-dark">Rank</label>
           <Select
             value={form.rank_id || NO_RANK}
-            onValueChange={(v) =>
-              update("rank_id", v === NO_RANK ? null : v)
-            }
+            onValueChange={(v) => update("rank_id", v === NO_RANK ? null : v)}
             disabled={ranksLoading}
           >
             <SelectTrigger>
@@ -342,13 +340,13 @@ export function ExecutiveFormDrawer({
         </Button>
         {isCreate ? (
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:gap-3">
-            <Button
+            {/* <Button
               onClick={() => handleSave({ closeAfterSave: false })}
               loading={saving}
               className="w-full bg-primary font-semibold text-white shadow-md hover:bg-[#040e3d] sm:w-auto"
             >
               Create & Add Another
-            </Button>
+            </Button> */}
             <Button
               onClick={() => handleSave({ closeAfterSave: true })}
               loading={saving}

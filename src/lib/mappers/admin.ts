@@ -416,6 +416,7 @@ type RawProgram = {
   id?: string;
   title: string;
   slug: string;
+  programCode?: string | null;
   category: string;
   description?: string | null;
   flyerImageUrl?: string | null;
@@ -446,6 +447,7 @@ export function mapProgram(raw: RawProgram): AdminProgram {
     id: toId(raw),
     title: raw.title,
     slug: raw.slug,
+    programCode: raw.programCode ?? null,
     category: raw.category,
     description: raw.description ?? null,
     flyerImageUrl: raw.flyerImageUrl ?? null,
@@ -465,6 +467,7 @@ export function mapProgram(raw: RawProgram): AdminProgram {
 
 type RawRegistrationEntry = {
   name: string;
+  registrationCode?: string;
   rank?: { _id?: string; id?: string; name?: string } | string;
   church?: {
     _id?: string;
@@ -506,6 +509,7 @@ function mapRegistrationEntry(raw: RawRegistrationEntry): AdminRegistrationEntry
 
   return {
     name: raw.name,
+    registrationCode: raw.registrationCode,
     rankId:
       typeof raw.rank === "string"
         ? raw.rank

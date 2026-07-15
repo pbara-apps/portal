@@ -14,6 +14,7 @@ function churchLabel(row: ProgramParticipantRow) {
 function exportRows(rows: ProgramParticipantRow[]) {
   return rows.map((row, index) => ({
     "#": index + 1,
+    Code: row.registrationCode ?? "—",
     Participant: row.participantName,
     Rank: row.rankName,
     Church: churchLabel(row),
@@ -78,6 +79,7 @@ export function exportParticipantsPdf(
     head: [
       [
         "#",
+        "Code",
         "Participant",
         "Rank",
         "Church",
@@ -89,6 +91,7 @@ export function exportParticipantsPdf(
     ],
     body: rows.map((row, index) => [
       index + 1,
+      row.registrationCode ?? "—",
       row.participantName,
       row.rankName,
       churchLabel(row),

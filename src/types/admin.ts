@@ -259,6 +259,7 @@ export interface AdminProgram {
   id: string;
   title: string;
   slug: string;
+  programCode?: string | null;
   category: string;
   description?: string | null;
   flyerImageUrl?: string | null;
@@ -274,6 +275,7 @@ export interface AdminProgram {
 export interface ProgramFormPayload {
   title: string;
   slug?: string;
+  programCode?: string | null;
   category: string;
   description?: string | null;
   flyerImageUrl?: string | null;
@@ -292,12 +294,14 @@ export interface AdminRegistrationEntry {
   churchId: string;
   churchName: string;
   churchChapter?: string;
+  registrationCode?: string;
 }
 
 export interface ProgramParticipantRow {
   id: string;
   registrationId: string;
   participantName: string;
+  registrationCode?: string;
   rankName: string;
   churchName: string;
   churchChapter?: string;

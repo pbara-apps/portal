@@ -188,6 +188,7 @@ export function RegistrationDetailPanel({
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Code</TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>Rank</TableHead>
                 <TableHead>Church</TableHead>
@@ -195,7 +196,10 @@ export function RegistrationDetailPanel({
             </TableHeader>
             <TableBody>
               {registration.entries.map((entry, index) => (
-                <TableRow key={`${entry.name}-${index}`}>
+                <TableRow key={`${entry.registrationCode ?? entry.name}-${index}`}>
+                  <TableCell className="font-mono text-xs font-semibold text-primary">
+                    {entry.registrationCode ?? "—"}
+                  </TableCell>
                   <TableCell className="text-sm font-medium text-text-dark">
                     {entry.name}
                   </TableCell>

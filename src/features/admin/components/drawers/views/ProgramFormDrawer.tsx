@@ -45,6 +45,7 @@ function toForm(initial?: AdminProgram): ProgramFormPayload {
   return {
     title: initial?.title ?? "",
     slug: initial?.slug ?? "",
+    programCode: initial?.programCode ?? "",
     category: initial?.category ?? "",
     description: initial?.description ?? "",
     flyerImageUrl: initial?.flyerImageUrl ?? null,
@@ -111,6 +112,14 @@ export function ProgramFormDrawer({
       );
       return;
     }
+    const programCode = (form.programCode ?? "").trim();
+    if (programCode && !/^[A-Za-z0-9]{2,12}$/.test(programCode)) {
+      errorToast(
+        "Program code must be 2–12 letters or numbers (optional).",
+        "Validation",
+      );
+      return;
+    }
     if (!category || category.length < 2) {
       errorToast("Category is required.", "Validation");
       return;
@@ -131,6 +140,9 @@ export function ProgramFormDrawer({
     const payload: ProgramFormPayload = {
       title,
       slug,
+      programCode: form.programCode?.trim()
+        ? form.programCode.trim().toUpperCase()
+        : null,
       category,
       description: form.description?.trim() || null,
       flyerImageUrl: form.flyerImageUrl || null,
@@ -201,6 +213,24 @@ export function ProgramFormDrawer({
           }}
           required
         />
+
+        <div className="space-y-2">
+          <Input
+            label="Program code (optional)"
+            placeholder="e.g. RCAMP26"
+            value={form.programCode ?? ""}
+            onChange={(e) =>
+              setForm((f) => ({
+                ...f,
+                programCode: e.target.value.toUpperCase(),
+              }))
+            }
+          />
+          <p className="text-xs text-text-muted">
+            Used in registration numbers (PBARA/CODE/…). If empty, a code is
+            derived from the slug.
+          </p>
+        </div>
 
         <div className="space-y-2">
           <label className="text-xs font-semibold text-text-dark">Category</label>

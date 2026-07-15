@@ -47,6 +47,7 @@ export function flattenRegistrationParticipants(
         id: `${registration.id}-${index}`,
         registrationId: registration.id,
         participantName: entry.name,
+        registrationCode: entry.registrationCode,
         rankName: entry.rankName,
         churchName: entry.churchName,
         churchChapter: entry.churchChapter,
