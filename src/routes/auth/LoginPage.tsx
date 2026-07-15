@@ -98,7 +98,6 @@ export default function LoginPage() {
       navigate(returnTo, { replace: true });
       successToast("Login successful", "Sign in successful");
     } catch (err) {
-      console.log(err);
       const e = err as { message?: string };
       const errMessage = e?.message || "Sign in failed. Please try again.";
       errorToast(errMessage, "Sign in failed");
