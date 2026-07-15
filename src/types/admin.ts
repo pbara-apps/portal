@@ -139,6 +139,10 @@ export interface AdminEvent {
   image?: string | null;
   status: EventStatus;
   isPast: boolean;
+  /** Linked registration program; public Register Now goes to /registration/[slug]. */
+  registrationProgramId?: string | null;
+  registrationProgramSlug?: string | null;
+  registrationProgramTitle?: string | null;
 }
 
 export interface AdminGalleryItem {
@@ -184,6 +188,7 @@ export interface EventFormPayload {
   description: string;
   image?: string | null;
   status?: EventStatus;
+  registrationProgramId?: string | null;
 }
 
 export interface GalleryFormPayload {

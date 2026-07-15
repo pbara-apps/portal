@@ -206,6 +206,14 @@ type RawNews = {
   createdAt?: string;
 };
 
+type RawRegistrationProgram = {
+  _id?: string;
+  id?: string;
+  title?: string;
+  slug?: string;
+  isActive?: boolean;
+};
+
 type RawEvent = {
   _id?: string;
   title: string;
@@ -216,6 +224,7 @@ type RawEvent = {
   description: string;
   image?: string | null;
   status: AdminEvent["status"];
+  registrationProgramId?: string | RawRegistrationProgram | null;
 };
 
 type RawGallery = {
@@ -262,6 +271,29 @@ function isPastEvent(
   return endTs < Date.now();
 }
 
+function mapEventProgramLink(raw: RawEvent) {
+  const ref = raw.registrationProgramId;
+  if (!ref) {
+    return {
+      registrationProgramId: null as string | null,
+      registrationProgramSlug: null as string | null,
+      registrationProgramTitle: null as string | null,
+    };
+  }
+  if (typeof ref === "string") {
+    return {
+      registrationProgramId: ref,
+      registrationProgramSlug: null as string | null,
+      registrationProgramTitle: null as string | null,
+    };
+  }
+  return {
+    registrationProgramId: ref._id ?? ref.id ?? null,
+    registrationProgramSlug: ref.slug ?? null,
+    registrationProgramTitle: ref.title ?? null,
+  };
+}
+
 export function mapNews(raw: RawNews): AdminNews {
   return {
     id: toId(raw),
@@ -300,6 +332,7 @@ export function mapPublicNewsDetail(raw: RawNews): NewsDetail {
 }
 
 export function mapEvent(raw: RawEvent): AdminEvent {
+  const program = mapEventProgramLink(raw);
   return {
     id: toId(raw),
     title: raw.title,
@@ -311,11 +344,13 @@ export function mapEvent(raw: RawEvent): AdminEvent {
     image: raw.image ?? null,
     status: raw.status,
     isPast: isPastEvent(raw.date, raw.status, raw.endDate),
+    ...program,
   };
 }
 
 export function mapPublicEvent(raw: RawEvent): EventItem {
   const isPast = isPastEvent(raw.date, raw.status, raw.endDate);
+  const program = mapEventProgramLink(raw);
   return {
     id: toId(raw),
     title: raw.title,
@@ -327,6 +362,7 @@ export function mapPublicEvent(raw: RawEvent): EventItem {
     image: raw.image ?? undefined,
     status: raw.status,
     isPast,
+    registrationProgramSlug: program.registrationProgramSlug,
   };
 }
 
