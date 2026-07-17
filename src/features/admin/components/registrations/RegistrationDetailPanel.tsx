@@ -1,5 +1,5 @@
 import dayjs from "dayjs";
-import { LuDownload, LuExternalLink } from "react-icons/lu";
+import { LuDownload, LuExternalLink, LuPencil, LuPlus } from "react-icons/lu";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,8 +15,14 @@ import {
   errorToast,
   successToast,
 } from "@/components/shared/toast-notification";
+import { AddRegistrationEntriesDialog } from "@/features/admin/components/registrations/AddRegistrationEntriesDialog";
+import { EditRegistrationEntryDialog } from "@/features/admin/components/registrations/EditRegistrationEntryDialog";
 import { useUpdateRegistrationStatus } from "@/lib/api/registration";
-import type { AdminRegistration, RegistrationStatus } from "@/types/admin";
+import type {
+  AdminRegistration,
+  AdminRegistrationEntry,
+  RegistrationStatus,
+} from "@/types/admin";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 
@@ -72,10 +78,15 @@ export function RegistrationDetailPanel({
   const [pendingAction, setPendingAction] = useState<
     "verified" | "rejected" | null
   >(null);
+  const [addOpen, setAddOpen] = useState(false);
+  const [editingEntry, setEditingEntry] =
+    useState<AdminRegistrationEntry | null>(null);
 
   useEffect(() => {
     setNote(registration?.adminNote ?? "");
     setPendingAction(null);
+    setAddOpen(false);
+    setEditingEntry(null);
   }, [registration?.id, registration?.adminNote]);
 
   if (!registration) {
@@ -85,6 +96,8 @@ export function RegistrationDetailPanel({
       </div>
     );
   }
+
+  const canEditEntries = canManage && registration.status !== "rejected";
 
   const handleStatus = async (status: "verified" | "rejected") => {
     if (!canManage) return;
@@ -181,9 +194,23 @@ export function RegistrationDetailPanel({
       </section>
 
       <section className="space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">
-          Entries ({registration.entries.length})
-        </p>
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">
+            Entries ({registration.entries.length})
+          </p>
+          {canEditEntries ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => setAddOpen(true)}
+            >
+              <LuPlus size={14} />
+              Add participant
+            </Button>
+          ) : null}
+        </div>
+
         <div className="overflow-hidden rounded-xl border border-text-dark/10">
           <Table>
             <TableHeader>
@@ -192,11 +219,16 @@ export function RegistrationDetailPanel({
                 <TableHead>Name</TableHead>
                 <TableHead>Rank</TableHead>
                 <TableHead>Church</TableHead>
+                {canEditEntries ? (
+                  <TableHead className="text-right">Actions</TableHead>
+                ) : null}
               </TableRow>
             </TableHeader>
             <TableBody>
               {registration.entries.map((entry, index) => (
-                <TableRow key={`${entry.registrationCode ?? entry.name}-${index}`}>
+                <TableRow
+                  key={`${entry.registrationCode ?? entry.name}-${index}`}
+                >
                   <TableCell className="font-mono text-xs font-semibold text-primary">
                     {entry.registrationCode ?? "—"}
                   </TableCell>
@@ -214,6 +246,21 @@ export function RegistrationDetailPanel({
                       </span>
                     ) : null}
                   </TableCell>
+                  {canEditEntries ? (
+                    <TableCell className="text-right">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        className="text-primary gap-1"
+                        onClick={() => setEditingEntry(entry)}
+                        disabled={!entry.registrationCode}
+                      >
+                        <LuPencil />
+                        Edit
+                      </Button>
+                    </TableCell>
+                  ) : null}
                 </TableRow>
               ))}
             </TableBody>
@@ -266,6 +313,21 @@ export function RegistrationDetailPanel({
           </p>
         </section>
       )}
+
+      <AddRegistrationEntriesDialog
+        open={addOpen}
+        registration={registration}
+        onClose={() => setAddOpen(false)}
+        onUpdated={(updated) => onUpdated?.(updated)}
+      />
+
+      <EditRegistrationEntryDialog
+        open={Boolean(editingEntry)}
+        registrationId={registration.id}
+        entry={editingEntry}
+        onClose={() => setEditingEntry(null)}
+        onUpdated={(updated) => onUpdated?.(updated)}
+      />
     </div>
   );
 }
