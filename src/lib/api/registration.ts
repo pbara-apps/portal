@@ -103,32 +103,84 @@ export const useUpdateRegistrationStatus = () => {
       return mapRegistration(res.data);
     },
     onSuccess: (updated) => {
-      qc.setQueriesData<RegistrationListResult>(
-        { queryKey: registrationKeys.all },
-        (current) => {
-          if (
-            !current ||
-            typeof current !== "object" ||
-            !("items" in current)
-          ) {
-            return current;
-          }
-          return {
-            ...current,
-            items: current.items.map((item) =>
-              item.id === updated.id ? updated : item,
-            ),
-          };
-        },
-      );
-      qc.setQueryData(registrationKeys.detail(updated.id), updated);
-      qc.invalidateQueries({ queryKey: registrationKeys.pendingCount });
-      qc.invalidateQueries({ queryKey: registrationKeys.participantCounts });
-      if (updated.programId) {
-        qc.invalidateQueries({
-          queryKey: registrationKeys.programParticipants(updated.programId),
-        });
+      syncRegistrationCaches(qc, updated);
+    },
+  });
+};
+
+function syncRegistrationCaches(
+  qc: ReturnType<typeof useQueryClient>,
+  updated: ReturnType<typeof mapRegistration>,
+) {
+  qc.setQueriesData<RegistrationListResult>(
+    { queryKey: registrationKeys.all },
+    (current) => {
+      if (!current || typeof current !== "object" || !("items" in current)) {
+        return current;
       }
+      return {
+        ...current,
+        items: current.items.map((item) =>
+          item.id === updated.id ? updated : item,
+        ),
+      };
+    },
+  );
+  qc.setQueryData(registrationKeys.detail(updated.id), updated);
+  qc.invalidateQueries({ queryKey: registrationKeys.pendingCount });
+  qc.invalidateQueries({ queryKey: registrationKeys.participantCounts });
+  if (updated.programId) {
+    qc.invalidateQueries({
+      queryKey: registrationKeys.programParticipants(updated.programId),
+    });
+  }
+}
+
+export type RegistrationEntryInput = {
+  name: string;
+  rank: string;
+  church: string;
+};
+
+export const useAddRegistrationEntries = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      entries,
+    }: {
+      id: string;
+      entries: RegistrationEntryInput[];
+    }) => {
+      const res = await http.post(`/registration/${id}/entries`, { entries });
+      return mapRegistration(res.data);
+    },
+    onSuccess: (updated) => {
+      syncRegistrationCaches(qc, updated);
+    },
+  });
+};
+
+export const useUpdateRegistrationEntry = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      body,
+    }: {
+      id: string;
+      body: {
+        registrationCode: string;
+        name?: string;
+        rank?: string;
+        church?: string;
+      };
+    }) => {
+      const res = await http.patch(`/registration/${id}/entry`, body);
+      return mapRegistration(res.data);
+    },
+    onSuccess: (updated) => {
+      syncRegistrationCaches(qc, updated);
     },
   });
 };
