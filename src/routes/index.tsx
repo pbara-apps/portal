@@ -18,6 +18,7 @@ const ProgramPage = lazy(() => import("./admin/ProgramPage"));
 const RegistrationPage = lazy(() => import("./admin/RegistrationPage"));
 const AdministrativePage = lazy(() => import("./admin/AdministrativePage"));
 const MessagesPage = lazy(() => import("./admin/MessagesPage"));
+const SubscribersPage = lazy(() => import("./admin/SubscribersPage"));
 const ProfilePage = lazy(() => import("./admin/ProfilePage"));
 const AuditPage = lazy(() => import("./admin/AuditPage"));
 const SettingsPage = lazy(() => import("./admin/SettingsPage"));
@@ -63,6 +64,7 @@ export const router = createBrowserRouter([
           { path: "registrations", element: <RegistrationPage /> },
           { path: "administrative", element: <AdministrativePage /> },
           { path: "messages", element: <MessagesPage /> },
+          { path: "subscribers", element: <SubscribersPage /> },
           { path: "profile", element: <ProfilePage /> },
           { path: "audit", element: <AuditPage /> },
           { path: "settings", element: <SettingsPage /> },

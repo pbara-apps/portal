@@ -15,6 +15,7 @@ import {
   LuAward,
   LuClipboardList,
   LuClipboardCheck,
+  LuMailPlus,
 } from "react-icons/lu";
 
 export type NavItem = {
@@ -46,6 +47,7 @@ export const adminNav: NavItem[] = [
     href: "/admin/messages",
     icon: LuMessageSquare,
   },
+  { label: "Subscribers", href: "/admin/subscribers", icon: LuMailPlus },
 ];
 
 export const adminFooterNav: NavItem[] = [
