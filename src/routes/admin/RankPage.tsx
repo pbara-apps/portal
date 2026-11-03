@@ -38,6 +38,7 @@ import { ConfirmDialog } from "@/features/admin/components/shared/ConfirmDialog"
 import useCurrentUser from "@/hooks/useCurrentUser";
 import { useDeleteRank, useGetRanks, useReorderRanks } from "@/lib/api/rank";
 import { useDrawer } from "@/store/useDrawer";
+import { MIN_JOIN_AGE } from "@/features/chapter/lib/member-utils";
 import type { AdminRank } from "@/types/admin";
 import { canWriteAdminContent } from "@/types/user";
 
@@ -152,6 +153,7 @@ export default function RankAdminPage() {
                     <TableHead className="w-20">POSITION</TableHead>
                     <TableHead>RANK</TableHead>
                     <TableHead>CATEGORY</TableHead>
+                    <TableHead>AGE RANGE</TableHead>
                     <TableHead>DESCRIPTION</TableHead>
                     <TableHead className="text-right">ACTIONS</TableHead>
                   </TableRow>
@@ -159,7 +161,7 @@ export default function RankAdminPage() {
                 <TableBody>
                   {visibleRanks.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5}>
+                      <TableCell colSpan={6}>
                         <div className="flex flex-col items-center gap-3 py-16 text-center">
                           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/[0.06] text-primary">
                             <LuMedal size={20} />
@@ -203,6 +205,9 @@ export default function RankAdminPage() {
                           </TableCell>
                           <TableCell>
                             <Badge variant="outline">{rank.category}</Badge>
+                          </TableCell>
+                          <TableCell className="text-sm text-text-muted">
+                            {rank.maxAge ? `${MIN_JOIN_AGE}–${rank.maxAge}` : `${MIN_JOIN_AGE}+`}
                           </TableCell>
                           <TableCell>
                             <p className="line-clamp-2 max-w-md text-sm text-text-muted">

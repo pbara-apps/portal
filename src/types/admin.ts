@@ -36,6 +36,8 @@ export interface AdminRank {
   image?: string | null;
   /** Position in the rank ladder (1 = lowest). Null for ranks not yet ordered. */
   order: number | null;
+  /** Oldest normal age for this rank (soft warning only). Null = no limit. */
+  maxAge: number | null;
 }
 
 export interface RankFormPayload {
@@ -44,6 +46,7 @@ export interface RankFormPayload {
   category: string;
   image?: string | null;
   order?: number;
+  maxAge?: number | null;
 }
 
 export interface AdminChapter {

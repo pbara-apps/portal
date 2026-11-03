@@ -36,11 +36,17 @@ export const ROLE_LABELS: Record<ExecutiveRole, string> = {
   viewer: "Viewer",
 };
 
+
 export function isSuperAdmin(role?: string | null) {
   return role === "super_admin";
 }
 
 export function canManageDirectorDesk(role?: string | null) {
+  return role === "super_admin" || role === "admin";
+}
+
+/** Setting a church's counsellor login (chapter portal access). */
+export function canManageCounsellors(role?: string | null) {
   return role === "super_admin" || role === "admin";
 }
 

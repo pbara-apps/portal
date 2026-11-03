@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Controller, useForm, type SubmitHandler } from "react-hook-form";
 import {
   LuArrowRight,
@@ -242,6 +242,14 @@ export default function LoginPage() {
               </Button>
             </form>
           </div>
+
+          {/* Chapter officers use a separate login. */}
+          <p className="mt-4 text-center text-sm text-text-muted">
+            Church counsellor, chapter president or secretary?{" "}
+            <Link to="/chapter/login" className="font-semibold text-primary hover:text-gold">
+              Sign in to the Chapter Portal
+            </Link>
+          </p>
 
           <div className="mt-4 flex justify-center pb-2 sm:mt-5">
             <button

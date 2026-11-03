@@ -10,6 +10,7 @@ import {
 import { DrawerFormShell } from "@/features/admin/components/shared/DrawerFormShell";
 import { ImageUploadField } from "@/features/admin/components/shared/ImageUploadField";
 import { useCreateRank, useGetRanks, useUpdateRank } from "@/lib/api/rank";
+import { MIN_JOIN_AGE } from "@/features/chapter/lib/member-utils";
 import type { AdminRank, RankFormPayload } from "@/types/admin";
 
 interface RankFormDrawerProps {
@@ -18,7 +19,7 @@ interface RankFormDrawerProps {
   onClose: () => void;
 }
 
-type RankFormState = Omit<RankFormPayload, "order"> & { order: string };
+type RankFormState = Omit<RankFormPayload, "order" | "maxAge"> & { order: string; maxAge: string };
 
 function toFormState(rank?: AdminRank): RankFormState {
   return {
@@ -27,6 +28,7 @@ function toFormState(rank?: AdminRank): RankFormState {
     category: rank?.category ?? "",
     image: rank?.image ?? null,
     order: rank?.order ? String(rank.order) : "",
+    maxAge: rank?.maxAge ? String(rank.maxAge) : "",
   };
 }
 
@@ -68,11 +70,18 @@ export function RankFormDrawer({ mode, initial, onClose }: RankFormDrawerProps) 
       return;
     }
 
+    const maxAge = form.maxAge.trim() ? Number(form.maxAge) : null;
+    if (maxAge !== null && (!Number.isInteger(maxAge) || maxAge < MIN_JOIN_AGE || maxAge > 99)) {
+      errorToast(`Maximum age must be a whole number from ${MIN_JOIN_AGE} to 99.`, "Validation");
+      return;
+    }
+
     const payload: RankFormPayload = {
       name: form.name.trim(),
       description: form.description.trim(),
       category: form.category.trim(),
       image: form.image ?? null,
+      maxAge,
       ...(position !== undefined ? { order: position } : {}),
     };
 
@@ -132,6 +141,20 @@ export function RankFormDrawer({ mode, initial, onClose }: RankFormDrawerProps) 
           value={form.order}
           onChange={(e) => set("order", e.target.value)}
         />
+        <div>
+          <Input
+            label="Maximum age (optional)"
+            type="number"
+            min={MIN_JOIN_AGE}
+            max={99}
+            placeholder="Leave empty for no limit"
+            value={form.maxAge}
+            onChange={(e) => set("maxAge", e.target.value)}
+          />
+          <p className="mt-1 text-xs text-text-muted">
+            Every rank starts at age {MIN_JOIN_AGE}. Members older than this get a gentle warning; nothing is blocked.
+          </p>
+        </div>
         <Textarea
           label="Description"
           rows={5}

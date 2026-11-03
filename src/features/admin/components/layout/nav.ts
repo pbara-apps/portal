@@ -32,7 +32,7 @@ export const adminNav: NavItem[] = [
   { label: "Executives", href: "/admin/executive", icon: LuUsers },
   { label: "Patrons", href: "/admin/patron", icon: LuAward },
   { label: "Offices", href: "/admin/office", icon: LuBriefcase },
-  { label: "Chapters", href: "/admin/chapter", icon: LuNetwork },
+  { label: "Churches", href: "/admin/chapter", icon: LuNetwork },
   { label: "Ranks", href: "/admin/ranks", icon: LuMedal },
   { label: "News", href: "/admin/news", icon: LuNewspaper },
   { label: "Events", href: "/admin/event", icon: LuCalendar },

@@ -5,6 +5,7 @@ import {
   LuPlus,
   LuSearch,
   LuTrash2,
+  LuUserCog,
 } from "react-icons/lu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -61,7 +62,8 @@ import useCurrentUser from "@/hooks/useCurrentUser";
 import { useDrawer } from "@/store/useDrawer";
 import type { ChapterStatus } from "@/types/admin";
 import { CHAPTER_STATUSES } from "@/types/admin";
-import { canWriteAdminContent } from "@/types/user";
+import { canManageCounsellors, canWriteAdminContent } from "@/types/user";
+import { CounsellorDialog } from "@/features/admin/components/churches/CounsellorDialog";
 
 const PAGE_SIZE = 10;
 
@@ -69,6 +71,8 @@ export default function ChapterAdminPage() {
   const openDrawer = useDrawer((s) => s.openDrawer);
   const { user } = useCurrentUser();
   const canManage = canWriteAdminContent(user?.role);
+  const canSetCounsellor = canManageCounsellors(user?.role);
+  const [counsellorChurch, setCounsellorChurch] = useState<{ id: string; name: string } | null>(null);
   const { data: chapters = [], isLoading, isError, refetch } = useGetChapters();
   const deleteChapter = useDeleteChapter();
   const deleteBulk = useDeleteChaptersBulk();
@@ -139,8 +143,8 @@ export default function ChapterAdminPage() {
   return (
     <div className={adminPageCx}>
       <AdminPageHeader
-        title="Chapters & Units"
-        description="Manage local RA chapters displayed on the public chapters page."
+        title="Churches"
+        description="Churches in the association. Each church has a default chapter, and its counsellor signs in to the chapter portal."
         actionLabel="Register Chapter"
         onAction={() => openDrawer("create-church")}
         actionDisabled={!canManage}
@@ -292,7 +296,14 @@ export default function ChapterAdminPage() {
                                   onClick={() => openDrawer("edit-church", { body: chapter })}
                                 >
                                   <LuPencil size={14} />
-                                  Edit chapter
+                                  Edit church
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  disabled={!canSetCounsellor}
+                                  onClick={() => setCounsellorChurch({ id: chapter.id, name: chapter.name })}
+                                >
+                                  <LuUserCog size={14} />
+                                  Counsellor login
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   disabled={!canManage}
@@ -339,6 +350,8 @@ export default function ChapterAdminPage() {
         deleting={deleteBulk.isPending}
         disabled={!canManage}
       />
+
+      <CounsellorDialog church={counsellorChurch} onClose={() => setCounsellorChurch(null)} />
 
       <ConfirmDialog
         isOpen={!!deleteTarget}

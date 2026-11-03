@@ -2,6 +2,7 @@ import { lazy } from "react";
 import { createBrowserRouter, Navigate, Outlet } from "react-router-dom";
 import { RouteErrorPage } from "@/components/RouteErrorPage";
 import { SessionExpiredModal } from "@/components/SessionExpiredModal";
+import { ChapterShell } from "@/features/chapter/components/ChapterShell";
 import { AdminLayout } from "./layouts/AdminLayout";
 import { GuestGuard } from "./layouts/GuestGuard";
 
@@ -23,6 +24,13 @@ const SubscribersPage = lazy(() => import("./admin/SubscribersPage"));
 const ProfilePage = lazy(() => import("./admin/ProfilePage"));
 const AuditPage = lazy(() => import("./admin/AuditPage"));
 const SettingsPage = lazy(() => import("./admin/SettingsPage"));
+// Chapter portal (counsellors, presidents, secretaries)
+const ChapterLoginPage = lazy(() => import("../features/chapter/pages/ChapterLoginPage"));
+const ChapterDashboardPage = lazy(() => import("../features/chapter/pages/ChapterDashboardPage"));
+const ChapterMembersPage = lazy(() => import("../features/chapter/pages/ChapterMembersPage"));
+const AddMembersPage = lazy(() => import("../features/chapter/pages/AddMembersPage"));
+const ChapterOfficersPage = lazy(() => import("../features/chapter/pages/ChapterOfficersPage"));
+const ChangePasswordPage = lazy(() => import("../features/chapter/pages/ChangePasswordPage"));
 const MemberHomePage = lazy(
   () => import("../features/member/pages/MemberHomePage"),
 );
@@ -70,6 +78,18 @@ export const router = createBrowserRouter([
           { path: "profile", element: <ProfilePage /> },
           { path: "audit", element: <AuditPage /> },
           { path: "settings", element: <SettingsPage /> },
+        ],
+      },
+      { path: "/chapter/login", element: <ChapterLoginPage /> },
+      {
+        path: "/chapter",
+        element: <ChapterShell />,
+        children: [
+          { index: true, element: <ChapterDashboardPage /> },
+          { path: "members", element: <ChapterMembersPage /> },
+          { path: "members/add", element: <AddMembersPage /> },
+          { path: "officers", element: <ChapterOfficersPage /> },
+          { path: "change-password", element: <ChangePasswordPage /> },
         ],
       },
       {
