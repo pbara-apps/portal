@@ -32,6 +32,7 @@ import {
   useRecruitmentRequests,
   useRejectMembers,
   useRequestMemberChanges,
+  useMergeDuplicate,
 } from "@/lib/api/chapter-admin";
 import { useGetChapters } from "@/lib/api/church";
 import { cn } from "@/lib/utils";
@@ -42,7 +43,12 @@ type Tab = "pending" | "rejected";
 type NoteAction = { kind: "reject" | "changes"; ids: string[] } | null;
 
 /** One line describing a possible duplicate, e.g. "Same name & date of birth · Antioch Chapter, ANTIOCH BC". */
-function DuplicateLine({ match }: { match: DuplicateMatch }) {
+/**
+ * One possible duplicate. For an approved member, a super admin can say
+ * "same person": the new entry is dropped and the existing record moves to
+ * the submitting chapter (keeping their member ID and history).
+ */
+function DuplicateLine({ match, onSamePerson }: { match: DuplicateMatch; onSamePerson?: () => void }) {
   const where = match.sameChapter
     ? "in the same chapter"
     : [match.chapterName, match.churchName].filter(Boolean).join(", ");
@@ -55,6 +61,11 @@ function DuplicateLine({ match }: { match: DuplicateMatch }) {
         {match.strength === "strong" ? "same name & date of birth" : "same name"} · {where} ·{" "}
         {match.status === "active" ? "approved member" : match.status}
       </span>
+      {onSamePerson && match.status === "active" && (
+        <button type="button" onClick={onSamePerson} className="ml-auto shrink-0 rounded-md bg-white px-2 py-1 font-semibold text-primary ring-1 ring-amber-300 hover:bg-amber-100">
+          Same person — use existing record
+        </button>
+      )}
     </li>
   );
 }
@@ -86,6 +97,18 @@ export default function RecruitmentPage() {
   const approve = useApproveMembers();
   const reject = useRejectMembers();
   const requestChanges = useRequestMemberChanges();
+  const merge = useMergeDuplicate();
+
+  const handleMerge = async (r: RecruitmentRequest, d: DuplicateMatch) => {
+    const moving = d.sameChapter ? "" : ` and move ${d.fullName} to ${r.chapter?.name}`;
+    if (!window.confirm(`Remove this new entry${moving}? They keep member ID ${d.memberId}.`)) return;
+    try {
+      await merge.mutateAsync({ pendingId: r.id, existingId: d.id });
+      successToast("Merged into the existing member record.");
+    } catch (err) {
+      errorToast((err as { message?: string })?.message ?? "Unable to merge.", "Error");
+    }
+  };
 
   const duplicateCount = useMemo(() => requests.filter((r) => r.duplicates.length > 0).length, [requests]);
   const allSelected = requests.length > 0 && requests.every((r) => selected.has(r.id));
@@ -196,7 +219,13 @@ export default function RecruitmentPage() {
               <LuTriangleAlert size={14} /> Possible duplicate — check before approving
             </p>
             <ul className="space-y-1.5">
-              {r.duplicates.map((d) => <DuplicateLine key={d.id} match={d} />)}
+              {r.duplicates.map((d) => (
+                <DuplicateLine
+                  key={d.id}
+                  match={d}
+                  onSamePerson={tab === "pending" && canReview ? () => handleMerge(r, d) : undefined}
+                />
+              ))}
             </ul>
           </div>
         )}

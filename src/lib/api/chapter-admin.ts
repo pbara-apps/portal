@@ -10,6 +10,7 @@ import type {
   ReviewResult,
 } from "@/types/chapter-admin";
 import { type RawAchievement, mapAchievement } from "@/types/achievement";
+import { mapTransfer } from "@/types/transfer";
 import http from ".";
 
 /**
@@ -265,3 +266,26 @@ export const useMembershipOverview = () =>
       return res.data as MembershipOverview;
     },
   });
+
+// ─── Transfers ─────────────────────────────────────────────────────────────
+
+export const useAdminTransfers = (status: "pending" | "approved" | "rejected") =>
+  useQuery({
+    queryKey: ["chapter-admin", "transfers", status],
+    queryFn: async () =>
+      ((await http.get("/chapter-admin/transfers", { params: { status } })).data as unknown[]).map(mapTransfer),
+  });
+
+export const useApproveTransfer = () =>
+  useChapterRequestMutation((id: string) => http.post(`/chapter-admin/transfers/${id}/approve`));
+
+export const useRejectTransfer = () =>
+  useChapterRequestMutation(({ id, note }: { id: string; note: string }) =>
+    http.post(`/chapter-admin/transfers/${id}/reject`, { note }),
+  );
+
+/** Recruitment Board: "same person, moved" — merge the new entry into the existing member. */
+export const useMergeDuplicate = () =>
+  useChapterRequestMutation(({ pendingId, existingId }: { pendingId: string; existingId: string }) =>
+    http.post(`/chapter-admin/recruitment/${pendingId}/merge`, { existingId }),
+  );

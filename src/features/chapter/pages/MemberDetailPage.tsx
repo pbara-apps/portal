@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { LuArrowLeft, LuPencil, LuTrendingUp } from "react-icons/lu";
+import { LuArrowLeft, LuPencil, LuShuffle, LuTrendingUp } from "react-icons/lu";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { useMember, useRanks } from "../api/members";
@@ -9,6 +9,7 @@ import { MemberEditDialog } from "../components/MemberEditDialog";
 import { MemberStatusBadge } from "../components/MemberStatusBadge";
 import { RankProgressDialog } from "../components/RankProgressDialog";
 import { RankProgressLine } from "../components/RankProgressLine";
+import { TransferDialog } from "../components/TransferDialog";
 import { ageFrom, ageWarning, formatDate } from "../lib/member-utils";
 
 function Detail({ label, value }: { label: string; value?: string | number | null }) {
@@ -30,6 +31,7 @@ export default function MemberDetailPage() {
   const { data: ranks = [] } = useRanks();
   const [editOpen, setEditOpen] = useState(false);
   const [progressOpen, setProgressOpen] = useState(false);
+  const [transferOpen, setTransferOpen] = useState(false);
 
   if (isLoading) return <div className="flex justify-center py-20"><Spinner label="Loading member…" /></div>;
   if (isError || !member) {
@@ -65,6 +67,11 @@ export default function MemberDetailPage() {
           <Button variant="outline" onClick={() => setEditOpen(true)}>
             <LuPencil size={14} /> Edit details
           </Button>
+          {member.status === "active" && (
+              <Button variant="outline" onClick={() => setTransferOpen(true)}>
+                <LuShuffle size={14} /> Transfer
+              </Button>
+          )}
         </div>
       </header>
 
@@ -110,6 +117,7 @@ export default function MemberDetailPage() {
 
       <MemberEditDialog member={editOpen ? member : null} onClose={() => setEditOpen(false)} />
       <RankProgressDialog member={member} ranks={ranks} open={progressOpen} onClose={() => setProgressOpen(false)} />
+      <TransferDialog member={member} open={transferOpen} onClose={() => setTransferOpen(false)} />
     </div>
   );
 }

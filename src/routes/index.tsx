@@ -12,6 +12,7 @@ const ExecutivePage = lazy(() => import("./admin/ExecutivePage"));
 const OfficePage = lazy(() => import("./admin/OfficePage"));
 const ChapterPage = lazy(() => import("./admin/ChapterPage"));
 const RankPage = lazy(() => import("./admin/RankPage"));
+const AdminTransfersPage = lazy(() => import("./admin/TransfersPage"));
 const AdminDuesPage = lazy(() => import("./admin/DuesPage"));
 const MembersPage = lazy(() => import("./admin/MembersPage"));
 const AchievementsAdminPage = lazy(() => import("./admin/AchievementsPage"));
@@ -39,6 +40,7 @@ const MemberDetailPage = lazy(() => import("../features/chapter/pages/MemberDeta
 const ProgramsPage = lazy(() => import("../features/chapter/pages/ProgramsPage"));
 const RegisterForProgramPage = lazy(() => import("../features/chapter/pages/RegisterForProgramPage"));
 const ChapterAchievementsPage = lazy(() => import("../features/chapter/pages/AchievementsPage"));
+const ChapterTransfersPage = lazy(() => import("../features/chapter/pages/TransfersPage"));
 const ChapterDuesPage = lazy(() => import("../features/chapter/pages/DuesPage"));
 const ChurchChaptersPage = lazy(() => import("../features/chapter/pages/ChurchChaptersPage"));
 const ChangePasswordPage = lazy(() => import("../features/chapter/pages/ChangePasswordPage"));
@@ -82,6 +84,7 @@ export const router = createBrowserRouter([
           { path: "achievements", element: <AchievementsAdminPage /> },
           { path: "members", element: <MembersPage /> },
           { path: "dues", element: <AdminDuesPage /> },
+          { path: "transfers", element: <AdminTransfersPage /> },
           { path: "patron", element: <PatronPage /> },
           { path: "news", element: <NewsPage /> },
           { path: "event", element: <EventPage /> },
@@ -110,6 +113,7 @@ export const router = createBrowserRouter([
           { path: "programs", element: <ProgramsPage /> },
           { path: "achievements", element: <ChapterAchievementsPage /> },
           { path: "dues", element: <ChapterDuesPage /> },
+          { path: "transfers", element: <ChapterTransfersPage /> },
           { path: "programs/:id/register", element: <RegisterForProgramPage /> },
           { path: "change-password", element: <ChangePasswordPage /> },
         ],

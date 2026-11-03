@@ -13,6 +13,7 @@ import {
   LuClipboardList,
   LuAward,
   LuWallet,
+  LuShuffle,
   LuX,
 } from "react-icons/lu";
 import { cn } from "@/lib/utils";
@@ -31,6 +32,7 @@ const NAV: NavItem[] = [
   { label: "Dashboard", href: "/chapter", icon: LuLayoutDashboard },
   { label: "Members", href: "/chapter/members", icon: LuUsers },
   { label: "Add Members", href: "/chapter/members/add", icon: LuUserPlus },
+  { label: "Transfers", href: "/chapter/transfers", icon: LuShuffle },
   { label: "Programs", href: "/chapter/programs", icon: LuClipboardList },
   { label: "Achievements", href: "/chapter/achievements", icon: LuAward },
   { label: "Dues & Levies", href: "/chapter/dues", icon: LuWallet },
