@@ -32,6 +32,7 @@ const ChapterDashboardPage = lazy(() => import("../features/chapter/pages/Chapte
 const ChapterMembersPage = lazy(() => import("../features/chapter/pages/ChapterMembersPage"));
 const AddMembersPage = lazy(() => import("../features/chapter/pages/AddMembersPage"));
 const ChapterOfficersPage = lazy(() => import("../features/chapter/pages/ChapterOfficersPage"));
+const MemberDetailPage = lazy(() => import("../features/chapter/pages/MemberDetailPage"));
 const ChurchChaptersPage = lazy(() => import("../features/chapter/pages/ChurchChaptersPage"));
 const ChangePasswordPage = lazy(() => import("../features/chapter/pages/ChangePasswordPage"));
 const MemberHomePage = lazy(
@@ -93,6 +94,7 @@ export const router = createBrowserRouter([
           { index: true, element: <ChapterDashboardPage /> },
           { path: "members", element: <ChapterMembersPage /> },
           { path: "members/add", element: <AddMembersPage /> },
+          { path: "members/:id", element: <MemberDetailPage /> },
           { path: "officers", element: <ChapterOfficersPage /> },
           { path: "chapters", element: <ChurchChaptersPage /> },
           { path: "change-password", element: <ChangePasswordPage /> },

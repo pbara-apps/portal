@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { LuSearch, LuTrash2, LuUserPlus, LuUsers } from "react-icons/lu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,7 +25,6 @@ import { cn } from "@/lib/utils";
 import { type MemberView, useChapterMembers, useRanks, useWithdrawMember } from "../api/members";
 import { ChapterSwitcher } from "../components/ChapterSwitcher";
 import { MemberAvatar } from "../components/MemberAvatar";
-import { MemberEditDialog } from "../components/MemberEditDialog";
 import { MemberStatusBadge } from "../components/MemberStatusBadge";
 import { ageFrom } from "../lib/member-utils";
 import { useActiveChapterId } from "../store/useChapterSession";
@@ -50,7 +49,7 @@ export default function ChapterMembersPage() {
   const chapterId = useActiveChapterId();
   const [search, setSearch] = useState("");
   const [rankId, setRankId] = useState<string>("all");
-  const [selected, setSelected] = useState<PortalMember | null>(null);
+  const navigate = useNavigate();
   const [withdrawTarget, setWithdrawTarget] = useState<PortalMember | null>(null);
 
   const { data: ranks = [] } = useRanks();
@@ -162,7 +161,7 @@ export default function ChapterMembersPage() {
               </TableHeader>
               <TableBody>
                 {members.map((m) => (
-                  <TableRow key={m.id} className="cursor-pointer hover:bg-background/60" onClick={() => setSelected(m)}>
+                  <TableRow key={m.id} className="cursor-pointer hover:bg-background/60" onClick={() => navigate(`/chapter/members/${m.id}`)}>
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <MemberAvatar photo={m.photo} name={m.fullName} size={36} />
@@ -204,7 +203,6 @@ export default function ChapterMembersPage() {
         )}
       </section>
 
-      <MemberEditDialog member={selected} onClose={() => setSelected(null)} />
 
       <ConfirmDialog
         isOpen={!!withdrawTarget}

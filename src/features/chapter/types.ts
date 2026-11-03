@@ -31,6 +31,13 @@ export interface PortalProfile {
   chapters: PortalChapterRef[];
 }
 
+/** One rank a member has reached (date and proof optional). */
+export interface RankProgressEntry {
+  rank: { id: string; name: string; order: number | null };
+  dateReached: string | null;
+  proofUrl: string | null;
+}
+
 export type MemberStatus = "pending" | "active" | "rejected" | "transferred" | "inactive";
 
 export interface PortalMember {
@@ -43,6 +50,8 @@ export interface PortalMember {
   guardianName: string | null;
   guardianPhone: string | null;
   rank: { id: string; name: string; order: number | null; maxAge: number | null } | null;
+  /** Ranks reached, lowest first. Empty for records created before rank history existed. */
+  rankHistory: RankProgressEntry[];
   chapter: { id: string; name: string } | null;
   church: { id: string; name: string } | null;
   status: MemberStatus;

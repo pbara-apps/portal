@@ -24,6 +24,7 @@ export type RawMember = {
   changesRequested?: boolean;
   reviewNote?: string | null;
   submittedBy?: RawRef;
+  rankHistory?: { rank?: RawRef; dateReached?: string | null; proofUrl?: string | null }[];
   createdAt: string;
   approvedAt?: string | null;
 };
@@ -51,6 +52,16 @@ export function mapMember(raw: RawMember): PortalMember {
     rank: rank
       ? { id: idOf(rank), name: rank.name ?? "", order: rank.order ?? null, maxAge: rank.maxAge ?? null }
       : null,
+    rankHistory: (raw.rankHistory ?? [])
+      .filter((h) => h.rank && typeof h.rank !== "string")
+      .map((h) => {
+        const r = h.rank as Exclude<RawRef, string | null | undefined>;
+        return {
+          rank: { id: idOf(r), name: r.name ?? "", order: r.order ?? null },
+          dateReached: h.dateReached ?? null,
+          proofUrl: h.proofUrl ?? null,
+        };
+      }),
     chapter: ref(raw.chapter),
     church: ref(raw.church),
     status: raw.status,

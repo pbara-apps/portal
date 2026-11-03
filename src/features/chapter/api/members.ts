@@ -112,3 +112,31 @@ export const useUploadFile = (purpose: UploadPurpose) =>
   });
 
 export const useUploadMemberPhoto = () => useUploadFile("photo");
+
+/** One member with full details (including rank history). */
+export const useMember = (id?: string) =>
+  useQuery({
+    queryKey: ["chapter-portal", "members", "detail", id],
+    enabled: Boolean(id),
+    queryFn: async () => {
+      const res = await chapterHttp.get(`/members/${id}`);
+      return mapMember(res.data as RawMember);
+    },
+  });
+
+export const useSetRankHistory = () => {
+  const invalidate = useInvalidateMembers();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      entries,
+    }: {
+      id: string;
+      entries: { rankId: string; dateReached: string | null; proofUrl: string | null }[];
+    }) => {
+      const res = await chapterHttp.put(`/members/${id}/rank-history`, { entries });
+      return mapMember(res.data as RawMember);
+    },
+    onSuccess: invalidate,
+  });
+};
