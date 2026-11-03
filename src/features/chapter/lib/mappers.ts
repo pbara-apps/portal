@@ -22,6 +22,7 @@ export type RawMember = {
   church?: RawRef;
   status: PortalMember["status"];
   changesRequested?: boolean;
+  statusReason?: string | null;
   reviewNote?: string | null;
   submittedBy?: RawRef;
   rankHistory?: { rank?: RawRef; dateReached?: string | null; proofUrl?: string | null }[];
@@ -66,6 +67,7 @@ export function mapMember(raw: RawMember): PortalMember {
     church: ref(raw.church),
     status: raw.status,
     changesRequested: Boolean(raw.changesRequested),
+    statusReason: raw.statusReason ?? null,
     reviewNote: raw.reviewNote ?? null,
     submittedBy: submittedBy
       ? { id: idOf(submittedBy), name: submittedBy.name ?? "", role: submittedBy.role ?? "" }

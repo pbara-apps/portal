@@ -55,6 +55,8 @@ export interface PortalMember {
   chapter: { id: string; name: string } | null;
   church: { id: string; name: string } | null;
   status: MemberStatus;
+  /** Why the member is inactive (set by the association). */
+  statusReason: string | null;
   changesRequested: boolean;
   reviewNote: string | null;
   submittedBy: { id: string; name: string; role: string } | null;

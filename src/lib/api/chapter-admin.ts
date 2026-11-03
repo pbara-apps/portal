@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { mapMember, type RawMember } from "@/features/chapter/lib/mappers";
-import type { CredentialDelivery } from "@/features/chapter/types";
+import type { CredentialDelivery, MemberPayload } from "@/features/chapter/types";
 import type {
   AdminChapterRow,
   ChapterRequest,
@@ -193,5 +193,75 @@ export const useAdminAchievements = (filter: { churchId?: string; year?: number 
     queryFn: async () => {
       const res = await http.get("/chapter-admin/achievements", { params: filter });
       return ((res.data ?? []) as RawAchievement[]).map(mapAchievement);
+    },
+  });
+
+// ─── Member directory ──────────────────────────────────────────────────────
+
+export type AdminMemberQuery = {
+  search?: string;
+  churchId?: string;
+  chapterId?: string;
+  rankId?: string;
+  status?: "active" | "inactive" | "transferred";
+  page?: number;
+  limit?: number;
+};
+
+async function fetchMembers(params: AdminMemberQuery) {
+  const res = await http.get("/chapter-admin/members", { params });
+  const data = res.data as { items: RawMember[]; total: number };
+  return { items: data.items.map(mapMember), total: data.total };
+}
+
+export const useAdminMembers = (params: AdminMemberQuery) =>
+  useQuery({
+    queryKey: ["chapter-admin", "members", params],
+    queryFn: () => fetchMembers(params),
+    placeholderData: (previous) => previous,
+  });
+
+/** Every member matching the filters (for Excel export). */
+export const fetchAllMembers = async (params: AdminMemberQuery) =>
+  (await fetchMembers({ ...params, page: 1, limit: 5000 })).items;
+
+export const useAdminMember = (id: string | null) =>
+  useQuery({
+    queryKey: ["chapter-admin", "members", "detail", id],
+    enabled: Boolean(id),
+    queryFn: async () => {
+      const res = await http.get(`/chapter-admin/members/${id}`);
+      return mapMember(res.data as RawMember);
+    },
+  });
+
+export const useAdminUpdateMember = () =>
+  useChapterRequestMutation(({ id, body }: { id: string; body: Partial<MemberPayload> }) =>
+    http.patch(`/chapter-admin/members/${id}`, body),
+  );
+
+export const useAdminSetMemberStatus = () =>
+  useChapterRequestMutation(
+    ({ id, status, reason }: { id: string; status: "active" | "inactive"; reason?: string | null }) =>
+      http.patch(`/chapter-admin/members/${id}/status`, { status, reason }),
+  );
+
+// ─── Dashboard overview ────────────────────────────────────────────────────
+
+export interface MembershipOverview {
+  activeMembers: number;
+  pendingApprovals: number;
+  activeChapters: number;
+  pendingChapterRequests: number;
+  byRank: { name: string; count: number }[];
+  growth: { year: number; month: number; newMembers: number }[];
+}
+
+export const useMembershipOverview = () =>
+  useQuery({
+    queryKey: ["chapter-admin", "overview"],
+    queryFn: async () => {
+      const res = await http.get("/chapter-admin/overview");
+      return res.data as MembershipOverview;
     },
   });
