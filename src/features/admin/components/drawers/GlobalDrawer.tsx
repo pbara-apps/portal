@@ -12,6 +12,7 @@ import type {
   AdminOffice,
   AdminPatron,
   AdminProgram,
+  AdminRank,
   AdminRegistration,
 } from "@/types/admin";
 import type { UserType } from "@/types/user";
@@ -27,6 +28,7 @@ import { OfficeFormDrawer } from "./views/OfficeFormDrawer";
 import { PatronFormDrawer } from "./views/PatronFormDrawer";
 import { ProfileFormDrawer } from "./views/ProfileFormDrawer";
 import { ProgramFormDrawer } from "./views/ProgramFormDrawer";
+import { RankFormDrawer } from "./views/RankFormDrawer";
 import { CreateRegistrationDrawer } from "./views/CreateRegistrationDrawer";
 import { ProgramParticipantsDrawer } from "./views/ProgramParticipantsDrawer";
 import { RegistrationDetailDrawer } from "./views/RegistrationDetailDrawer";
@@ -82,6 +84,14 @@ export function GlobalDrawer() {
             <OfficeFormDrawer
               mode="edit"
               initial={body as unknown as AdminOffice | undefined}
+              onClose={onClose}
+            />
+          )}
+          {view === "create-rank" && <RankFormDrawer mode="create" onClose={onClose} />}
+          {view === "edit-rank" && (
+            <RankFormDrawer
+              mode="edit"
+              initial={body as unknown as AdminRank | undefined}
               onClose={onClose}
             />
           )}

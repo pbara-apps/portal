@@ -16,6 +16,7 @@ import {
   LuClipboardList,
   LuClipboardCheck,
   LuMailPlus,
+  LuMedal,
 } from "react-icons/lu";
 
 export type NavItem = {
@@ -32,6 +33,7 @@ export const adminNav: NavItem[] = [
   { label: "Patrons", href: "/admin/patron", icon: LuAward },
   { label: "Offices", href: "/admin/office", icon: LuBriefcase },
   { label: "Chapters", href: "/admin/chapter", icon: LuNetwork },
+  { label: "Ranks", href: "/admin/ranks", icon: LuMedal },
   { label: "News", href: "/admin/news", icon: LuNewspaper },
   { label: "Events", href: "/admin/event", icon: LuCalendar },
   { label: "Gallery", href: "/admin/gallery", icon: LuImage },

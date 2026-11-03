@@ -10,6 +10,7 @@ const DashboardPage = lazy(() => import("./admin/DashboardPage"));
 const ExecutivePage = lazy(() => import("./admin/ExecutivePage"));
 const OfficePage = lazy(() => import("./admin/OfficePage"));
 const ChapterPage = lazy(() => import("./admin/ChapterPage"));
+const RankPage = lazy(() => import("./admin/RankPage"));
 const PatronPage = lazy(() => import("./admin/PatronPage"));
 const NewsPage = lazy(() => import("./admin/NewsPage"));
 const EventPage = lazy(() => import("./admin/EventPage"));
@@ -56,6 +57,7 @@ export const router = createBrowserRouter([
           { path: "executive", element: <ExecutivePage /> },
           { path: "office", element: <OfficePage /> },
           { path: "chapter", element: <ChapterPage /> },
+          { path: "ranks", element: <RankPage /> },
           { path: "patron", element: <PatronPage /> },
           { path: "news", element: <NewsPage /> },
           { path: "event", element: <EventPage /> },

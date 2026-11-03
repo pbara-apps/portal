@@ -6,6 +6,8 @@ export type DrawerView =
   | "view-executive"
   | "create-office"
   | "edit-office"
+  | "create-rank"
+  | "edit-rank"
   | "create-church"
   | "edit-church"
   | "create-patron"
@@ -44,6 +46,8 @@ const FORM_DRAWER_VIEWS: DrawerView[] = [
   "view-executive",
   "create-office",
   "edit-office",
+  "create-rank",
+  "edit-rank",
   "create-church",
   "edit-church",
   "create-patron",

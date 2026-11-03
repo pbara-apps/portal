@@ -34,6 +34,16 @@ export interface AdminRank {
   description: string;
   category: string;
   image?: string | null;
+  /** Position in the rank ladder (1 = lowest). Null for ranks not yet ordered. */
+  order: number | null;
+}
+
+export interface RankFormPayload {
+  name: string;
+  description: string;
+  category: string;
+  image?: string | null;
+  order?: number;
 }
 
 export interface AdminChapter {

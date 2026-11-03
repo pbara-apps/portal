@@ -64,6 +64,7 @@ type RawRank = {
   description: string;
   category: string;
   image?: string | null;
+  order?: number | null;
 };
 
 type RawChapter = {
@@ -130,6 +131,7 @@ export function mapRank(raw: RawRank): AdminRank {
     description: raw.description,
     category: raw.category,
     image: raw.image ?? null,
+    order: raw.order ?? null,
   };
 }
 

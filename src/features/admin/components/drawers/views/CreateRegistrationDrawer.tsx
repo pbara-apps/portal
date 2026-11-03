@@ -228,10 +228,8 @@ export function CreateRegistrationDrawer({
     });
   }, [firstChurchId]);
 
-  const sortedRanks = useMemo(
-    () => [...ranks].sort((a, b) => a.name.localeCompare(b.name)),
-    [ranks],
-  );
+  // The API already returns ranks in ladder order (lowest first).
+  const sortedRanks = ranks;
 
   const sortedChurches = useMemo(
     () =>
