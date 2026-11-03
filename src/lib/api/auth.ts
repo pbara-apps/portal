@@ -119,3 +119,19 @@ export const useUpdateProfile = () => {
     },
   });
 };
+
+/** Admin "forgot password": emails a reset link (same reply whether or not the email exists). */
+export const useForgotPassword = () =>
+  useMutation({
+    mutationFn: async (email: string) => {
+      await http.post("auth/forgot-password", { email });
+    },
+  });
+
+/** Sets a new admin password using the token from the reset email. */
+export const useResetPassword = () =>
+  useMutation({
+    mutationFn: async (body: { token: string; password: string }) => {
+      await http.post("auth/reset-password", body);
+    },
+  });

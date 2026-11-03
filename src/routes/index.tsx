@@ -7,6 +7,8 @@ import { AdminLayout } from "./layouts/AdminLayout";
 import { GuestGuard } from "./layouts/GuestGuard";
 
 const LoginPage = lazy(() => import("./auth/LoginPage"));
+const ForgotPasswordPage = lazy(() => import("./auth/ForgotPasswordPage"));
+const ResetPasswordPage = lazy(() => import("./auth/ResetPasswordPage"));
 const DashboardPage = lazy(() => import("./admin/DashboardPage"));
 const ExecutivePage = lazy(() => import("./admin/ExecutivePage"));
 const OfficePage = lazy(() => import("./admin/OfficePage"));
@@ -105,6 +107,22 @@ export const router = createBrowserRouter([
           { path: "audit", element: <AuditPage /> },
           { path: "settings", element: <SettingsPage /> },
         ],
+      },
+      {
+        path: "/forgot-password",
+        element: (
+          <GuestGuard>
+            <ForgotPasswordPage />
+          </GuestGuard>
+        ),
+      },
+      {
+        path: "/reset-password",
+        element: (
+          <GuestGuard>
+            <ResetPasswordPage />
+          </GuestGuard>
+        ),
       },
       { path: "/chapter/login", element: <ChapterLoginPage /> },
       {
