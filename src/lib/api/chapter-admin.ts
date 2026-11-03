@@ -2,6 +2,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { mapMember, type RawMember } from "@/features/chapter/lib/mappers";
 import type { CredentialDelivery } from "@/features/chapter/types";
 import type {
+  AdminChapterRow,
+  ChapterRequest,
   CounsellorAccount,
   DuplicateMatch,
   RecruitmentRequest,
@@ -101,3 +103,83 @@ export const useApproveMembers = () => useReviewMutation<{ ids: string[] }>("app
 export const useRejectMembers = () => useReviewMutation<{ ids: string[]; note: string }>("reject");
 export const useRequestMemberChanges = () =>
   useReviewMutation<{ ids: string[]; note: string }>("request-changes");
+
+// ─── Chapters and new-chapter requests ─────────────────────────────────────
+
+type RawRef = { _id?: string; name?: string; email?: string } | null | undefined;
+const toRef = (r: RawRef) => (r && r._id ? { id: r._id, name: r.name ?? "" } : null);
+
+export const useAdminChapters = () =>
+  useQuery({
+    queryKey: ["chapter-admin", "chapters"],
+    queryFn: async () => {
+      const res = await http.get("/chapter-admin/chapters");
+      type Raw = Omit<AdminChapterRow, "church"> & { church: RawRef };
+      return ((res.data ?? []) as Raw[]).map((c): AdminChapterRow => ({ ...c, church: toRef(c.church) }));
+    },
+  });
+
+export const useChapterRequests = (status: "pending" | "rejected") =>
+  useQuery({
+    queryKey: ["chapter-admin", "chapter-requests", status],
+    queryFn: async () => {
+      const res = await http.get("/chapter-admin/chapter-requests", { params: { status } });
+      type RawMember = {
+        _id: string;
+        fullName: string;
+        memberId?: string | null;
+        photo?: string | null;
+        status: string;
+        chapter?: RawRef;
+        rank?: RawRef;
+      };
+      type Raw = {
+        _id: string;
+        name: string;
+        status: ChapterRequest["status"];
+        church: RawRef;
+        requestedBy: RawRef;
+        reviewNote?: string | null;
+        createdAt: string;
+        churchActiveMembers: number;
+        members: RawMember[];
+      };
+      return ((res.data ?? []) as Raw[]).map(
+        (r): ChapterRequest => ({
+          id: r._id,
+          name: r.name,
+          status: r.status,
+          church: toRef(r.church),
+          requestedBy: r.requestedBy ? { name: r.requestedBy.name ?? "", email: r.requestedBy.email ?? "" } : null,
+          reviewNote: r.reviewNote ?? null,
+          createdAt: r.createdAt,
+          churchActiveMembers: r.churchActiveMembers,
+          members: r.members.map((m) => ({
+            id: m._id,
+            fullName: m.fullName,
+            memberId: m.memberId ?? null,
+            photo: m.photo ?? null,
+            status: m.status,
+            chapterName: m.chapter?.name ?? null,
+            rankName: m.rank?.name ?? null,
+          })),
+        }),
+      );
+    },
+  });
+
+function useChapterRequestMutation<T>(fn: (vars: T) => Promise<unknown>) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: fn,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["chapter-admin"] }),
+  });
+}
+
+export const useApproveChapterRequest = () =>
+  useChapterRequestMutation((id: string) => http.post(`/chapter-admin/chapter-requests/${id}/approve`));
+
+export const useRejectChapterRequest = () =>
+  useChapterRequestMutation(({ id, note }: { id: string; note: string }) =>
+    http.post(`/chapter-admin/chapter-requests/${id}/reject`, { note }),
+  );

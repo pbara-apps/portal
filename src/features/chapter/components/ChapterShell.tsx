@@ -9,6 +9,7 @@ import {
   LuUserPlus,
   LuUsers,
   LuUserCog,
+  LuLayers,
   LuX,
 } from "react-icons/lu";
 import { cn } from "@/lib/utils";
@@ -27,6 +28,7 @@ const NAV: NavItem[] = [
   { label: "Dashboard", href: "/chapter", icon: LuLayoutDashboard },
   { label: "Members", href: "/chapter/members", icon: LuUsers },
   { label: "Add Members", href: "/chapter/members/add", icon: LuUserPlus },
+  { label: "Chapters", href: "/chapter/chapters", icon: LuLayers, roles: ["counsellor"] },
   { label: "Chapter Officers", href: "/chapter/officers", icon: LuUserCog, roles: ["counsellor"] },
   { label: "Change Password", href: "/chapter/change-password", icon: LuKeyRound },
 ];

@@ -37,3 +37,27 @@ export interface ReviewResult {
   updated?: number;
   skipped: number;
 }
+
+/** A row on the association's Chapters page. */
+export interface AdminChapterRow {
+  id: string;
+  name: string;
+  isDefault: boolean;
+  church: { id: string; name: string } | null;
+  activeMembers: number;
+  president: string | null;
+  secretary: string | null;
+}
+
+/** A counsellor's request to open a new chapter. */
+export interface ChapterRequest {
+  id: string;
+  name: string;
+  status: "pending" | "rejected";
+  church: { id: string; name: string } | null;
+  requestedBy: { name: string; email: string } | null;
+  reviewNote: string | null;
+  createdAt: string;
+  churchActiveMembers: number;
+  members: { id: string; fullName: string; memberId: string | null; photo: string | null; status: string; chapterName: string | null; rankName: string | null }[];
+}

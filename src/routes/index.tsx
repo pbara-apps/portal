@@ -12,6 +12,7 @@ const ExecutivePage = lazy(() => import("./admin/ExecutivePage"));
 const OfficePage = lazy(() => import("./admin/OfficePage"));
 const ChapterPage = lazy(() => import("./admin/ChapterPage"));
 const RankPage = lazy(() => import("./admin/RankPage"));
+const ChaptersPage = lazy(() => import("./admin/ChaptersPage"));
 const RecruitmentPage = lazy(() => import("./admin/RecruitmentPage"));
 const PatronPage = lazy(() => import("./admin/PatronPage"));
 const NewsPage = lazy(() => import("./admin/NewsPage"));
@@ -31,6 +32,7 @@ const ChapterDashboardPage = lazy(() => import("../features/chapter/pages/Chapte
 const ChapterMembersPage = lazy(() => import("../features/chapter/pages/ChapterMembersPage"));
 const AddMembersPage = lazy(() => import("../features/chapter/pages/AddMembersPage"));
 const ChapterOfficersPage = lazy(() => import("../features/chapter/pages/ChapterOfficersPage"));
+const ChurchChaptersPage = lazy(() => import("../features/chapter/pages/ChurchChaptersPage"));
 const ChangePasswordPage = lazy(() => import("../features/chapter/pages/ChangePasswordPage"));
 const MemberHomePage = lazy(
   () => import("../features/member/pages/MemberHomePage"),
@@ -68,6 +70,7 @@ export const router = createBrowserRouter([
           { path: "chapter", element: <ChapterPage /> },
           { path: "ranks", element: <RankPage /> },
           { path: "recruitment", element: <RecruitmentPage /> },
+          { path: "chapters", element: <ChaptersPage /> },
           { path: "patron", element: <PatronPage /> },
           { path: "news", element: <NewsPage /> },
           { path: "event", element: <EventPage /> },
@@ -91,6 +94,7 @@ export const router = createBrowserRouter([
           { path: "members", element: <ChapterMembersPage /> },
           { path: "members/add", element: <AddMembersPage /> },
           { path: "officers", element: <ChapterOfficersPage /> },
+          { path: "chapters", element: <ChurchChaptersPage /> },
           { path: "change-password", element: <ChangePasswordPage /> },
         ],
       },
