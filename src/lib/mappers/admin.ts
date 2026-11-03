@@ -508,6 +508,7 @@ export function mapProgram(raw: RawProgram): AdminProgram {
 type RawRegistrationEntry = {
   name: string;
   registrationCode?: string;
+  membership?: AdminRegistrationEntry["membership"];
   rank?: { _id?: string; id?: string; name?: string } | string;
   church?: {
     _id?: string;
@@ -550,6 +551,7 @@ function mapRegistrationEntry(raw: RawRegistrationEntry): AdminRegistrationEntry
   return {
     name: raw.name,
     registrationCode: raw.registrationCode,
+    membership: raw.membership ?? null,
     rankId:
       typeof raw.rank === "string"
         ? raw.rank

@@ -26,7 +26,7 @@ import {
   readMemberWorkbook,
 } from "../lib/member-excel";
 import { ageWarning } from "../lib/member-utils";
-import { useChapterSession } from "../store/useChapterSession";
+import { useChapterSession, useWorkingChapter } from "../store/useChapterSession";
 
 /**
  * Add members to a chapter — one or many at once.
@@ -38,11 +38,8 @@ import { useChapterSession } from "../store/useChapterSession";
 export default function AddMembersPage() {
   const navigate = useNavigate();
   const profile = useChapterSession((s) => s.profile);
-  const selectedChapterId = useChapterSession((s) => s.selectedChapterId);
-  // Members must go into one specific chapter; "all" falls back to the first.
-  const chapterId =
-    selectedChapterId !== "all" ? selectedChapterId : (profile?.chapterId ?? profile?.chapters[0]?.id ?? "");
-  const chapterName = profile?.chapters.find((c) => c.id === chapterId)?.name ?? "";
+  // Members must go into one specific chapter.
+  const { chapterId, chapterName } = useWorkingChapter();
 
   const { data: ranks = [] } = useRanks();
   const addMembers = useAddMembers();

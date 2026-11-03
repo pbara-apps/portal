@@ -46,3 +46,17 @@ export function useActiveChapterId(): string | undefined {
   const selected = useChapterSession((s) => s.selectedChapterId);
   return selected === "all" ? undefined : selected;
 }
+
+/**
+ * The single chapter to act on (adding members, registering for programs).
+ * Presidents/secretaries: their chapter. Counsellors: the selected chapter,
+ * or their church's first chapter when "All chapters" is selected.
+ */
+export function useWorkingChapter(): { chapterId: string; chapterName: string } {
+  const profile = useChapterSession((s) => s.profile);
+  const selected = useChapterSession((s) => s.selectedChapterId);
+  const chapterId =
+    selected !== "all" ? selected : (profile?.chapterId ?? profile?.chapters[0]?.id ?? "");
+  const chapterName = profile?.chapters.find((c) => c.id === chapterId)?.name ?? "";
+  return { chapterId, chapterName };
+}

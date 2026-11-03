@@ -234,6 +234,16 @@ export function RegistrationDetailPanel({
                   </TableCell>
                   <TableCell className="text-sm font-medium text-text-dark">
                     {entry.name}
+                    {entry.membership === "pending" && (
+                      <span className="ml-2 rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-semibold text-sky-800">
+                        Membership pending
+                      </span>
+                    )}
+                    {entry.membership === "non_member" && (
+                      <span className="ml-2 rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-semibold text-rose-700">
+                        Non-member
+                      </span>
+                    )}
                   </TableCell>
                   <TableCell className="text-sm text-text-muted">
                     {entry.rankName}

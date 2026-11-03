@@ -314,6 +314,8 @@ export interface AdminRegistrationEntry {
   churchName: string;
   churchChapter?: string;
   registrationCode?: string;
+  /** Chapter portal registrations only: member status of this person. */
+  membership?: "member" | "pending" | "non_member" | null;
 }
 
 export interface ProgramParticipantRow {
