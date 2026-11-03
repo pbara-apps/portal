@@ -298,7 +298,8 @@ export interface ProgramFormPayload {
   description?: string | null;
   flyerImageUrl?: string | null;
   amount: number;
-  bankDetails: ProgramBankDetails;
+  /** Legacy: payments now go to the association account set in Settings. */
+  bankDetails?: ProgramBankDetails;
   registrationMode: RegistrationMode;
   registrationDeadline?: string | null;
   isActive?: boolean;
@@ -387,3 +388,6 @@ export const REGISTRATION_MODE_LABELS: Record<RegistrationMode, string> = {
   bulk: "Bulk only",
   both: "Both",
 };
+
+/** The association's single bank account for all payments. */
+export type PaymentAccount = ProgramBankDetails;

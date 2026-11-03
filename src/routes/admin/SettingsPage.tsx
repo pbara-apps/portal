@@ -19,6 +19,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { AdminPageHeader } from "@/features/admin/components/shared/AdminPageHeader";
+import { PaymentAccountSection } from "@/features/admin/components/settings/PaymentAccountSection";
 import {
   adminPageCx,
   adminTableMinCx,
@@ -152,6 +153,8 @@ export default function SettingsAdminPage() {
         title="Settings"
         description="Manage your account and organization access controls."
       />
+
+      <PaymentAccountSection canEdit={superAdmin} />
 
       <section className="rounded-2xl border border-text-dark/[0.05] bg-surface p-4 shadow-[0_1px_2px_rgba(27,36,82,0.04)] sm:p-6">
         <h2 className="text-base font-semibold text-primary">Your Account</h2>

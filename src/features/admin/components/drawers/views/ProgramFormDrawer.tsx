@@ -19,6 +19,7 @@ import { DrawerFormShell } from "@/features/admin/components/shared/DrawerFormSh
 import { ImageUploadField } from "@/features/admin/components/shared/ImageUploadField";
 import { useCreateProgram, useGetPrograms, useUpdateProgram } from "@/lib/api/program";
 import type { AdminProgram, ProgramFormPayload } from "@/types/admin";
+import { usePaymentAccount } from "@/lib/api/settings";
 import {
   REGISTRATION_MODE_LABELS,
   REGISTRATION_MODES,
@@ -68,6 +69,7 @@ export function ProgramFormDrawer({
   onClose,
 }: ProgramFormDrawerProps) {
   const [form, setForm] = useState<ProgramFormPayload>(toForm(initial));
+  const { data: paymentAccount } = usePaymentAccount();
   const [slugTouched, setSlugTouched] = useState(mode === "edit");
   const createProgram = useCreateProgram();
   const updateProgram = useUpdateProgram();
@@ -128,14 +130,6 @@ export function ProgramFormDrawer({
       errorToast("Amount must be a positive number.", "Validation");
       return;
     }
-    if (
-      !form.bankDetails.bankName.trim() ||
-      !form.bankDetails.accountName.trim() ||
-      !form.bankDetails.accountNumber.trim()
-    ) {
-      errorToast("Bank name, account name, and account number are required.", "Validation");
-      return;
-    }
 
     const payload: ProgramFormPayload = {
       title,
@@ -147,11 +141,6 @@ export function ProgramFormDrawer({
       description: form.description?.trim() || null,
       flyerImageUrl: form.flyerImageUrl || null,
       amount,
-      bankDetails: {
-        bankName: form.bankDetails.bankName.trim(),
-        accountName: form.bankDetails.accountName.trim(),
-        accountNumber: form.bankDetails.accountNumber.trim(),
-      },
       registrationMode: form.registrationMode,
       registrationDeadline: form.registrationDeadline?.trim() || null,
       isActive: form.isActive ?? true,
@@ -270,44 +259,18 @@ export function ProgramFormDrawer({
           required
         />
 
-        <div className="space-y-3 rounded-xl border border-text-dark/10 bg-background/40 p-3 sm:p-4">
-          <p className="text-xs font-semibold text-text-dark">Bank details</p>
-          <Input
-            label="Bank name"
-            value={form.bankDetails.bankName}
-            onChange={(e) =>
-              setForm((f) => ({
-                ...f,
-                bankDetails: { ...f.bankDetails, bankName: e.target.value },
-              }))
-            }
-            required
-          />
-          <Input
-            label="Account name"
-            value={form.bankDetails.accountName}
-            onChange={(e) =>
-              setForm((f) => ({
-                ...f,
-                bankDetails: { ...f.bankDetails, accountName: e.target.value },
-              }))
-            }
-            required
-          />
-          <Input
-            label="Account number"
-            value={form.bankDetails.accountNumber}
-            onChange={(e) =>
-              setForm((f) => ({
-                ...f,
-                bankDetails: {
-                  ...f.bankDetails,
-                  accountNumber: e.target.value,
-                },
-              }))
-            }
-            required
-          />
+        {/* Payments go to the association account set in Settings. */}
+        <div className="space-y-1 rounded-xl border border-text-dark/10 bg-background/40 p-3 text-sm sm:p-4">
+          <p className="text-xs font-semibold text-text-dark">Payment account</p>
+          {paymentAccount ? (
+            <p className="text-text-muted">
+              {paymentAccount.bankName} · {paymentAccount.accountName} · {paymentAccount.accountNumber}
+            </p>
+          ) : (
+            <p className="text-amber-700">
+              No association account set yet. A super admin can add it under Settings → Payment account.
+            </p>
+          )}
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
