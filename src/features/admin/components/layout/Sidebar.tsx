@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import useCurrentUser from "@/hooks/useCurrentUser";
 import { useGetUnreadMessageCount } from "@/lib/api/message";
 import { useGetPendingRegistrationCount } from "@/lib/api/registration";
+import { useRecruitmentPendingCount } from "@/lib/api/chapter-admin";
 import { ROLE_LABELS } from "@/types/user";
 import { adminFooterNav, adminNav, isNavActive, type NavItem } from "./nav";
 
@@ -37,6 +38,7 @@ export function Sidebar({
   const { data: unreadCount = 0 } = useGetUnreadMessageCount();
   const { data: pendingRegistrationCount = 0 } =
     useGetPendingRegistrationCount();
+  const { data: pendingRecruitmentCount = 0 } = useRecruitmentPendingCount();
 
   const navItems = adminNav.map((item) => {
     if (item.href === "/admin/messages" && unreadCount > 0) {
@@ -47,6 +49,9 @@ export function Sidebar({
       pendingRegistrationCount > 0
     ) {
       return { ...item, badge: pendingRegistrationCount };
+    }
+    if (item.href === "/admin/recruitment" && pendingRecruitmentCount > 0) {
+      return { ...item, badge: pendingRecruitmentCount };
     }
     return item;
   });
