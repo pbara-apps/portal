@@ -9,6 +9,7 @@ import type {
   RecruitmentRequest,
   ReviewResult,
 } from "@/types/chapter-admin";
+import { type RawAchievement, mapAchievement } from "@/types/achievement";
 import http from ".";
 
 /**
@@ -183,3 +184,14 @@ export const useRejectChapterRequest = () =>
   useChapterRequestMutation(({ id, note }: { id: string; note: string }) =>
     http.post(`/chapter-admin/chapter-requests/${id}/reject`, { note }),
   );
+
+// ─── Achievements (read only) ──────────────────────────────────────────────
+
+export const useAdminAchievements = (filter: { churchId?: string; year?: number }) =>
+  useQuery({
+    queryKey: ["chapter-admin", "achievements", filter],
+    queryFn: async () => {
+      const res = await http.get("/chapter-admin/achievements", { params: filter });
+      return ((res.data ?? []) as RawAchievement[]).map(mapAchievement);
+    },
+  });
