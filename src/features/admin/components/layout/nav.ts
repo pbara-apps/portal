@@ -23,6 +23,8 @@ import {
   LuContact,
   LuWallet,
   LuShuffle,
+  LuCalendarCheck,
+  LuMegaphone,
 } from "react-icons/lu";
 
 export type NavItem = {
@@ -45,6 +47,8 @@ export const adminNav: NavItem[] = [
   { label: "Transfers", href: "/admin/transfers", icon: LuShuffle },
   { label: "Achievements", href: "/admin/achievements", icon: LuTrophy },
   { label: "Dues & Levies", href: "/admin/dues", icon: LuWallet },
+  { label: "Chapter Activity", href: "/admin/activity", icon: LuCalendarCheck },
+  { label: "Announcements", href: "/admin/announcements", icon: LuMegaphone },
   { label: "Ranks", href: "/admin/ranks", icon: LuMedal },
   { label: "News", href: "/admin/news", icon: LuNewspaper },
   { label: "Events", href: "/admin/event", icon: LuCalendar },

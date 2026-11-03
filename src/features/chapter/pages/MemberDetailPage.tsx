@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { LuArrowLeft, LuPencil, LuShuffle, LuTrendingUp } from "react-icons/lu";
+import { useMemberAttendance } from "../api/engagement";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { useMember, useRanks } from "../api/members";
@@ -28,6 +29,7 @@ function Detail({ label, value }: { label: string; value?: string | number | nul
 export default function MemberDetailPage() {
   const { id } = useParams();
   const { data: member, isLoading, isError } = useMember(id);
+  const { data: attendance } = useMemberAttendance(id);
   const { data: ranks = [] } = useRanks();
   const [editOpen, setEditOpen] = useState(false);
   const [progressOpen, setProgressOpen] = useState(false);
@@ -46,6 +48,10 @@ export default function MemberDetailPage() {
   const age = ageFrom(member.dateOfBirth);
   const warning = ageWarning(member.dateOfBirth, ranks.find((r) => r.id === member.rank?.id));
   const canEditProgress = ["active", "pending", "rejected"].includes(member.status);
+  const attendanceText =
+    attendance && attendance.held > 0
+      ? `${attendance.attended} of ${attendance.held} meetings (${attendance.rate}%)`
+      : "No meetings recorded yet";
 
   return (
     <div className="space-y-6">
@@ -94,6 +100,7 @@ export default function MemberDetailPage() {
             <Detail label="Guardian phone" value={member.guardianPhone} />
             <Detail label="Added" value={formatDate(member.createdAt)} />
             <Detail label="Approved" value={member.approvedAt ? formatDate(member.approvedAt) : null} />
+            <Detail label="Meeting attendance" value={member.status === "active" ? attendanceText : null} />
           </dl>
           {warning && <p className="mt-4 text-xs text-amber-700">{warning}</p>}
         </section>
