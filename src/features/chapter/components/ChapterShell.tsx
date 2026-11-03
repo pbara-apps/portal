@@ -13,7 +13,9 @@ import {
 } from "react-icons/lu";
 import { cn } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
+import { NotificationBell } from "@/components/shared/NotificationBell";
 import { useChapterProfile } from "../api/auth";
+import { chapterNotifications } from "../api/notifications";
 import { useChapterSession } from "../store/useChapterSession";
 import { PORTAL_ROLE_LABELS, type PortalRole } from "../types";
 import { ChapterAuthGuard } from "./ChapterAuthGuard";
@@ -165,6 +167,9 @@ function ChapterFrame() {
             <LuMenu size={20} />
           </button>
           <p className="truncate text-sm font-semibold text-primary">{current?.label ?? "Chapter Portal"}</p>
+          <div className="ml-auto">
+            {!mustChangePassword && <NotificationBell hooks={chapterNotifications} />}
+          </div>
         </header>
         <main className="min-w-0 flex-1 px-4 py-6 pb-24 sm:px-6 lg:px-8 lg:py-8">
           <Outlet />

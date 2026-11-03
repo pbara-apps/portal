@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { LuBell, LuChevronRight, LuLogOut, LuMenu, LuSearch } from "react-icons/lu";
+import { LuChevronRight, LuLogOut, LuMenu, LuSearch } from "react-icons/lu";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -8,6 +8,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import useCurrentUser from "@/hooks/useCurrentUser";
+import { NotificationBell } from "@/components/shared/NotificationBell";
+import { adminNotifications } from "@/lib/api/notification";
 import { ROLE_LABELS } from "@/types/user";
 import { adminFooterNav, adminNav } from "./nav";
 
@@ -82,14 +84,7 @@ export function Topbar({ onOpenMobileSidebar }: TopbarProps) {
           <LuSearch size={18} />
         </button>
 
-        <button
-          type="button"
-          className="focus-ring relative flex h-9 w-9 items-center justify-center rounded-full text-text-dark transition-colors hover:bg-text-dark/5"
-          aria-label="Notifications"
-        >
-          <LuBell size={18} />
-          <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-gold ring-2 ring-surface" />
-        </button>
+        <NotificationBell hooks={adminNotifications} />
 
         <Popover>
           <PopoverTrigger asChild>
