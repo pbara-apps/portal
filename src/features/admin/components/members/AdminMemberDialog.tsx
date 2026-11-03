@@ -26,6 +26,7 @@ import { ageFrom, ageWarning, formatDate, toDateInput } from "@/features/chapter
 import type { PortalRank } from "@/features/chapter/types";
 import { useAdminMember, useAdminSetMemberStatus, useAdminUpdateMember } from "@/lib/api/chapter-admin";
 import { useGetRanks } from "@/lib/api/rank";
+import { downloadMembershipCard } from "@/lib/members/membership-card";
 
 type Form = { fullName: string; dateOfBirth: string; rankId: string; phone: string; guardianName: string; guardianPhone: string };
 
@@ -192,6 +193,9 @@ export function AdminMemberDialog({
               )}
               {canEdit && member.status === "inactive" && (
                 <Button variant="outline" loading={setStatus.isPending} onClick={() => handleStatus("active")}>Set active again</Button>
+              )}
+              {!editing && member.status === "active" && (
+                <Button variant="outline" onClick={() => downloadMembershipCard(member)}>Membership card</Button>
               )}
               {canEdit && !editing && <Button variant="outline" onClick={() => setEditing(true)}>Correct details</Button>}
               {editing && (

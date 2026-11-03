@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { LuSearch, LuTrash2, LuUserPlus, LuUsers } from "react-icons/lu";
+import { LuDownload, LuSearch, LuTrash2, LuUserPlus, LuUsers } from "react-icons/lu";
+import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -29,6 +30,25 @@ import { MemberStatusBadge } from "../components/MemberStatusBadge";
 import { ageFrom } from "../lib/member-utils";
 import { useActiveChapterId } from "../store/useChapterSession";
 import type { PortalMember } from "../types";
+
+/** Downloads the members currently shown as an Excel file. */
+function exportRoster(members: PortalMember[]) {
+  const rows = members.map((m) => ({
+    "Member ID": m.memberId ?? "Pending",
+    "Full Name": m.fullName,
+    Rank: m.rank?.name ?? "",
+    Chapter: m.chapter?.name ?? "",
+    "Date of Birth": m.dateOfBirth ? m.dateOfBirth.slice(0, 10) : "",
+    Age: ageFrom(m.dateOfBirth) ?? "",
+    Phone: m.phone ?? "",
+    "Parent/Guardian Name": m.guardianName ?? "",
+    "Parent/Guardian Phone": m.guardianPhone ?? "",
+    Status: m.status,
+  }));
+  const book = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(book, XLSX.utils.json_to_sheet(rows), "Members");
+  XLSX.writeFile(book, `chapter-members-${new Date().toISOString().slice(0, 10)}.xlsx`);
+}
 
 const TABS: { view: MemberView; label: string }[] = [
   { view: "active", label: "Members" },
@@ -84,6 +104,9 @@ export default function ChapterMembersPage() {
         </div>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <ChapterSwitcher />
+          <Button variant="outline" onClick={() => exportRoster(members)} disabled={members.length === 0}>
+            <LuDownload size={16} /> Export
+          </Button>
           <Button asChild className="bg-primary text-white">
             <Link to="/chapter/members/add"><LuUserPlus size={16} /> Add Members</Link>
           </Button>

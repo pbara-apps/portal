@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { LuArrowLeft, LuPencil, LuShuffle, LuTrendingUp } from "react-icons/lu";
+import { LuArrowLeft, LuIdCard, LuPencil, LuShuffle, LuTrendingUp } from "react-icons/lu";
+import { downloadMembershipCard } from "@/lib/members/membership-card";
 import { useMemberAttendance } from "../api/engagement";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
@@ -74,9 +75,14 @@ export default function MemberDetailPage() {
             <LuPencil size={14} /> Edit details
           </Button>
           {member.status === "active" && (
+            <>
               <Button variant="outline" onClick={() => setTransferOpen(true)}>
                 <LuShuffle size={14} /> Transfer
               </Button>
+              <Button variant="outline" onClick={() => downloadMembershipCard(member)}>
+                <LuIdCard size={14} /> Membership card
+              </Button>
+            </>
           )}
         </div>
       </header>
