@@ -1,6 +1,6 @@
 export type ExecutiveStatus = "active" | "inactive" | "completed";
 export type ChapterStatus = "active" | "inactive";
-export type ExecutiveRole = "super_admin" | "admin" | "editor" | "viewer";
+export type ExecutiveRole = "super_admin" | "admin" | "editor" | "finance" | "viewer";
 
 export interface AdminExecutive {
   id: string;

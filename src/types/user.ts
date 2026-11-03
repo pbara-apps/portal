@@ -1,4 +1,4 @@
-export type ExecutiveRole = "super_admin" | "admin" | "editor" | "viewer";
+export type ExecutiveRole = "super_admin" | "admin" | "editor" | "finance" | "viewer";
 
 export interface UserType {
   id: string;
@@ -26,6 +26,7 @@ export const EXECUTIVE_ROLES: ExecutiveRole[] = [
   "super_admin",
   "admin",
   "editor",
+  "finance",
   "viewer",
 ];
 
@@ -33,9 +34,14 @@ export const ROLE_LABELS: Record<ExecutiveRole, string> = {
   super_admin: "Super Admin",
   admin: "Admin",
   editor: "Editor",
+  finance: "Finance",
   viewer: "Viewer",
 };
 
+/** Creating dues/levies and verifying chapter payments. */
+export function canManageFinance(role?: string | null) {
+  return role === "super_admin" || role === "admin" || role === "finance";
+}
 
 export function isSuperAdmin(role?: string | null) {
   return role === "super_admin";

@@ -71,7 +71,7 @@ export default function LoginPage() {
         office?: { _id?: string; name?: string };
         church?: { _id?: string; name?: string; chapter?: string };
         rank?: { _id?: string; name?: string };
-        role?: "super_admin" | "admin" | "editor" | "viewer";
+        role?: "super_admin" | "admin" | "editor" | "finance" | "viewer";
       };
       setCurrentUser({
         user: {

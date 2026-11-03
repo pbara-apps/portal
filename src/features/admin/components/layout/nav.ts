@@ -21,6 +21,7 @@ import {
   LuLayers,
   LuTrophy,
   LuContact,
+  LuWallet,
 } from "react-icons/lu";
 
 export type NavItem = {
@@ -41,6 +42,7 @@ export const adminNav: NavItem[] = [
   { label: "Members", href: "/admin/members", icon: LuContact },
   { label: "Recruitment Board", href: "/admin/recruitment", icon: LuUserCheck },
   { label: "Achievements", href: "/admin/achievements", icon: LuTrophy },
+  { label: "Dues & Levies", href: "/admin/dues", icon: LuWallet },
   { label: "Ranks", href: "/admin/ranks", icon: LuMedal },
   { label: "News", href: "/admin/news", icon: LuNewspaper },
   { label: "Events", href: "/admin/event", icon: LuCalendar },

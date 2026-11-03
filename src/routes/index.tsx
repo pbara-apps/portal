@@ -12,6 +12,7 @@ const ExecutivePage = lazy(() => import("./admin/ExecutivePage"));
 const OfficePage = lazy(() => import("./admin/OfficePage"));
 const ChapterPage = lazy(() => import("./admin/ChapterPage"));
 const RankPage = lazy(() => import("./admin/RankPage"));
+const AdminDuesPage = lazy(() => import("./admin/DuesPage"));
 const MembersPage = lazy(() => import("./admin/MembersPage"));
 const AchievementsAdminPage = lazy(() => import("./admin/AchievementsPage"));
 const ChaptersPage = lazy(() => import("./admin/ChaptersPage"));
@@ -38,6 +39,7 @@ const MemberDetailPage = lazy(() => import("../features/chapter/pages/MemberDeta
 const ProgramsPage = lazy(() => import("../features/chapter/pages/ProgramsPage"));
 const RegisterForProgramPage = lazy(() => import("../features/chapter/pages/RegisterForProgramPage"));
 const ChapterAchievementsPage = lazy(() => import("../features/chapter/pages/AchievementsPage"));
+const ChapterDuesPage = lazy(() => import("../features/chapter/pages/DuesPage"));
 const ChurchChaptersPage = lazy(() => import("../features/chapter/pages/ChurchChaptersPage"));
 const ChangePasswordPage = lazy(() => import("../features/chapter/pages/ChangePasswordPage"));
 const MemberHomePage = lazy(
@@ -79,6 +81,7 @@ export const router = createBrowserRouter([
           { path: "chapters", element: <ChaptersPage /> },
           { path: "achievements", element: <AchievementsAdminPage /> },
           { path: "members", element: <MembersPage /> },
+          { path: "dues", element: <AdminDuesPage /> },
           { path: "patron", element: <PatronPage /> },
           { path: "news", element: <NewsPage /> },
           { path: "event", element: <EventPage /> },
@@ -106,6 +109,7 @@ export const router = createBrowserRouter([
           { path: "chapters", element: <ChurchChaptersPage /> },
           { path: "programs", element: <ProgramsPage /> },
           { path: "achievements", element: <ChapterAchievementsPage /> },
+          { path: "dues", element: <ChapterDuesPage /> },
           { path: "programs/:id/register", element: <RegisterForProgramPage /> },
           { path: "change-password", element: <ChangePasswordPage /> },
         ],
