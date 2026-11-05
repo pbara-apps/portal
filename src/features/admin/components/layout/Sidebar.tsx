@@ -86,7 +86,7 @@ export function Sidebar({
             collapsed && "lg:justify-center lg:px-3",
           )}
         >
-          <Link to="/admin" className="flex items-center gap-2 shrink-0" aria-label="RAPBA home">
+          <Link to="/admin" className="flex items-center gap-2 shrink-0" aria-label="PBARA home">
             <img src="/images/ra-logo.png" alt="RA logo" className="h-10 w-10 rounded-full object-contain" />
           </Link>
           <div
@@ -95,9 +95,9 @@ export function Sidebar({
               collapsed && "lg:pointer-events-none lg:-translate-x-2 lg:opacity-0",
             )}
           >
-            <h1 className="truncate text-base font-bold text-white">RAPBA</h1>
+            <h1 className="truncate text-base font-bold text-white">PBARA</h1>
             <p className="truncate text-[11px] uppercase tracking-wider text-white/50">
-              Organization Admin
+              Association Admin
             </p>
           </div>
           <button

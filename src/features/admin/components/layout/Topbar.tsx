@@ -53,7 +53,7 @@ export function Topbar({ onOpenMobileSidebar }: TopbarProps) {
         aria-label="Breadcrumb"
         className="flex min-w-0 flex-1 items-center gap-2 text-sm text-text-muted"
       >
-        <span className="hidden shrink-0 font-medium sm:inline">RAPBA</span>
+        <span className="hidden shrink-0 font-medium sm:inline">PBARA</span>
         <LuChevronRight
           size={14}
           className="hidden shrink-0 sm:inline opacity-50"

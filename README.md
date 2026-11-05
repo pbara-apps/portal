@@ -1,4 +1,4 @@
-# RAPBA Portal
+# PBARA Portal
 
 React + Vite application for the **admin CMS** and future **member portal** features. Lives alongside the public Next.js marketing site (`front/`) inside `pbara-web`.
 

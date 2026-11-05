@@ -96,7 +96,7 @@ export function AdminDashboardContent() {
     <div className="w-full min-w-0 max-w-full space-y-6 lg:space-y-8">
       <WelcomeHeader />
 
-      <MembershipOverview />
+      {/* <MembershipOverview /> */}
 
       <section className="grid w-full min-w-0 grid-cols-1 gap-6 lg:grid-cols-5 lg:gap-4">
         <div className="min-w-0 space-y-6 lg:col-span-3">
