@@ -10,6 +10,7 @@ import {
   LuMail,
 } from "react-icons/lu";
 import { AuthBrandPanel } from "@/features/auth/components/AuthBrandPanel";
+import { ForgotPasswordDialog } from "@/features/auth/components/ForgotPasswordDialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -35,6 +36,7 @@ export default function LoginPage() {
   const from = searchParams.get("from");
   const returnTo = from ? normalizeReturnPath(from) : null;
   const [showPassword, setShowPassword] = useState(false);
+  const [forgotOpen, setForgotOpen] = useState(false);
 
   const {
     register,
@@ -147,7 +149,7 @@ export default function LoginPage() {
                     <span className="shrink-0">Password</span>
                     <button
                       type="button"
-                      onClick={() => navigate("/forgot-password")}
+                      onClick={() => setForgotOpen(true)}
                       className="shrink-0 text-[11px] font-semibold text-primary transition-colors hover:text-gold"
                     >
                       Forgot password?
@@ -225,6 +227,7 @@ export default function LoginPage() {
           </div>
         </div>
       </section>
+      <ForgotPasswordDialog open={forgotOpen} onClose={() => setForgotOpen(false)} />
     </div>
   );
 }
