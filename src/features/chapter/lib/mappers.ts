@@ -10,6 +10,7 @@ type RawRef =
 export type RawMember = {
   _id?: string;
   id?: string;
+  memberType?: string;
   memberId?: string | null;
   fullName: string;
   dateOfBirth?: string | null;
@@ -43,6 +44,7 @@ export function mapMember(raw: RawMember): PortalMember {
   const submittedBy = raw.submittedBy && typeof raw.submittedBy !== "string" ? raw.submittedBy : null;
   return {
     id: idOf(raw),
+    memberType: raw.memberType === "counsellor" ? "counsellor" : "ambassador",
     memberId: raw.memberId ?? null,
     fullName: raw.fullName,
     dateOfBirth: raw.dateOfBirth ?? null,

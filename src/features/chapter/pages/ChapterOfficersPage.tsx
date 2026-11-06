@@ -4,7 +4,6 @@ import { LuMail, LuPhone, LuRefreshCw, LuUserMinus, LuUserPlus } from "react-ico
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import { AccountDetailsDialog, type AccountDetails } from "@/components/shared/AccountDetailsDialog";
 import { TemporaryPasswordDialog } from "@/components/shared/TemporaryPasswordDialog";
 import { errorToast, successToast } from "@/components/shared/toast-notification";
 import { ConfirmDialog } from "@/features/admin/components/shared/ConfirmDialog";
@@ -14,6 +13,7 @@ import {
   useRemoveOfficer,
   useResendOfficerPassword,
 } from "../api/officers";
+import { OfficerDialog, type OfficerDetails } from "../components/OfficerDialog";
 import { useChapterSession } from "../store/useChapterSession";
 import { PORTAL_ROLE_LABELS, type CredentialDelivery, type PortalAccount } from "../types";
 
@@ -21,9 +21,10 @@ type OfficerRole = "president" | "secretary";
 type EditTarget = { chapterId: string; chapterName: string; role: OfficerRole; current: PortalAccount | null };
 
 /**
- * Counsellor only: sets up the President and Secretary login for each
- * chapter in the church. Each gets a one-time password by email.
- * Replacing an officer removes the previous person's access.
+ * Counsellor only: picks each chapter's President and Secretary from its
+ * members and gives them a login. New logins get a one-time password by
+ * email; someone who already has an account keeps their password.
+ * Replacing an officer removes the previous person's chapter access.
  */
 export default function ChapterOfficersPage() {
   const isCounsellor = useChapterSession((s) => s.profile?.role === "counsellor");
@@ -50,7 +51,7 @@ function OfficersManager() {
     }
   };
 
-  const handleSave = async (details: AccountDetails) => {
+  const handleSave = async (details: OfficerDetails) => {
     if (!editTarget) return;
     try {
       const result = await assign.mutateAsync({ chapterId: editTarget.chapterId, role: editTarget.role, ...details });
@@ -74,7 +75,7 @@ function OfficersManager() {
     if (!removeTarget) return;
     try {
       await remove.mutateAsync(removeTarget.id);
-      successToast(`${removeTarget.name} can no longer sign in.`);
+      successToast(`${removeTarget.name} no longer has chapter portal access.`);
       setRemoveTarget(null);
     } catch (err) {
       errorToast((err as { message?: string })?.message ?? "Unable to remove.", "Error");
@@ -132,7 +133,8 @@ function OfficersManager() {
       <header>
         <h1 className="text-2xl font-bold tracking-tight text-primary lg:text-3xl">Chapter Officers</h1>
         <p className="mt-1 text-sm text-text-muted">
-          Give each chapter's President and Secretary their own login. They can only see their own chapter.
+          Pick each chapter's President and Secretary from its members and give them their own login. They can only
+          see their own chapter.
         </p>
       </header>
 
@@ -157,15 +159,16 @@ function OfficersManager() {
         </div>
       )}
 
-      <AccountDetailsDialog
+      <OfficerDialog
         open={!!editTarget}
         title={editTarget ? `${PORTAL_ROLE_LABELS[editTarget.role]} — ${editTarget.chapterName}` : ""}
         description={
           editTarget?.current
-            ? "Change the email to hand this role to someone else. The previous person will lose access."
-            : "We'll email a one-time password. They choose their own password at first sign-in."
+            ? "Pick someone else to hand this role over. The previous person will lose chapter portal access."
+            : "Pick the member who holds this role. We'll email their sign-in details."
         }
-        initial={editTarget?.current}
+        chapterId={editTarget?.chapterId ?? ""}
+        current={editTarget?.current ?? null}
         saving={assign.isPending}
         onClose={() => setEditTarget(null)}
         onSave={handleSave}

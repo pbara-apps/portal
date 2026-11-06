@@ -48,6 +48,7 @@ function exportMembers(members: PortalMember[]) {
   const rows = members.map((m) => ({
     "Member ID": m.memberId ?? "",
     "Full Name": m.fullName,
+    Type: m.memberType === "counsellor" ? "Counsellor" : "Ambassador",
     Rank: m.rank?.name ?? "",
     Chapter: m.chapter?.name ?? "",
     Church: m.church?.name ?? "",
@@ -78,6 +79,7 @@ export default function MembersPage() {
   const [churchId, setChurchId] = useState("all");
   const [chapterId, setChapterId] = useState("all");
   const [rankId, setRankId] = useState("all");
+  const [memberType, setMemberType] = useState<"all" | "ambassador" | "counsellor">("all");
   const [status, setStatus] = useState<StatusFilter>("active");
   const [page, setPage] = useState(1);
   const [openId, setOpenId] = useState<string | null>(null);
@@ -88,7 +90,7 @@ export default function MembersPage() {
     const t = window.setTimeout(() => setDebounced(search.trim()), 350);
     return () => window.clearTimeout(t);
   }, [search]);
-  useEffect(() => setPage(1), [debounced, churchId, chapterId, rankId, status]);
+  useEffect(() => setPage(1), [debounced, churchId, chapterId, rankId, status, memberType]);
 
   const { data: churches = [] } = useGetChapters();
   const { data: chapters = [] } = useAdminChapters();
@@ -104,6 +106,7 @@ export default function MembersPage() {
     chapterId: chapterId === "all" ? undefined : chapterId,
     rankId: rankId === "all" ? undefined : rankId,
     status,
+    memberType: memberType === "all" ? undefined : memberType,
   };
   const { data, isLoading, isError, refetch } = useAdminMembers({ ...filters, page, limit: PAGE_SIZE });
   const members = data?.items ?? [];
@@ -126,7 +129,7 @@ export default function MembersPage() {
     <div className={adminPageCx}>
       <AdminPageHeader
         title="Members"
-        description="Every approved member of the association, across all churches and chapters."
+        description="Every approved member of the association (ambassadors and church counsellors), across all churches and chapters."
         stats={<Badge className="bg-primary/10 text-primary">{total} {status} member{total === 1 ? "" : "s"}</Badge>}
       />
 
@@ -157,6 +160,14 @@ export default function MembersPage() {
           <SelectContent>
             <SelectItem value="all">All ranks</SelectItem>
             {ranks.map((r) => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={memberType} onValueChange={(v) => setMemberType(v as typeof memberType)}>
+          <SelectTrigger className="w-full sm:w-40" aria-label="Member type"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All members</SelectItem>
+            <SelectItem value="ambassador">Ambassadors</SelectItem>
+            <SelectItem value="counsellor">Counsellors</SelectItem>
           </SelectContent>
         </Select>
         <Select value={status} onValueChange={(v) => setStatus(v as StatusFilter)}>
@@ -216,8 +227,16 @@ export default function MembersPage() {
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell className="text-sm">{m.rank?.name ?? "—"}</TableCell>
-                        <TableCell className="text-sm">{m.chapter?.name ?? "—"}</TableCell>
+                        <TableCell className="text-sm">
+                          {m.memberType === "counsellor" ? (
+                            <Badge className="bg-gold/15 text-[#8a6d1d]">Counsellor</Badge>
+                          ) : (
+                            m.rank?.name ?? "—"
+                          )}
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {m.chapter?.name ?? (m.memberType === "counsellor" ? "Whole church" : "—")}
+                        </TableCell>
                         <TableCell className="text-sm">{m.church?.name ?? "—"}</TableCell>
                         <TableCell className="text-sm">{ageFrom(m.dateOfBirth) ?? "—"}</TableCell>
                         <TableCell className="text-sm text-text-muted">{m.approvedAt ? formatDate(m.approvedAt) : "—"}</TableCell>

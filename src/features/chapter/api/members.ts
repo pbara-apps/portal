@@ -15,14 +15,18 @@ export const memberKeys = {
 };
 
 /** Members in the selected chapter (or all chapters in scope). */
-export const useChapterMembers = (params: {
-  chapterId?: string;
-  view: MemberView;
-  search?: string;
-  rankId?: string;
-}) =>
+export const useChapterMembers = (
+  params: {
+    chapterId?: string;
+    view: MemberView;
+    search?: string;
+    rankId?: string;
+  },
+  enabled = true,
+) =>
   useQuery({
     queryKey: memberKeys.list(params),
+    enabled,
     queryFn: async () => {
       const res = await chapterHttp.get("/members", { params });
       return ((res.data ?? []) as RawMember[]).map(mapMember);

@@ -88,6 +88,9 @@ export function CounsellorDialog({
                 </div>
                 <p className="flex items-center gap-1.5 text-xs text-text-muted"><LuMail size={12} /> {counsellor.email}</p>
                 <p className="flex items-center gap-1.5 text-xs text-text-muted"><LuPhone size={12} /> {counsellor.phone}</p>
+                {counsellor.memberNumber && (
+                  <p className="text-xs text-text-muted">Member ID {counsellor.memberNumber}</p>
+                )}
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button variant="outline" onClick={() => setFormOpen(true)}>Edit / replace</Button>
@@ -111,10 +114,11 @@ export function CounsellorDialog({
         description={
           counsellor
             ? "Change the email to hand over to a new counsellor. The previous counsellor will lose access."
-            : "We'll email a one-time password. They choose their own password at first sign-in."
+            : "They are recorded as an association member and listed on the public site. If the email already has an account, it keeps its password; otherwise we email a one-time password."
         }
         initial={counsellor}
         saving={assign.isPending}
+        withPhoto
         onClose={() => setFormOpen(false)}
         onSave={handleSave}
       />

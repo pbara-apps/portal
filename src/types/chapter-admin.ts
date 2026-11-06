@@ -11,6 +11,9 @@ export interface CounsellorAccount {
   phone: string;
   hasChangedPassword: boolean;
   lastLoginAt: string | null;
+  /** From the counsellor's member record (shown on the public site). */
+  photo?: string | null;
+  memberNumber?: string | null;
 }
 
 /** Another record with the same name, found by the duplicate check. */

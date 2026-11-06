@@ -42,7 +42,7 @@ export const useAssignCounsellor = () => {
     mutationFn: async ({
       churchId,
       ...body
-    }: { churchId: string; name: string; email: string; phone: string }) => {
+    }: { churchId: string; name: string; email: string; phone: string; photo?: string | null }) => {
       const res = await http.put(`/chapter-admin/churches/${churchId}/counsellor`, body);
       return res.data as CredentialDelivery & { account: CounsellorAccount; replaced: boolean };
     },
@@ -205,6 +205,7 @@ export type AdminMemberQuery = {
   chapterId?: string;
   rankId?: string;
   status?: "active" | "inactive" | "transferred";
+  memberType?: "ambassador" | "counsellor";
   page?: number;
   limit?: number;
 };

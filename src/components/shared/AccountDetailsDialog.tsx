@@ -9,8 +9,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { ImageUploadField } from "@/features/admin/components/shared/ImageUploadField";
 
-export type AccountDetails = { name: string; email: string; phone: string };
+export type AccountDetails = { name: string; email: string; phone: string; photo?: string | null };
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -33,6 +34,7 @@ export function AccountDetailsDialog({
   description,
   initial,
   saving,
+  withPhoto = false,
   onClose,
   onSave,
 }: {
@@ -41,6 +43,8 @@ export function AccountDetailsDialog({
   description: string;
   initial?: Partial<AccountDetails> | null;
   saving: boolean;
+  /** Show a photo field (e.g. counsellors, shown on the public site). */
+  withPhoto?: boolean;
   onClose: () => void;
   onSave: (details: AccountDetails) => void;
 }) {
@@ -49,7 +53,12 @@ export function AccountDetailsDialog({
 
   useEffect(() => {
     if (open) {
-      setForm({ name: initial?.name ?? "", email: initial?.email ?? "", phone: initial?.phone ?? "" });
+      setForm({
+        name: initial?.name ?? "",
+        email: initial?.email ?? "",
+        phone: initial?.phone ?? "",
+        photo: initial?.photo ?? null,
+      });
       setTouched(false);
     }
   }, [open, initial]);
@@ -60,7 +69,12 @@ export function AccountDetailsDialog({
   const submit = () => {
     setTouched(true);
     if (!hasErrors) {
-      onSave({ name: form.name.trim(), email: form.email.trim().toLowerCase(), phone: form.phone.trim() });
+      onSave({
+        name: form.name.trim(),
+        email: form.email.trim().toLowerCase(),
+        phone: form.phone.trim(),
+        ...(withPhoto ? { photo: form.photo ?? null } : {}),
+      });
     }
   };
 
@@ -72,6 +86,15 @@ export function AccountDetailsDialog({
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
+          {withPhoto && (
+            <ImageUploadField
+              label="Photo (optional)"
+              value={form.photo ?? null}
+              onChange={(url) => setForm((f) => ({ ...f, photo: url }))}
+              folder="chapters"
+              previewName={form.name || "Counsellor"}
+            />
+          )}
           <Input
             label="Full name"
             value={form.name}

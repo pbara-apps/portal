@@ -20,9 +20,9 @@ export const useAssignOfficer = () => {
     mutationFn: async (body: {
       chapterId: string;
       role: "president" | "secretary";
-      name: string;
+      memberId: string;
       email: string;
-      phone: string;
+      phone?: string;
     }) => {
       const res = await chapterHttp.post("/officers", body);
       return res.data as CredentialDelivery & { account: PortalAccount; replaced: boolean };

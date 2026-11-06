@@ -42,6 +42,8 @@ export type MemberStatus = "pending" | "active" | "rejected" | "transferred" | "
 
 export interface PortalMember {
   id: string;
+  /** "counsellor" for a church counsellor's member record (no chapter or rank). */
+  memberType: "ambassador" | "counsellor";
   memberId: string | null;
   fullName: string;
   dateOfBirth: string | null;
@@ -92,6 +94,8 @@ export interface PortalAccount {
   email: string;
   phone: string;
   role: PortalRole;
+  /** The member record this login belongs to. */
+  memberId?: string | null;
   hasChangedPassword: boolean;
   isActive: boolean;
   lastLoginAt: string | null;
