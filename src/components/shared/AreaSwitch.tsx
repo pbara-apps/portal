@@ -9,7 +9,7 @@ export function AreaSwitch({ to }: { to: "admin" | "chapter" }) {
   return (
     <Link
       to={to === "admin" ? "/admin" : "/chapter"}
-      className="focus-ring inline-flex h-9 items-center gap-1.5 rounded-full border border-text-dark/10 bg-surface px-3 text-xs font-semibold text-primary transition-colors hover:border-gold/50 hover:bg-gold/10"
+      className="outline-none focus-visible:focus-ring inline-flex h-9 items-center gap-1.5 rounded-full border border-text-dark/10 bg-surface px-3 text-xs font-semibold text-primary transition-colors hover:border-gold/50 hover:bg-gold/10"
       title={to === "admin" ? "Go to the Admin Portal" : "Go to the Chapter Portal"}
     >
       <LuArrowLeftRight size={14} />

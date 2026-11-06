@@ -38,7 +38,7 @@ export function NotificationBell({ hooks }: { hooks: NotificationHooks }) {
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="focus-ring relative flex h-9 w-9 items-center justify-center rounded-full text-text-dark transition-colors hover:bg-text-dark/5"
+          className="outline-none focus-visible:focus-ring relative flex h-9 w-9 items-center justify-center rounded-full text-text-dark transition-colors hover:bg-text-dark/5"
           aria-label={unread ? `Notifications, ${unread} unread` : "Notifications"}
         >
           <LuBell size={18} />

@@ -86,7 +86,7 @@ export function AdminContentCard({
         onClick={canManage ? onClick : undefined}
         disabled={!canManage}
         title={!canManage ? disabledReason : undefined}
-        className="focus-ring relative aspect-[16/10] w-full overflow-hidden bg-gradient-to-br from-primary/10 to-[#040e3d]/10 text-left"
+        className="outline-none focus-visible:focus-ring relative aspect-[16/10] w-full overflow-hidden bg-gradient-to-br from-primary/10 to-[#040e3d]/10 text-left"
       >
         {image ? (
           <img

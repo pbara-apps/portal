@@ -111,10 +111,6 @@
   }
 }
 
-.focus-ring {
-  @apply outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2;
-}
-
 /*
  * Shape overrides. HeroUI's defaults are pill buttons and 24–32px corners;
  * PBA uses a calmer, more precise geometry:

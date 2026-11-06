@@ -140,7 +140,7 @@ export function Sidebar({
         tabIndex={mobileOpen ? 0 : -1}
         onClick={onMobileClose}
         className={cn(
-          "focus-ring fixed inset-0 z-40 bg-primary/50 backdrop-blur-sm transition-opacity duration-200 lg:hidden",
+          "outline-none focus-visible:focus-ring fixed inset-0 z-40 bg-primary/50 backdrop-blur-sm transition-opacity duration-200 lg:hidden",
           mobileOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0",
         )}
         aria-label="Close sidebar"
@@ -166,14 +166,13 @@ export function Sidebar({
         <div className={cn("relative flex items-center gap-3 px-4 pb-4 pt-5", compact && "justify-center px-0")}>
           <Link
             to="/admin"
-            className="focus-ring relative shrink-0 rounded-xl"
+            className="outline-none focus-visible:focus-ring relative shrink-0 rounded-xl"
             aria-label="PBARA home"
           >
-            <span className="absolute inset-0 rounded-xl bg-gradient-to-br from-gold/60 to-gold/0 blur-md" aria-hidden />
             <img
               src="/images/ra-logo.png"
               alt="RA logo"
-              className="relative h-10 w-10 rounded-xl object-contain"
+              className="relative h-11 w-11 rounded-xl object-contain"
             />
           </Link>
           {!compact && (
@@ -188,7 +187,7 @@ export function Sidebar({
           <button
             type="button"
             onClick={onMobileClose}
-            className="focus-ring rounded-lg p-2 text-white/60 transition-colors hover:bg-white/10 hover:text-white lg:hidden"
+            className="outline-none focus-visible:focus-ring rounded-lg p-2 text-white/60 transition-colors hover:bg-white/10 hover:text-white lg:hidden"
             aria-label="Close menu"
           >
             <LuX size={18} />
@@ -205,7 +204,7 @@ export function Sidebar({
                 requestAnimationFrame(() => searchRef.current?.focus());
               }}
               title="Search menu (⌘K)"
-              className="focus-ring flex h-10 w-full items-center justify-center rounded-xl bg-white/[0.05] text-white/60 ring-1 ring-white/10 transition-colors hover:bg-white/10 hover:text-white"
+              className="outline-none focus-visible:focus-ring flex h-10 w-full items-center justify-center rounded-xl bg-white/[0.05] text-white/60 ring-1 ring-white/10 transition-colors hover:bg-white/10 hover:text-white"
               aria-label="Search menu"
             >
               <LuSearch size={17} />
@@ -291,7 +290,7 @@ export function Sidebar({
                     type="button"
                     onClick={() => !searching && toggle(group.id, isOpen)}
                     aria-expanded={isOpen}
-                    className="focus-ring group/label flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-white/40 transition-colors hover:text-white/70"
+                    className="outline-none focus-visible:focus-ring group/label flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-white/40 transition-colors hover:text-white/70"
                   >
                     <span className="flex-1 truncate text-left">{group.label}</span>
                     {!isOpen && groupBadge > 0 && (
@@ -351,7 +350,7 @@ export function Sidebar({
               to="/admin/profile"
               onClick={onMobileClose}
               title={compact ? `${user?.name ?? "Profile"}` : undefined}
-              className="focus-ring flex min-w-0 flex-1 items-center gap-2.5 rounded-xl"
+              className="outline-none focus-visible:focus-ring flex min-w-0 flex-1 items-center gap-2.5 rounded-xl"
             >
               <span className="relative shrink-0">
                 {user?.image ? (
@@ -383,7 +382,7 @@ export function Sidebar({
           <button
             type="button"
             onClick={onToggleCollapse}
-            className="focus-ring mt-2 hidden h-8 w-full items-center justify-center gap-2 rounded-lg text-xs font-medium text-white/45 transition-colors hover:bg-white/[0.06] hover:text-white lg:flex"
+            className="outline-none focus-visible:focus-ring mt-2 hidden h-8 w-full items-center justify-center gap-2 rounded-lg text-xs font-medium text-white/45 transition-colors hover:bg-white/[0.06] hover:text-white lg:flex"
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             aria-pressed={collapsed}
           >
@@ -405,7 +404,7 @@ function LogoutButton({ onConfirm }: { onConfirm: () => void }) {
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="focus-ring shrink-0 rounded-lg p-2 text-white/55 transition-colors hover:bg-rose-500/15 hover:text-rose-300"
+          className="outline-none focus-visible:focus-ring shrink-0 rounded-lg p-2 text-white/55 transition-colors hover:bg-rose-500/15 hover:text-rose-300"
           aria-label="Sign out"
           title="Sign out"
         >
@@ -455,7 +454,7 @@ function SidebarLink({
       title={compact ? item.label : undefined}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "focus-ring group relative flex items-center rounded-xl text-sm font-medium transition-colors duration-150",
+        "outline-none focus-visible:focus-ring group relative flex items-center rounded-xl text-sm font-medium transition-colors duration-150",
         compact ? "h-10 justify-center" : "gap-3 px-3 py-2",
         active ? "text-white" : "text-white/60 hover:bg-white/[0.04] hover:text-white",
       )}

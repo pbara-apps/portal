@@ -45,7 +45,7 @@ export function Topbar({ onOpenMobileSidebar }: TopbarProps) {
       <button
         type="button"
         onClick={onOpenMobileSidebar}
-        className="focus-ring flex h-9 w-9 items-center justify-center rounded-lg text-text-dark transition-colors hover:bg-text-dark/5 lg:hidden"
+        className="outline-none focus-visible:focus-ring flex h-9 w-9 items-center justify-center rounded-lg text-text-dark transition-colors hover:bg-text-dark/5 lg:hidden"
         aria-label="Open menu"
       >
         <LuMenu size={20} />
@@ -74,13 +74,13 @@ export function Topbar({ onOpenMobileSidebar }: TopbarProps) {
           <input
             type="search"
             placeholder="Search anything…"
-            className="focus-ring w-full rounded-lg border border-text-dark/10 bg-background/70 py-2 pl-9 pr-12 text-sm text-text-dark placeholder:text-text-muted transition-all focus:border-gold/40 focus:bg-surface focus:outline-none focus:ring-4 focus:ring-gold/10"
+            className="w-full rounded-lg border border-text-dark/10 bg-background/70 py-2 pl-9 pr-12 text-sm text-text-dark placeholder:text-text-muted transition-all focus:border-gold/40 focus:bg-surface focus:outline-none focus:ring-4 focus:ring-gold/10"
           />
         </div>
 
         <button
           type="button"
-          className="focus-ring flex h-9 w-9 items-center justify-center rounded-full text-text-dark transition-colors hover:bg-text-dark/5 md:hidden"
+          className="outline-none focus-visible:focus-ring flex h-9 w-9 items-center justify-center rounded-full text-text-dark transition-colors hover:bg-text-dark/5 md:hidden"
           aria-label="Search"
         >
           <LuSearch size={18} />
@@ -94,7 +94,7 @@ export function Topbar({ onOpenMobileSidebar }: TopbarProps) {
           <PopoverTrigger asChild>
             <button
               type="button"
-              className="focus-ring flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-gold to-[#E8C96A] text-xs font-bold text-primary shadow-inner transition-opacity hover:opacity-90 lg:hidden"
+              className="outline-none focus-visible:focus-ring flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-gold to-[#E8C96A] text-xs font-bold text-primary shadow-inner transition-opacity hover:opacity-90 lg:hidden"
               aria-label="Account menu"
             >
               {userInitials}

@@ -38,7 +38,7 @@ export default function ChooseAreaPage() {
 
   return (
     <AuthCardLayout
-      title={`Hello, ${account.name.split(" ")[0] || "there"}`}
+      title={`Hello, ${(account.name.split(" ")[0] + " "+ account.name.split(" ")[1] ) || "there"}`}
       subtitle="Your account opens two portals. Where would you like to go? You can switch any time from the top bar."
     >
       <div className="flex flex-col gap-3">
