@@ -1,23 +1,100 @@
 @import "tailwindcss";
+@import "@heroui/styles";
+
+/*
+ * PBA design tokens.
+ * Brand values come from pbara-web (navy, gold, ivory, Plus Jakarta Sans).
+ * HeroUI reads the semantic variables in :root; the @theme block exposes the
+ * brand names the app already uses (bg-primary, text-text-muted, ...).
+ * Kept unlayered so it overrides HeroUI's default theme layer.
+ */
+:root {
+  /* Base */
+  --background: #f8f7f3;
+  --foreground: #05061f;
+  --muted: #61637a;
+
+  /* Surfaces */
+  --surface: #ffffff;
+  --surface-foreground: var(--foreground);
+  --surface-secondary: #f4f3ee;
+  --surface-tertiary: #eeede7;
+  --overlay: #ffffff;
+  --overlay-foreground: var(--foreground);
+
+  /* Interactive */
+  --default: #f1f1f6;
+  --default-foreground: #05061f;
+  --accent: #080935;
+  --accent-foreground: #ffffff;
+  --focus: #2f3394;
+  --link: var(--accent);
+
+  /* Status: all pass 4.5:1 as text on white */
+  --success: #15803d;
+  --success-foreground: #ffffff;
+  --warning: #b45309;
+  --warning-foreground: #ffffff;
+  --danger: #dc2626;
+  --danger-foreground: #ffffff;
+
+  /* Lines */
+  --border: #e5e4eb;
+  --separator: #ecebf0;
+
+  /* Fields */
+  --field-background: #ffffff;
+  --field-foreground: var(--foreground);
+  --field-placeholder: #8a8ca0;
+  --field-border: #dcdbe3;
+  --field-border-width: 1px;
+  --field-radius: 0.5rem;
+
+  /* Shape */
+  --radius: 0.5rem;
+
+  /* Elevation: tinted with brand ink rather than pure black */
+  --surface-shadow: 0 1px 2px 0 rgb(5 6 31 / 0.04), 0 0 0 1px rgb(5 6 31 / 0.04);
+  --overlay-shadow: 0 4px 12px -2px rgb(5 6 31 / 0.08), 0 16px 40px -8px rgb(5 6 31 / 0.16),
+    0 0 0 1px rgb(5 6 31 / 0.05);
+  --field-shadow: 0 1px 2px 0 rgb(5 6 31 / 0.04);
+  --backdrop: rgb(5 6 31 / 0.45);
+
+  --tooltip-delay: 500ms;
+  --tooltip-close-delay: 150ms;
+}
 
 @theme {
-  --color-primary: #1b2452;
-  --color-gold: #c8a84b;
-  --color-background: #f4f6fa;
-  --color-surface: #ffffff;
-  --color-text-dark: #1a1a2e;
-  --color-text-muted: #6b7280;
-  --font-heading: "Outfit", sans-serif;
-  --font-body: "Outfit", sans-serif;
+  /* Brand */
+  --color-primary: #080935;
+  --color-primary-hover: #15174d;
+  --color-ink: #05061f;
+  --color-gold: #d4af36;
+  --color-gold-soft: #e4c766;
+  --color-mist: #f1f1f6;
+
+  /* Text */
+  --color-text-dark: #05061f;
+  --color-text-muted: #61637a;
+  --color-line: #e5e4eb;
+
+  /* Typography */
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-heading: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --ease-brand: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @layer base {
   * {
-    @apply border-text-dark/10;
+    border-color: var(--border);
   }
 
   body {
-    @apply bg-background text-text-dark font-[family-name:var(--font-body)] antialiased;
+    @apply bg-background text-foreground font-sans antialiased;
+    font-feature-settings: "cv11", "ss01";
   }
 
   h1,
@@ -26,16 +103,64 @@
   h4,
   h5,
   h6 {
-    @apply font-[family-name:var(--font-heading)];
+    @apply font-heading tracking-tight;
+  }
+
+  button {
+    @apply cursor-pointer;
   }
 }
 
 .focus-ring {
-  @apply outline-none focus-visible:ring-2 focus-visible:ring-gold/60 focus-visible:ring-offset-2;
+  @apply outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2;
 }
-button{
-  @apply cursor-pointer
+
+/*
+ * Shape overrides. HeroUI's defaults are pill buttons and 24–32px corners;
+ * PBA uses a calmer, more precise geometry:
+ * 8px controls, 10px menu rows, 12px cards and floating panels, 16px modals.
+ */
+@layer components {
+  .button {
+    border-radius: var(--radius-lg);
+  }
+
+  .list-box-item,
+  .menu-item {
+    border-radius: calc(var(--radius) * 1.25);
+  }
+
+  .card,
+  .popover,
+  .dropdown__popover,
+  .select__popover {
+    border-radius: var(--radius-xl);
+  }
+
+  .tooltip {
+    border-radius: var(--radius-md);
+  }
+
+  .modal__dialog {
+    border-radius: var(--radius-2xl);
+  }
+
+  .chip {
+    border-radius: 9999px;
+  }
+
+  /* Icons sit inside the field, without HeroUI's divider line. */
+  .input-group__prefix {
+    border-inline-end-width: 0;
+    padding-inline-end: 0;
+  }
+
+  .input-group__suffix {
+    border-inline-start-width: 0;
+    padding-inline-start: 0;
+  }
 }
+
 @keyframes aurora-1 {
   0% {
     transform: translate(0%, 0%) scale(1);
@@ -82,78 +207,9 @@ button{
   animation: aurora-2 18s ease-in-out infinite;
 }
 
-@keyframes sheet-slide-in-from-right {
-  from {
-    transform: translateX(100%);
-  }
-  to {
-    transform: translateX(0);
-  }
-}
-
-@keyframes sheet-slide-out-to-right {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(100%);
-  }
-}
-
-@keyframes sheet-slide-in-from-left {
-  from {
-    transform: translateX(-100%);
-  }
-  to {
-    transform: translateX(0);
-  }
-}
-
-@keyframes sheet-slide-out-to-left {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-100%);
-  }
-}
-
-@keyframes sheet-fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes sheet-fade-out {
-  from {
-    opacity: 1;
-  }
-  to {
-    opacity: 0;
-  }
-}
-
-@keyframes popover-in {
-  from {
-    opacity: 0;
-    transform: scale(0.96);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes popover-out {
-  from {
-    opacity: 1;
-    transform: scale(1);
-  }
-  to {
-    opacity: 0;
-    transform: scale(0.96);
+@media (prefers-reduced-motion: reduce) {
+  .aurora-blob-1,
+  .aurora-blob-2 {
+    animation: none;
   }
 }

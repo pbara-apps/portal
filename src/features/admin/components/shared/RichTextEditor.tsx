@@ -1,7 +1,7 @@
 import { lazy, Suspense, useMemo } from "react";
-import "react-quill/dist/quill.snow.css";
+import "react-quill-new/dist/quill.snow.css";
 
-const ReactQuill = lazy(() => import("react-quill"));
+const ReactQuill = lazy(() => import("react-quill-new"));
 
 const TOOLBAR = [
   [{ header: [2, 3, false] }],

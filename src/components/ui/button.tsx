@@ -1,78 +1,104 @@
-import { Slot } from "@radix-ui/react-slot";
-import { cva, type VariantProps } from "class-variance-authority";
+import {
+  Button as HeroButton,
+  Spinner,
+  buttonVariants as heroButtonVariants,
+} from "@heroui/react";
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
-const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/60 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 cursor-pointer",
-  {
-    variants: {
-      variant: {
-        default: "bg-primary text-white shadow hover:bg-[#040e3d]",
-        destructive: "bg-rose-600 text-white shadow-sm hover:bg-rose-700",
-        outline:
-          "border border-text-dark/15 bg-surface shadow-sm hover:bg-background",
-        secondary:
-          "bg-background text-text-dark shadow-sm hover:bg-background/80",
-        ghost: "hover:bg-text-dark/5 text-text-muted hover:text-text-dark",
-        link: "text-primary underline-offset-4 hover:underline",
-      },
-      size: {
-        default: "h-10 px-4 py-2",
-        sm: "h-8 rounded-md px-3 text-xs",
-        lg: "h-11 rounded-md px-8 text-base",
-        icon: "h-9 w-9",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-      size: "default",
-    },
-  },
-);
+/**
+ * App button built on HeroUI's Button.
+ * Keeps the app-wide variant/size names so existing call sites don't change.
+ */
+type ButtonVariant = "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
+type ButtonSize = "default" | "sm" | "lg" | "icon";
 
-export interface ButtonProps
-  extends
-    React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
-  asChild?: boolean;
-  loading?: boolean;
+const HERO_VARIANT = {
+  default: "primary",
+  destructive: "danger",
+  outline: "outline",
+  secondary: "secondary",
+  ghost: "ghost",
+  link: "ghost",
+} as const;
+
+const HERO_SIZE = { default: "md", sm: "sm", lg: "lg", icon: "md" } as const;
+
+const LINK_CX =
+  "h-auto px-0 text-accent underline-offset-4 hover:bg-transparent hover:underline data-[hovered=true]:bg-transparent";
+
+interface ButtonVariantOptions {
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  className?: string;
 }
 
-const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  (
-    {
-      className,
-      variant,
-      size,
-      asChild = false,
-      loading,
-      children,
-      disabled,
-      ...props
-    },
-    ref,
-  ) => {
-    const Comp = asChild ? Slot : "button";
-    return (
-      <Comp
-        className={cn(buttonVariants({ variant, size, className }))}
-        ref={ref}
-        disabled={disabled || loading}
-        {...props}
-      >
-        {loading ? (
-          <>
-            <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-            {children}
-          </>
-        ) : (
-          children
-        )}
-      </Comp>
-    );
-  },
-);
-Button.displayName = "Button";
+/** Class string for elements that should look like a button (e.g. router links). */
+function buttonVariants({ variant = "default", size = "default", className }: ButtonVariantOptions = {}) {
+  return cn(
+    heroButtonVariants({
+      variant: HERO_VARIANT[variant],
+      size: HERO_SIZE[size],
+      isIconOnly: size === "icon",
+    }),
+    variant === "link" && LINK_CX,
+    className,
+  );
+}
+
+export interface ButtonProps
+  extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "color"> {
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  /** Style the single child element (e.g. a <Link>) as a button instead of rendering a <button>. */
+  asChild?: boolean;
+  loading?: boolean;
+  ref?: React.Ref<HTMLButtonElement>;
+}
+
+type HeroButtonProps = React.ComponentProps<typeof HeroButton>;
+
+function Button({
+  className,
+  variant = "default",
+  size = "default",
+  asChild = false,
+  loading = false,
+  disabled,
+  children,
+  // Match native <button> semantics, which existing forms rely on.
+  type = "submit",
+  ref,
+  ...props
+}: ButtonProps) {
+  if (asChild && React.isValidElement<{ className?: string }>(children)) {
+    return React.cloneElement(children, {
+      className: buttonVariants({ variant, size, className: cn(className, children.props.className) }),
+    });
+  }
+
+  return (
+    <HeroButton
+      {...(props as Omit<HeroButtonProps, "children">)}
+      ref={ref}
+      type={type}
+      variant={HERO_VARIANT[variant]}
+      size={HERO_SIZE[size]}
+      isIconOnly={size === "icon"}
+      isDisabled={disabled}
+      isPending={loading}
+      className={cn(variant === "link" && LINK_CX, className)}
+    >
+      {loading ? (
+        <>
+          <Spinner size="sm" color="current" />
+          {children}
+        </>
+      ) : (
+        children
+      )}
+    </HeroButton>
+  );
+}
 
 export { Button, buttonVariants };

@@ -1,5 +1,6 @@
 import { lazy } from "react";
-import { createBrowserRouter, Navigate, Outlet } from "react-router-dom";
+import { RouterProvider as AriaRouterProvider } from "react-aria-components";
+import { createBrowserRouter, Navigate, Outlet, useHref, useNavigate } from "react-router-dom";
 import { RouteErrorPage } from "@/components/RouteErrorPage";
 import { SessionExpiredModal } from "@/components/SessionExpiredModal";
 import { ChapterShell } from "@/features/chapter/components/ChapterShell";
@@ -57,12 +58,14 @@ const MemberHomePage = lazy(
   () => import("../features/member/pages/MemberHomePage"),
 );
 
+/** Root layout. Lets HeroUI/React Aria links and menu items navigate client-side. */
 function AppRoot() {
+  const navigate = useNavigate();
   return (
-    <>
+    <AriaRouterProvider navigate={navigate} useHref={useHref}>
       <Outlet />
       <SessionExpiredModal />
-    </>
+    </AriaRouterProvider>
   );
 }
 

@@ -1,147 +1,125 @@
-import * as SelectPrimitive from "@radix-ui/react-select";
-import { Check, ChevronDown, ChevronUp } from "lucide-react";
+import { ListBox, Select as HeroSelect, Separator } from "@heroui/react";
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
-const Select = SelectPrimitive.Root;
-const SelectGroup = SelectPrimitive.Group;
-const SelectValue = SelectPrimitive.Value;
+/**
+ * Select on HeroUI's Select + ListBox, keeping the app's compound API:
+ *
+ *   <Select value onValueChange>
+ *     <SelectTrigger aria-label className><SelectValue placeholder /></SelectTrigger>
+ *     <SelectContent><SelectItem value>Label</SelectItem></SelectContent>
+ *   </Select>
+ *
+ * The trigger's aria-label and className are lifted onto the Select root, which is
+ * where React Aria expects the accessible name and where the layout width belongs.
+ */
+interface SelectProps {
+  value?: string;
+  defaultValue?: string;
+  onValueChange?: (value: string) => void;
+  disabled?: boolean;
+  required?: boolean;
+  name?: string;
+  children: React.ReactNode;
+}
 
-const SelectTrigger = React.forwardRef<
-  React.ElementRef<typeof SelectPrimitive.Trigger>,
-  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger>
->(({ className, children, ...props }, ref) => (
-  <SelectPrimitive.Trigger
-    ref={ref}
-    className={cn(
-      "flex h-10 w-full items-center justify-between rounded-md border border-text-dark/15 bg-background/60 px-3 py-2 text-sm ring-offset-background placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-gold/50 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1",
-      className,
-    )}
-    {...props}
-  >
-    {children}
-    <SelectPrimitive.Icon asChild>
-      <ChevronDown className="h-4 w-4 opacity-50" />
-    </SelectPrimitive.Icon>
-  </SelectPrimitive.Trigger>
-));
-SelectTrigger.displayName = SelectPrimitive.Trigger.displayName;
+interface SelectTriggerProps {
+  className?: string;
+  id?: string;
+  children?: React.ReactNode;
+  "aria-label"?: string;
+  "aria-labelledby"?: string;
+}
 
-const SelectScrollUpButton = React.forwardRef<
-  React.ElementRef<typeof SelectPrimitive.ScrollUpButton>,
-  React.ComponentPropsWithoutRef<typeof SelectPrimitive.ScrollUpButton>
->(({ className, ...props }, ref) => (
-  <SelectPrimitive.ScrollUpButton
-    ref={ref}
-    className={cn("flex cursor-default items-center justify-center py-1", className)}
-    {...props}
-  >
-    <ChevronUp className="h-4 w-4" />
-  </SelectPrimitive.ScrollUpButton>
-));
-SelectScrollUpButton.displayName = SelectPrimitive.ScrollUpButton.displayName;
+function findTriggerProps(children: React.ReactNode): SelectTriggerProps {
+  let found: SelectTriggerProps = {};
+  React.Children.forEach(children, (child) => {
+    if (React.isValidElement<SelectTriggerProps>(child) && child.type === SelectTrigger) {
+      found = child.props;
+    }
+  });
+  return found;
+}
 
-const SelectScrollDownButton = React.forwardRef<
-  React.ElementRef<typeof SelectPrimitive.ScrollDownButton>,
-  React.ComponentPropsWithoutRef<typeof SelectPrimitive.ScrollDownButton>
->(({ className, ...props }, ref) => (
-  <SelectPrimitive.ScrollDownButton
-    ref={ref}
-    className={cn("flex cursor-default items-center justify-center py-1", className)}
-    {...props}
-  >
-    <ChevronDown className="h-4 w-4" />
-  </SelectPrimitive.ScrollDownButton>
-));
-SelectScrollDownButton.displayName = SelectPrimitive.ScrollDownButton.displayName;
-
-const SelectContent = React.forwardRef<
-  React.ElementRef<typeof SelectPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Content>
->(({ className, children, position = "popper", ...props }, ref) => (
-  <SelectPrimitive.Portal>
-    <SelectPrimitive.Content
-      ref={ref}
-      className={cn(
-        "relative z-[100] max-h-96 min-w-[8rem] overflow-hidden rounded-md border bg-surface text-text-dark shadow-md pointer-events-auto data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
-        position === "popper" &&
-          "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
-        className,
-      )}
-      position={position}
-      {...props}
+function Select({ value, defaultValue, onValueChange, disabled, required, name, children }: SelectProps) {
+  const trigger = findTriggerProps(children);
+  return (
+    <HeroSelect
+      value={value === undefined ? undefined : value || null}
+      defaultValue={defaultValue}
+      onChange={(key) => {
+        if (key != null) onValueChange?.(String(key));
+      }}
+      isDisabled={disabled}
+      isRequired={required}
+      name={name}
+      aria-label={trigger["aria-label"]}
+      aria-labelledby={trigger["aria-labelledby"]}
+      fullWidth
+      className={cn("min-w-0", trigger.className)}
     >
-      <SelectScrollUpButton />
-      <SelectPrimitive.Viewport
-        className={cn(
-          "p-1",
-          position === "popper" &&
-            "w-full min-w-[var(--radix-select-trigger-width)]",
-        )}
-      >
-        {children}
-      </SelectPrimitive.Viewport>
-      <SelectScrollDownButton />
-    </SelectPrimitive.Content>
-  </SelectPrimitive.Portal>
-));
-SelectContent.displayName = SelectPrimitive.Content.displayName;
+      {children}
+    </HeroSelect>
+  );
+}
 
-const SelectLabel = React.forwardRef<
-  React.ElementRef<typeof SelectPrimitive.Label>,
-  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Label>
->(({ className, ...props }, ref) => (
-  <SelectPrimitive.Label
-    ref={ref}
-    className={cn("py-1.5 pl-8 pr-2 text-sm font-semibold", className)}
-    {...props}
-  />
-));
-SelectLabel.displayName = SelectPrimitive.Label.displayName;
+function SelectTrigger({ children, id }: SelectTriggerProps) {
+  return (
+    <HeroSelect.Trigger id={id} className="w-full">
+      {children}
+      <HeroSelect.Indicator />
+    </HeroSelect.Trigger>
+  );
+}
 
-const SelectItem = React.forwardRef<
-  React.ElementRef<typeof SelectPrimitive.Item>,
-  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Item>
->(({ className, children, ...props }, ref) => (
-  <SelectPrimitive.Item
-    ref={ref}
-    className={cn(
-      "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-background data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
-      className,
-    )}
-    {...props}
-  >
-    <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
-      <SelectPrimitive.ItemIndicator>
-        <Check className="h-4 w-4" />
-      </SelectPrimitive.ItemIndicator>
-    </span>
-    <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
-  </SelectPrimitive.Item>
-));
-SelectItem.displayName = SelectPrimitive.Item.displayName;
+function SelectValue({ placeholder = "Select…" }: { placeholder?: React.ReactNode }) {
+  return (
+    <HeroSelect.Value className="truncate">
+      {({ isPlaceholder, defaultChildren }) => (isPlaceholder ? placeholder : defaultChildren)}
+    </HeroSelect.Value>
+  );
+}
 
-const SelectSeparator = React.forwardRef<
-  React.ElementRef<typeof SelectPrimitive.Separator>,
-  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Separator>
->(({ className, ...props }, ref) => (
-  <SelectPrimitive.Separator
-    ref={ref}
-    className={cn("-mx-1 my-1 h-px bg-text-dark/10", className)}
-    {...props}
-  />
-));
-SelectSeparator.displayName = SelectPrimitive.Separator.displayName;
+function SelectContent({ className, children }: { className?: string; children: React.ReactNode }) {
+  return (
+    <HeroSelect.Popover className={cn("min-w-(--trigger-width)", className)}>
+      <ListBox className="max-h-80 overflow-y-auto">{children}</ListBox>
+    </HeroSelect.Popover>
+  );
+}
 
-export {
-  Select,
-  SelectGroup,
-  SelectValue,
-  SelectTrigger,
-  SelectContent,
-  SelectLabel,
-  SelectItem,
-  SelectSeparator,
-  SelectScrollUpButton,
-  SelectScrollDownButton,
-};
+/** Plain text of an item's children, used for typeahead and the trigger label. */
+function textOf(node: React.ReactNode): string {
+  if (typeof node === "string" || typeof node === "number") return String(node);
+  if (Array.isArray(node)) return node.map(textOf).join("");
+  if (React.isValidElement<{ children?: React.ReactNode }>(node)) return textOf(node.props.children);
+  return "";
+}
+
+interface SelectItemProps {
+  value: string;
+  children: React.ReactNode;
+  disabled?: boolean;
+  className?: string;
+  textValue?: string;
+}
+
+function SelectItem({ value, children, disabled, className, textValue }: SelectItemProps) {
+  return (
+    <ListBox.Item
+      id={value}
+      textValue={textValue ?? (textOf(children).trim() || value)}
+      isDisabled={disabled}
+      className={className}
+    >
+      {children}
+      <ListBox.ItemIndicator />
+    </ListBox.Item>
+  );
+}
+
+function SelectSeparator() {
+  return <Separator className="my-1" />;
+}
+
+export { Select, SelectTrigger, SelectValue, SelectContent, SelectItem, SelectSeparator };

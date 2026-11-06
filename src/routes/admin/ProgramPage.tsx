@@ -1,6 +1,5 @@
 import dayjs from "dayjs";
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import {
   LuClipboardList,
   LuPencil,
@@ -401,13 +400,9 @@ export default function ProgramAdminPage() {
                                     <LuUsers size={14} />
                                     View registered participants
                                   </DropdownMenuItem>
-                                  <DropdownMenuItem asChild>
-                                    <Link
-                                      to={`/admin/registrations?programId=${program.id}`}
-                                    >
-                                      <LuClipboardList size={14} />
-                                      View registrations
-                                    </Link>
+                                  <DropdownMenuItem href={`/admin/registrations?programId=${program.id}`}>
+                                    <LuClipboardList size={14} />
+                                    View registrations
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
                                     disabled={!canManage || !program.isActive}

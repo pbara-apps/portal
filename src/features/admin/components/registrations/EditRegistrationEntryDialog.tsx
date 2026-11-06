@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { X } from "lucide-react";
+import { LuX } from "react-icons/lu";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -179,7 +179,7 @@ export function EditRegistrationEntryDialog({
                 className="absolute right-4 top-4 rounded-full p-1.5 text-text-muted transition-colors hover:bg-background hover:text-primary disabled:pointer-events-none disabled:opacity-40"
                 aria-label="Close dialog"
               >
-                <X size={17} />
+                <LuX size={17} />
               </button>
 
               <DialogHeader>

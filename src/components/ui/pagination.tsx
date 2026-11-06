@@ -1,6 +1,8 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Pagination as HeroPagination } from "@heroui/react";
+import { Fragment } from "react";
 import { cn } from "@/lib/utils";
+
+const FULL_ONLY = "hidden sm:inline-flex";
 
 interface PaginationProps {
   page: number;
@@ -9,52 +11,60 @@ interface PaginationProps {
   className?: string;
 }
 
+/** Page numbers to show: first, last, and the current page's neighbours. */
+function visiblePages(page: number, totalPages: number) {
+  const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
+  if (totalPages <= 7) return pages;
+  return pages.filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1);
+}
+
+/** Page controls on HeroUI's Pagination. Hidden when there's a single page. */
 export function Pagination({ page, totalPages, onPageChange, className }: PaginationProps) {
   if (totalPages <= 1) return null;
-
-  const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
-  const visible =
-    totalPages <= 7
-      ? pages
-      : pages.filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1);
+  const visible = visiblePages(page, totalPages);
 
   return (
-    <div className={cn("flex items-center gap-1", className)}>
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => onPageChange(Math.max(1, page - 1))}
-        disabled={page <= 1}
-        aria-label="Previous page"
-      >
-        <ChevronLeft className="h-4 w-4" />
-      </Button>
-      {visible.map((p, idx) => {
-        const prev = visible[idx - 1];
-        const showEllipsis = prev !== undefined && p - prev > 1;
-        return (
-          <span key={p} className="flex items-center gap-1">
-            {showEllipsis ? <span className="px-1 text-text-muted">…</span> : null}
-            <Button
-              variant={p === page ? "default" : "ghost"}
-              size="sm"
-              className={cn("min-w-9", p === page && "font-semibold")}
-              onClick={() => onPageChange(p)}
-            >
-              {p}
-            </Button>
-          </span>
-        );
-      })}
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => onPageChange(Math.min(totalPages, page + 1))}
-        disabled={page >= totalPages}
-        aria-label="Next page"
-      >
-        <ChevronRight className="h-4 w-4" />
-      </Button>
-    </div>
+    <HeroPagination size="sm" className={cn("w-auto", className)}>
+      <HeroPagination.Content>
+        <HeroPagination.Item>
+          <HeroPagination.Previous isDisabled={page <= 1} onPress={() => onPageChange(page - 1)}>
+            <HeroPagination.PreviousIcon />
+            <span className="sr-only sm:not-sr-only">Prev</span>
+          </HeroPagination.Previous>
+        </HeroPagination.Item>
+
+        {/* Compact indicator on small screens; full page list from sm up. */}
+        <HeroPagination.Item className="px-2 text-xs font-medium text-muted tabular-nums sm:hidden">
+          {page} / {totalPages}
+        </HeroPagination.Item>
+
+        {visible.map((p, idx) => (
+          <Fragment key={p}>
+            {idx > 0 && p - visible[idx - 1] > 1 ? (
+              <HeroPagination.Item className={FULL_ONLY}>
+                <HeroPagination.Ellipsis />
+              </HeroPagination.Item>
+            ) : null}
+            <HeroPagination.Item className={FULL_ONLY}>
+              <HeroPagination.Link
+                isActive={p === page}
+                aria-current={p === page ? "page" : undefined}
+                onPress={() => onPageChange(p)}
+                className="tabular-nums"
+              >
+                {p}
+              </HeroPagination.Link>
+            </HeroPagination.Item>
+          </Fragment>
+        ))}
+
+        <HeroPagination.Item>
+          <HeroPagination.Next isDisabled={page >= totalPages} onPress={() => onPageChange(page + 1)}>
+            <span className="sr-only sm:not-sr-only">Next</span>
+            <HeroPagination.NextIcon />
+          </HeroPagination.Next>
+        </HeroPagination.Item>
+      </HeroPagination.Content>
+    </HeroPagination>
   );
 }

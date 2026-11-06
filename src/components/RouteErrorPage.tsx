@@ -1,4 +1,4 @@
-import { AlertTriangle } from "lucide-react";
+import { LuTriangleAlert } from "react-icons/lu";
 import { isRouteErrorResponse, useRouteError } from "react-router-dom";
 
 function getErrorMessage(error: unknown): string {
@@ -16,7 +16,7 @@ export function RouteErrorPage() {
   return (
     <div className="flex min-h-screen items-center justify-center px-6">
       <div className="flex max-w-md flex-col items-center text-center">
-        <AlertTriangle
+        <LuTriangleAlert
           className="mb-6 size-14 text-[#e85d6c]"
           strokeWidth={1.5}
           aria-hidden

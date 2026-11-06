@@ -28,9 +28,9 @@ export function SessionExpiredModal() {
     <Dialog open={expired} onOpenChange={() => undefined}>
       <DialogContent
         hideClose
+        dismissable={false}
+        role="alertdialog"
         className="max-w-md"
-        onPointerDownOutside={(e) => e.preventDefault()}
-        onEscapeKeyDown={(e) => e.preventDefault()}
       >
         <DialogHeader>
           <DialogTitle>Session expired</DialogTitle>

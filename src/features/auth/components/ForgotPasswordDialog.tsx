@@ -16,9 +16,9 @@ import {
  */
 export function ForgotPasswordDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const who = [
-    { role: "Executives and admins", contact: "a super admin of the association" },
-    { role: "Church counsellors", contact: "the association administration" },
-    { role: "Chapter presidents and secretaries", contact: "your church counsellor" },
+    { role: "Administrator?", contact: "a super admin of the association" },
+    { role: "Counsellors?", contact: "the association administration" },
+    { role: "Chapter presidents and secretary?", contact: "your church counsellor" },
   ];
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>

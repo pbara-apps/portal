@@ -139,6 +139,7 @@ export default function LoginPage() {
                 autoComplete="email"
                 error={errors.email?.message}
                 startContent={<LuMail size={16} className="text-text-muted" />}
+                
               />
 
               <Input
@@ -216,15 +217,7 @@ export default function LoginPage() {
             First time here? Use the one-time password sent to your email.
           </p>
 
-          <div className="mt-4 flex justify-center pb-2 sm:mt-5">
-            <button
-              type="button"
-              className="inline-flex max-w-full items-center gap-1.5 px-1 text-center text-xs text-text-muted transition-colors hover:text-primary"
-            >
-              <LuCircleHelp size={14} className="shrink-0" />
-              <span>Need assistance with your account?</span>
-            </button>
-          </div>
+          
         </div>
       </section>
       <ForgotPasswordDialog open={forgotOpen} onClose={() => setForgotOpen(false)} />

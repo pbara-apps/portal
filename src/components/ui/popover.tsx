@@ -1,30 +1,58 @@
-import * as PopoverPrimitive from "@radix-ui/react-popover";
+import { Popover as HeroPopover } from "@heroui/react";
 import * as React from "react";
+import { OverlayTriggerStateContext } from "react-aria-components";
 import { cn } from "@/lib/utils";
+import { TriggerSlot } from "./trigger-slot";
+import { toPlacement, type OverlayAlign, type OverlaySide } from "./overlay-placement";
 
-const Popover = PopoverPrimitive.Root;
-const PopoverTrigger = PopoverPrimitive.Trigger;
-const PopoverAnchor = PopoverPrimitive.Anchor;
-const PopoverClose = PopoverPrimitive.Close;
+/** Floating panel on HeroUI's Popover, keeping the app's compound API. */
+interface PopoverProps {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  children: React.ReactNode;
+}
 
-const PopoverContent = React.forwardRef<
-  React.ElementRef<typeof PopoverPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Content>
->(({ className, align = "center", sideOffset = 8, ...props }, ref) => (
-  <PopoverPrimitive.Portal>
-    <PopoverPrimitive.Content
-      ref={ref}
-      align={align}
-      sideOffset={sideOffset}
-      className={cn(
-        "z-50 w-72 rounded-md border border-text-dark/10 bg-surface p-4 text-text-dark shadow-md outline-none",
-        "data-[state=open]:animate-[popover-in_0.15s_ease-out] data-[state=closed]:animate-[popover-out_0.12s_ease-in]",
-        className,
-      )}
-      {...props}
-    />
-  </PopoverPrimitive.Portal>
-));
-PopoverContent.displayName = PopoverPrimitive.Content.displayName;
+function Popover({ open, onOpenChange, children }: PopoverProps) {
+  return (
+    <HeroPopover isOpen={open} onOpenChange={onOpenChange}>
+      {children}
+    </HeroPopover>
+  );
+}
 
-export { Popover, PopoverTrigger, PopoverContent, PopoverAnchor, PopoverClose };
+function PopoverTrigger({ asChild, children }: { asChild?: boolean; children: React.ReactNode }) {
+  if (asChild && React.isValidElement(children)) return <TriggerSlot>{children}</TriggerSlot>;
+  return <HeroPopover.Trigger>{children}</HeroPopover.Trigger>;
+}
+
+interface PopoverContentProps {
+  side?: OverlaySide;
+  align?: OverlayAlign;
+  sideOffset?: number;
+  className?: string;
+  "aria-label"?: string;
+  children: React.ReactNode;
+}
+
+function PopoverContent({ side = "bottom", align = "center", sideOffset = 8, className, children, ...props }: PopoverContentProps) {
+  return (
+    <HeroPopover.Content placement={toPlacement(side, align)} offset={sideOffset} className={cn("w-72", className)}>
+      <HeroPopover.Dialog {...props} className="p-4 outline-none">
+        {children}
+      </HeroPopover.Dialog>
+    </HeroPopover.Content>
+  );
+}
+
+/** Closes the surrounding popover when its child is clicked. */
+function PopoverClose({ children }: { asChild?: boolean; children: React.ReactElement<{ onClick?: (e: React.MouseEvent) => void }> }) {
+  const state = React.useContext(OverlayTriggerStateContext);
+  return React.cloneElement(children, {
+    onClick: (e: React.MouseEvent) => {
+      children.props.onClick?.(e);
+      state?.close();
+    },
+  });
+}
+
+export { Popover, PopoverTrigger, PopoverContent, PopoverClose };

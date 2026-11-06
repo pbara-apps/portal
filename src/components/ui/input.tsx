@@ -1,50 +1,57 @@
+import { Input as HeroInput, InputGroup, Label } from "@heroui/react";
 import * as React from "react";
 import { cn } from "@/lib/utils";
+import { FieldMessage } from "./field-message";
 
-export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+export interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "size"> {
   label?: React.ReactNode;
   error?: string;
   startContent?: React.ReactNode;
   endContent?: React.ReactNode;
+  ref?: React.Ref<HTMLInputElement>;
 }
 
-const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, type, label, error, startContent, endContent, id, ...props }, ref) => {
-    const inputId = id ?? React.useId();
-    return (
-      <div className="w-full space-y-2">
-        {label ? (
-          <label
-            htmlFor={inputId}
-            className="block w-full text-sm font-semibold text-text-dark"
-          >
-            {label}
-          </label>
-        ) : null}
-        <div
-          className={cn(
-            "flex h-11 w-full min-w-0 items-center gap-2 rounded-md border border-text-dark/15 bg-background/40 px-3 transition-colors focus-within:border-gold/50 focus-within:bg-background/60",
-            error && "border-rose-500 focus-within:border-rose-500",
-            className,
-          )}
-        >
-          {startContent ? (
-            <span className="shrink-0 text-text-muted">{startContent}</span>
-          ) : null}
-          <input
-            id={inputId}
-            type={type}
-            className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-text-muted disabled:cursor-not-allowed disabled:opacity-50"
-            ref={ref}
-            {...props}
-          />
-          {endContent ? <span className="shrink-0">{endContent}</span> : null}
-        </div>
-        {error ? <p className="text-xs text-rose-600">{error}</p> : null}
-      </div>
+/** Text input on HeroUI's Input / InputGroup, with an optional label and error message. */
+function Input({ className, label, error, startContent, endContent, id, ref, ...props }: InputProps) {
+  const generatedId = React.useId();
+  const inputId = id ?? generatedId;
+  const errorId = `${inputId}-error`;
+  const invalid = Boolean(error);
+  const a11y = {
+    "aria-invalid": invalid || undefined,
+    "aria-describedby": cn(props["aria-describedby"], invalid && errorId) || undefined,
+  };
+
+  const field =
+    startContent || endContent ? (
+      <InputGroup fullWidth isInvalid={invalid} className={className}>
+        {startContent ? <InputGroup.Prefix className="text-muted">{startContent}</InputGroup.Prefix> : null}
+        <InputGroup.Input {...props} {...a11y} id={inputId} ref={ref} />
+        {endContent ? <InputGroup.Suffix>{endContent}</InputGroup.Suffix> : null}
+      </InputGroup>
+    ) : (
+      <HeroInput
+        {...props}
+        {...a11y}
+        id={inputId}
+        ref={ref}
+        fullWidth
+        data-invalid={invalid || undefined}
+        className={className}
+      />
     );
-  },
-);
-Input.displayName = "Input";
+
+  return (
+    <div className="flex w-full min-w-0 flex-col gap-1.5">
+      {label ? (
+        <Label htmlFor={inputId} isRequired={props.required}>
+          {label}
+        </Label>
+      ) : null}
+      {field}
+      <FieldMessage id={errorId} message={error} />
+    </div>
+  );
+}
 
 export { Input };
