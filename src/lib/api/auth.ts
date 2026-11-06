@@ -3,11 +3,6 @@ import type { UserType } from "@/types/user";
 import useCurrentUser from "@/hooks/useCurrentUser";
 import http from ".";
 
-interface LoginTypes {
-  email: string;
-  password: string;
-}
-
 export type ProfileUpdatePayload = {
   image?: string | null;
   name?: string;
@@ -18,7 +13,7 @@ export type ProfileUpdatePayload = {
   password?: string;
 };
 
-type RawProfileUser = {
+export type RawProfileUser = {
   _id?: string;
   id?: string;
   name: string;
@@ -38,9 +33,12 @@ type RawProfileUser = {
   rank?: { _id?: string; name?: string };
   role?: UserType["role"];
   is_finance?: boolean;
+  has_changed_password?: boolean;
+  /** The linked executive profile's id (the profile's own `_id` is the account id). */
+  executive_id?: string | null;
 };
 
-function mapProfileUser(user: RawProfileUser): UserType {
+export function mapProfileUser(user: RawProfileUser): UserType {
   return {
     id: user._id ?? user.id ?? "",
     name: user.name,
@@ -61,18 +59,11 @@ function mapProfileUser(user: RawProfileUser): UserType {
     endYear: user.end_year ?? null,
     role: user.role ?? "viewer",
     isFinance: user.is_finance === true,
+    hasChangedPassword: user.has_changed_password !== false,
+    executiveId: user.executive_id ?? null,
     token: "",
   };
 }
-
-export const useLogin = () => {
-  return useMutation({
-    mutationFn: async (body: LoginTypes) => {
-      const res = await http.post("auth/login", body);
-      return res.data as { user: unknown; token: string };
-    },
-  });
-};
 
 export const authKeys = {
   profile: ["auth", "profile"] as const,

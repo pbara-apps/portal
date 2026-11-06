@@ -40,6 +40,15 @@ function isProtectedAppRoute() {
 http.interceptors.response.use(
   (response) => response?.data,
   (error) => {
+    const body = error?.response?.data;
+    if (
+      error?.response?.status === 403 &&
+      body?.code === "PASSWORD_CHANGE_REQUIRED" &&
+      typeof window !== "undefined" &&
+      !window.location.pathname.startsWith("/change-password")
+    ) {
+      window.location.assign("/change-password");
+    }
     if (error?.response?.status === 401 && typeof window !== "undefined") {
       const requestUrl = error.config?.url as string | undefined;
       const hadToken = Boolean(useCurrentUser.getState().token);

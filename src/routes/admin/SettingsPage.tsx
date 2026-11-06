@@ -1,49 +1,23 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { AdminPageHeader } from "@/features/admin/components/shared/AdminPageHeader";
 import { PaymentAccountSection } from "@/features/admin/components/settings/PaymentAccountSection";
-import {
-  adminPageCx,
-  adminTableMinCx,
-  adminTableScrollCx,
-  adminTableSectionCx,
-} from "@/features/admin/components/shared/adminLayout";
+import { adminPageCx } from "@/features/admin/components/shared/adminLayout";
 import useCurrentUser from "@/hooks/useCurrentUser";
 import { useProfile } from "@/lib/api/auth";
 import {
-  useGetExecutivesForSettings,
   useGetHeroStatsForSettings,
   useUpdateHeroStats,
-  useUpdateExecutiveRole,
 } from "@/lib/api/settings";
 import {
   errorToast,
   successToast,
 } from "@/components/shared/toast-notification";
-import {
-  EXECUTIVE_ROLES,
-  ROLE_LABELS,
-  isSuperAdmin,
-  type ExecutiveRole,
-} from "@/types/user";
+import { ROLE_LABELS, isSuperAdmin } from "@/types/user";
 import type { HeroStat } from "@/types";
 
 export default function SettingsAdminPage() {
@@ -51,14 +25,11 @@ export default function SettingsAdminPage() {
   useProfile(true);
   const superAdmin = isSuperAdmin(user?.role);
   const canManageHeroStats = user?.role === "super_admin" || user?.role === "admin";
-  const { data: executives = [], isLoading, isError } =
-    useGetExecutivesForSettings(superAdmin);
   const {
     data: heroStats = [],
     isLoading: isHeroStatsLoading,
     isError: isHeroStatsError,
   } = useGetHeroStatsForSettings(canManageHeroStats);
-  const updateRole = useUpdateExecutiveRole();
   const updateHeroStats = useUpdateHeroStats();
   const [editableStats, setEditableStats] = useState<HeroStat[]>([]);
 
@@ -73,18 +44,6 @@ export default function SettingsAdminPage() {
           ],
     );
   }, [heroStats]);
-
-  const handleRoleChange = async (id: string, role: ExecutiveRole) => {
-    try {
-      await updateRole.mutateAsync({ id, role });
-      successToast("Executive role updated.");
-    } catch (err) {
-      errorToast(
-        (err as { message?: string })?.message ?? "Unable to update role.",
-        "Error",
-      );
-    }
-  };
 
   const updateStat = (
     index: number,
@@ -166,6 +125,7 @@ export default function SettingsAdminPage() {
           <Badge className="bg-primary/10 text-primary">
             {user?.role ? ROLE_LABELS[user.role] : "Admin"}
           </Badge>
+          {user?.isFinance && <Badge variant="success">Finance officer</Badge>}
         </div>
         <div className="mt-5 grid gap-3 md:grid-cols-2">
           <AccountDetail label="Full Name" value={user?.name} />
@@ -189,96 +149,21 @@ export default function SettingsAdminPage() {
         </div>
       </section>
 
-      {superAdmin ? (
-        <section className={adminTableSectionCx}>
-          <div className="border-b border-text-dark/[0.05] px-4 py-5 sm:px-6">
-            <h2 className="text-base font-semibold text-primary">
-              Executive Role Assignment
-            </h2>
-            <p className="mt-1 text-sm text-text-muted">
-              Assign access roles for each executive who can sign in to the admin
-              portal.
-            </p>
-          </div>
-
-          {isLoading ? (
-            <div className="flex justify-center py-16">
-              <Spinner label="" />
-            </div>
-          ) : isError ? (
-            <p className="py-16 text-center text-sm text-rose-600">
-              Unable to load executives.
-            </p>
-          ) : (
-            <div className={adminTableScrollCx}>
-              <Table className={adminTableMinCx}>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Executive</TableHead>
-                    <TableHead>Office</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Access Role</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {executives.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={4} className="py-8 text-center text-sm text-text-muted">
-                        No executives found.
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    executives.map((exec) => (
-                      <TableRow key={exec.id}>
-                        <TableCell>
-                          <p className="text-sm font-medium text-text-dark">{exec.name}</p>
-                          <p className="text-xs text-text-muted">{exec.chapterName}</p>
-                        </TableCell>
-                        <TableCell>
-                          <span className="text-sm">{exec.officeName || "—"}</span>
-                        </TableCell>
-                        <TableCell>
-                          <span className="text-sm text-text-muted">{exec.email || "—"}</span>
-                        </TableCell>
-                        <TableCell>
-                          <Select
-                            value={exec.role ?? "admin"}
-                            onValueChange={(role) => {
-                              if (role !== exec.role) {
-                                handleRoleChange(exec.id, role as ExecutiveRole);
-                              }
-                            }}
-                            disabled={updateRole.isPending || exec.id === user?.id}
-                          >
-                            <SelectTrigger className="max-w-[180px]">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {EXECUTIVE_ROLES.map((role) => (
-                                <SelectItem key={role} value={role}>
-                                  {ROLE_LABELS[role]}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </section>
-      ) : (
-        <section className="rounded-2xl border border-dashed border-text-dark/10 bg-background/40 p-6">
-          <h2 className="text-base font-semibold text-text-dark">Role Assignment</h2>
-          <p className="mt-2 text-sm text-text-muted">
-            Only super admins can assign roles to executives. Contact your
-            organization super admin if you need access changes.
+      <section className="flex flex-col gap-3 rounded-2xl border border-text-dark/[0.05] bg-surface p-4 shadow-[0_1px_2px_rgba(27,36,82,0.04)] sm:flex-row sm:items-center sm:justify-between sm:p-6">
+        <div>
+          <h2 className="text-base font-semibold text-primary">Admin accounts and roles</h2>
+          <p className="mt-1 text-sm text-text-muted">
+            {superAdmin
+              ? "Who can sign in to the admin portal, their roles and finance access are managed on the Accounts page."
+              : "Only super admins can give admin access or change roles. Contact your super admin if you need access changes."}
           </p>
-        </section>
-      )}
+        </div>
+        {superAdmin && (
+          <Link to="/admin/accounts" className="shrink-0">
+            <Button variant="outline">Open Accounts</Button>
+          </Link>
+        )}
+      </section>
 
       <section className="overflow-hidden rounded-2xl border border-text-dark/[0.05] bg-surface shadow-[0_1px_2px_rgba(27,36,82,0.04)]">
         <div className="border-b border-text-dark/[0.05] px-6 py-5">

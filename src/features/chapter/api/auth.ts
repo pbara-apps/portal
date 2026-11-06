@@ -5,14 +5,6 @@ import chapterHttp from "./http";
 
 export const portalAuthKeys = { me: ["chapter-portal", "me"] as const };
 
-export const useChapterLogin = () =>
-  useMutation({
-    mutationFn: async (body: { email: string; password: string }) => {
-      const res = await chapterHttp.post("/auth/login", body);
-      return res.data as { token: string; user: PortalProfile };
-    },
-  });
-
 /** Refreshes the signed-in profile (e.g. after the counsellor's chapters change). */
 export const useChapterProfile = () => {
   const token = useChapterSession((s) => s.token);

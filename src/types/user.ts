@@ -7,6 +7,10 @@ export interface UserType {
   role: ExecutiveRole;
   /** Financial Secretary / Treasurer: verifies or rejects chapter payments. */
   isFinance?: boolean;
+  /** False until the one-time password has been replaced. */
+  hasChangedPassword?: boolean;
+  /** Linked executive profile, if this login belongs to an executive. */
+  executiveId?: string | null;
   token: string;
   phone?: string;
   image?: string | null;

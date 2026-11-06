@@ -9,7 +9,7 @@ import { AuthCardLayout } from "@/features/auth/components/AuthCardLayout";
 import { useForgotPassword } from "@/lib/api/auth";
 
 /**
- * Admin "forgot password". Sends a reset link by email. The page always
+ * "Forgot password" for every account (admins and chapter leaders). Sends a reset link by email. The page always
  * shows the same confirmation, so it never reveals which emails exist.
  */
 export default function ForgotPasswordPage() {
@@ -35,7 +35,7 @@ export default function ForgotPasswordPage() {
         <div className="flex flex-col items-center gap-3 text-center">
           <LuMailCheck size={28} className="text-primary" />
           <p className="text-sm text-text-dark">
-            If <strong>{sentTo}</strong> belongs to an admin account, we've sent a link to reset the password.
+            If <strong>{sentTo}</strong> belongs to an account, we've sent a link to reset the password.
             It works once and expires in 30 minutes.
           </p>
           <p className="text-xs text-text-muted">Check your spam folder if it doesn't arrive in a few minutes.</p>

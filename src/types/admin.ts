@@ -15,7 +15,6 @@ export interface AdminExecutive {
   rankId?: string | null;
   rankName?: string;
   status: ExecutiveStatus;
-  role: ExecutiveRole;
   description: string;
   image?: string | null;
   startYear: number;
@@ -84,7 +83,6 @@ export interface ExecutiveFormPayload {
   status: ExecutiveStatus;
   description: string;
   image?: string | null;
-  password?: string;
   title?: string;
 }
 

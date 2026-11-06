@@ -11,7 +11,6 @@ import {
   LuUser,
 } from "react-icons/lu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { SheetBody, SheetHeader } from "@/components/ui/sheet";
@@ -19,11 +18,6 @@ import { DrawerFormShell } from "@/features/admin/components/shared/DrawerFormSh
 import { StatusChip } from "@/features/admin/components/executives/StatusChip";
 import { useDrawer } from "@/store/useDrawer";
 import type { AdminExecutive } from "@/types/admin";
-import {
-  ROLE_LABELS,
-  canManageDirectorDesk,
-  canWriteAdminContent,
-} from "@/types/user";
 
 interface ExecutiveViewDrawerProps {
   executive?: AdminExecutive;
@@ -67,8 +61,6 @@ export function ExecutiveViewDrawer({
       </DrawerFormShell>
     );
   }
-
-  const roleLabel = ROLE_LABELS[executive.role] ?? executive.role;
 
   return (
     <DrawerFormShell>
@@ -128,20 +120,6 @@ export function ExecutiveViewDrawer({
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  <Badge className="bg-white/15 text-white hover:bg-white/15">
-                    {roleLabel}
-                  </Badge>
-                  <Badge
-                    className={
-                      canWriteAdminContent(executive.role)
-                        ? "bg-emerald-400/20 text-emerald-100 hover:bg-emerald-400/20"
-                        : "bg-amber-400/20 text-amber-100 hover:bg-amber-400/20"
-                    }
-                  >
-                    {canWriteAdminContent(executive.role)
-                      ? "Write access"
-                      : "Read-only access"}
-                  </Badge>
                   <StatusChip status={executive.status} />
                 </div>
               </div>
@@ -206,26 +184,9 @@ export function ExecutiveViewDrawer({
                 icon={<LuCalendar size={14} />}
               />
               <ProfileDetail
-                label="Portal Role"
-                value={roleLabel}
+                label="Admin portal login"
+                value="Managed by super admins on the Accounts page"
                 icon={<LuShield size={14} />}
-              />
-              <ProfileDetail
-                label="Director Desk Access"
-                value={
-                  canManageDirectorDesk(executive.role)
-                    ? "Can manage Director's Desk"
-                    : "View only"
-                }
-                icon={<LuShield size={14} />}
-              />
-              <ProfileDetail
-                label="Account Access"
-                value={
-                  canWriteAdminContent(executive.role)
-                    ? "Write access"
-                    : "Read-only access"
-                }
               />
             </ProfileSection>
 

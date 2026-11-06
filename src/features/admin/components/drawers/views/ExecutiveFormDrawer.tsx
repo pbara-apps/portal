@@ -49,7 +49,6 @@ function toForm(
     status: initial?.status ?? "active",
     description: initial?.description ?? "",
     image: initial?.image ?? null,
-    password: "",
     title: "Director's Desk",
   };
 }
@@ -113,17 +112,6 @@ export function ExecutiveFormDrawer({
       image: form.image,
       title: form.title,
     };
-
-    if (isCreate) {
-      const pwd = form.password?.trim();
-      if (!pwd || pwd.length < 8) {
-        errorToast("Password must be at least 8 characters.", "Validation");
-        return;
-      }
-      payload.password = pwd;
-    } else if (form.password?.trim()) {
-      payload.password = form.password.trim();
-    }
 
     try {
       if (isCreate) {
@@ -314,19 +302,10 @@ export function ExecutiveFormDrawer({
           />
         </div>
 
-        {isCreate && (
-          <Input
-            type={isCreate ? "password" : "text"}
-            label={isCreate ? "Login Password" : "Reset Password (optional)"}
-            placeholder={
-              isCreate
-                ? "Enter a secure password"
-                : "Leave blank to keep current"
-            }
-            value={form.password ?? ""}
-            onChange={(e) => update("password", e.target.value)}
-          />
-        )}
+        <p className="rounded-xl bg-background/60 px-4 py-3 text-xs text-text-muted">
+          This is a public profile only. To let this executive sign in to the admin portal, a super admin
+          creates their account on the Accounts page.
+        </p>
       </SheetBody>
 
       <SheetFooter className="bg-background/40">

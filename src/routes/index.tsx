@@ -9,6 +9,8 @@ import { GuestGuard } from "./layouts/GuestGuard";
 const LoginPage = lazy(() => import("./auth/LoginPage"));
 const ForgotPasswordPage = lazy(() => import("./auth/ForgotPasswordPage"));
 const ResetPasswordPage = lazy(() => import("./auth/ResetPasswordPage"));
+const FirstPasswordPage = lazy(() => import("./auth/FirstPasswordPage"));
+const ChooseAreaPage = lazy(() => import("./auth/ChooseAreaPage"));
 const DashboardPage = lazy(() => import("./admin/DashboardPage"));
 const ExecutivePage = lazy(() => import("./admin/ExecutivePage"));
 const OfficePage = lazy(() => import("./admin/OfficePage"));
@@ -34,8 +36,8 @@ const SubscribersPage = lazy(() => import("./admin/SubscribersPage"));
 const ProfilePage = lazy(() => import("./admin/ProfilePage"));
 const AuditPage = lazy(() => import("./admin/AuditPage"));
 const SettingsPage = lazy(() => import("./admin/SettingsPage"));
+const AccountsPage = lazy(() => import("./admin/AccountsPage"));
 // Chapter portal (counsellors, presidents, secretaries)
-const ChapterLoginPage = lazy(() => import("../features/chapter/pages/ChapterLoginPage"));
 const ChapterDashboardPage = lazy(() => import("../features/chapter/pages/ChapterDashboardPage"));
 const ChapterMembersPage = lazy(() => import("../features/chapter/pages/ChapterMembersPage"));
 const AddMembersPage = lazy(() => import("../features/chapter/pages/AddMembersPage"));
@@ -106,6 +108,7 @@ export const router = createBrowserRouter([
           { path: "profile", element: <ProfilePage /> },
           { path: "audit", element: <AuditPage /> },
           { path: "settings", element: <SettingsPage /> },
+          { path: "accounts", element: <AccountsPage /> },
         ],
       },
       {
@@ -124,7 +127,10 @@ export const router = createBrowserRouter([
           </GuestGuard>
         ),
       },
-      { path: "/chapter/login", element: <ChapterLoginPage /> },
+      // Everyone signs in on /login now; keep old chapter links working.
+      { path: "/chapter/login", element: <Navigate to="/login" replace /> },
+      { path: "/change-password", element: <FirstPasswordPage /> },
+      { path: "/choose", element: <ChooseAreaPage /> },
       {
         path: "/chapter",
         element: <ChapterShell />,

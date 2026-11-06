@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Controller, useForm, type SubmitHandler } from "react-hook-form";
 import {
   LuArrowRight,
@@ -17,9 +17,8 @@ import {
   errorToast,
   successToast,
 } from "@/components/shared/toast-notification";
-import { useLogin } from "@/lib/api/auth";
+import { landingPath, useAccountLogin } from "@/lib/auth/session";
 import { normalizeReturnPath } from "@/lib/auth/redirect";
-import useCurrentUser from "@/hooks/useCurrentUser";
 import { useSession } from "@/store/useSession";
 
 interface LoginFormValues {
@@ -33,7 +32,8 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export default function LoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const returnTo = normalizeReturnPath(searchParams.get("from"));
+  const from = searchParams.get("from");
+  const returnTo = from ? normalizeReturnPath(from) : null;
   const [showPassword, setShowPassword] = useState(false);
 
   const {
@@ -46,63 +46,29 @@ export default function LoginPage() {
     defaultValues: { email: "", password: "", remember: false },
   });
 
-  const { mutateAsync: login, isPending: isLoginPending } = useLogin();
-  const { setCurrentUser } = useCurrentUser();
+  const { mutateAsync: login, isPending: isLoginPending } = useAccountLogin();
 
   const onSubmit: SubmitHandler<LoginFormValues> = async (data) => {
     try {
-      const payload = {
-        email: data.email,
-        password: data.password,
-      };
-      const response = await login(payload);
-      const user = response.user as {
-        _id?: string;
-        id?: string;
-        name: string;
-        email?: string;
-        phone?: string;
-        office_id?: string;
-        church_id?: string;
-        rank_id?: string | null;
-        start_year?: number;
-        end_year?: number | null;
-        status?: "active" | "inactive" | "completed";
-        office?: { _id?: string; name?: string };
-        church?: { _id?: string; name?: string; chapter?: string };
-        rank?: { _id?: string; name?: string };
-        role?: "super_admin" | "admin" | "editor" | "finance" | "viewer";
-        is_finance?: boolean;
-      };
-      setCurrentUser({
-        user: {
-          id: user._id ?? user.id ?? "",
-          name: user.name,
-          email: user.email ?? data.email,
-          phone: user.phone ?? "",
-          officeId: user.office_id ?? user.office?._id ?? "",
-          officeName: user.office?.name ?? "",
-          churchId: user.church_id ?? user.church?._id ?? "",
-          churchName: user.church?.name ?? "",
-          chapterName: user.church?.chapter ?? "",
-          rankId: user.rank_id ?? user.rank?._id ?? null,
-          rankName: user.rank?.name ?? "",
-          status: user.status ?? "active",
-          startYear: user.start_year,
-          endYear: user.end_year ?? null,
-          role: user.role ?? "viewer",
-          isFinance: user.is_finance === true,
-          token: response.token,
-        },
-        token: response.token,
-      });
+      const session = await login({ email: data.email.trim(), password: data.password });
       useSession.getState().clearSessionExpired();
-      navigate(returnTo, { replace: true });
-      successToast("Login successful", "Sign in successful");
+      const next = landingPath(
+        {
+          hasChangedPassword: session.account.hasChangedPassword,
+          hasAdmin: Boolean(session.admin),
+          hasChapter: Boolean(session.chapter),
+        },
+        returnTo,
+      );
+      navigate(next, { replace: true });
+      if (next === "/change-password") {
+        successToast("Please choose your own password to continue.", "Welcome");
+      } else {
+        successToast("Signed in successfully", "Welcome back");
+      }
     } catch (err) {
       const e = err as { message?: string };
-      const errMessage = e?.message || "Sign in failed. Please try again.";
-      errorToast(errMessage, "Sign in failed");
+      errorToast(e?.message || "Sign in failed. Please try again.", "Sign in failed");
     }
   };
 
@@ -116,7 +82,6 @@ export default function LoginPage() {
 
   const passwordReg = register("password", {
     required: "Password is required",
-    minLength: { value: 6, message: "Must be at least 6 characters" },
   });
 
   return (
@@ -155,7 +120,7 @@ export default function LoginPage() {
                 Welcome Back
               </h2>
               <p className="mt-1.5 text-sm text-text-muted sm:text-base">
-                Access the Institutional Administration Portal.
+                One sign-in for executives, church counsellors and chapter officers.
               </p>
             </header>
 
@@ -168,7 +133,7 @@ export default function LoginPage() {
                 {...emailReg}
                 type="email"
                 label="Email Address"
-                placeholder="admin@pba.org"
+                placeholder="you@example.com"
                 autoComplete="email"
                 error={errors.email?.message}
                 startContent={<LuMail size={16} className="text-text-muted" />}
@@ -245,12 +210,8 @@ export default function LoginPage() {
             </form>
           </div>
 
-          {/* Chapter officers use a separate login. */}
           <p className="mt-4 text-center text-sm text-text-muted">
-            Church counsellor, chapter president or secretary?{" "}
-            <Link to="/chapter/login" className="font-semibold text-primary hover:text-gold">
-              Sign in to the Chapter Portal
-            </Link>
+            First time here? Use the one-time password sent to your email.
           </p>
 
           <div className="mt-4 flex justify-center pb-2 sm:mt-5">

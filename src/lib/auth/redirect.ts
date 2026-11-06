@@ -17,7 +17,9 @@ export function isSafeReturnPath(path: string) {
   if (!path.startsWith("/") || path.startsWith("//")) return false;
   if (path.includes("://")) return false;
   if (path.startsWith("/login")) return false;
-  return path.startsWith("/admin") || path.startsWith("/member") || path === "/";
+  return (
+    path.startsWith("/admin") || path.startsWith("/chapter") || path.startsWith("/member") || path === "/"
+  );
 }
 
 export function normalizeReturnPath(from: string | null | undefined) {

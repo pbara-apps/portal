@@ -11,6 +11,8 @@ import useCurrentUser from "@/hooks/useCurrentUser";
 import { NotificationBell } from "@/components/shared/NotificationBell";
 import { adminNotifications } from "@/lib/api/notification";
 import { ROLE_LABELS } from "@/types/user";
+import { AreaSwitch } from "@/components/shared/AreaSwitch";
+import { signOutEverywhere } from "@/lib/auth/session";
 import { adminFooterNav, adminNav } from "./nav";
 
 interface TopbarProps {
@@ -28,7 +30,7 @@ function getUserInitials(name?: string | null) {
 export function Topbar({ onOpenMobileSidebar }: TopbarProps) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const { user, removeCurrentUser } = useCurrentUser();
+  const { user } = useCurrentUser();
   const userInitials = getUserInitials(user?.name);
   const all = [...adminNav, ...adminFooterNav];
   const current =
@@ -84,6 +86,8 @@ export function Topbar({ onOpenMobileSidebar }: TopbarProps) {
           <LuSearch size={18} />
         </button>
 
+        <AreaSwitch to="chapter" />
+
         <NotificationBell hooks={adminNotifications} />
 
         <Popover>
@@ -120,7 +124,7 @@ export function Topbar({ onOpenMobileSidebar }: TopbarProps) {
                   size="sm"
                   variant="destructive"
                   onClick={() => {
-                    removeCurrentUser();
+                    signOutEverywhere();
                     navigate("/login", { replace: true });
                   }}
                 >

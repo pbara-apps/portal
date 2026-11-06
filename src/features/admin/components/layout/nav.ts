@@ -25,6 +25,7 @@ import {
   LuShuffle,
   LuCalendarCheck,
   LuMegaphone,
+  LuKeyRound,
 } from "react-icons/lu";
 
 export type NavItem = {
@@ -32,6 +33,8 @@ export type NavItem = {
   href: string;
   icon: IconType;
   badge?: number;
+  /** Hidden from everyone except super admins. */
+  superAdminOnly?: boolean;
 };
 
 export type NavGroup = {
@@ -105,6 +108,7 @@ export const adminNavGroups: NavGroup[] = [
     id: "system",
     label: "System",
     items: [
+      { label: "Accounts", href: "/admin/accounts", icon: LuKeyRound, superAdminOnly: true },
       { label: "Administrative", href: "/admin/administrative", icon: LuShield },
       { label: "Audit Log", href: "/admin/audit", icon: LuFileText },
       { label: "Settings", href: "/admin/settings", icon: LuSettings },

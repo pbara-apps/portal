@@ -9,7 +9,7 @@ import { useResetPassword } from "@/lib/api/auth";
 
 type Values = { password: string; confirm: string };
 
-/** Opened from the reset email: choose a new admin password. */
+/** Opened from the reset email: choose a new password. */
 export default function ResetPasswordPage() {
   const navigate = useNavigate();
   const [params] = useSearchParams();

@@ -43,7 +43,6 @@ type RawExecutive = {
   church?: PopulatedRef;
   rank?: PopulatedRef;
   status: AdminExecutive["status"];
-  role?: AdminExecutive["role"];
   description?: string;
   image?: string | null;
   start_year: number;
@@ -109,7 +108,6 @@ export function mapExecutive(raw: RawExecutive): AdminExecutive {
     rankId: raw.rank_id?.toString() ?? raw.rank?._id?.toString() ?? null,
     rankName: raw.rank?.name ?? "",
     status: raw.status,
-    role: raw.role ?? "admin",
     description: raw.description ?? "",
     image: raw.image ?? null,
     startYear: raw.start_year,

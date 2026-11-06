@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverClose, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import useCurrentUser from "@/hooks/useCurrentUser";
+import { signOutEverywhere } from "@/lib/auth/session";
 import { useGetUnreadMessageCount } from "@/lib/api/message";
 import { useGetPendingRegistrationCount } from "@/lib/api/registration";
 import { useRecruitmentPendingCount } from "@/lib/api/chapter-admin";
@@ -79,7 +80,8 @@ export function Sidebar({
 }: SidebarProps) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const { user, removeCurrentUser } = useCurrentUser();
+  const { user } = useCurrentUser();
+  const superAdmin = user?.role === "super_admin";
   const isDesktop = useIsDesktop();
   // The narrow icon rail only exists on desktop; mobile always shows the full menu.
   const compact = collapsed && isDesktop;
@@ -103,12 +105,13 @@ export function Sidebar({
         ...g,
         items: g.items
           .map((item) => (badges[item.href] > 0 ? { ...item, badge: badges[item.href] } : item))
+          .filter((item) => !item.superAdminOnly || superAdmin)
           .filter(
             (item) => !q || item.label.toLowerCase().includes(q) || g.label.toLowerCase().includes(q),
           ),
       }))
       .filter((g) => g.items.length > 0);
-  }, [query, unreadCount, pendingRegistrationCount, pendingRecruitmentCount]);
+  }, [query, unreadCount, pendingRegistrationCount, pendingRecruitmentCount, superAdmin]);
 
   // ⌘K / Ctrl+K jumps to the menu search.
   useEffect(() => {
@@ -125,7 +128,7 @@ export function Sidebar({
 
   const searching = query.trim().length > 0;
   const signOut = () => {
-    removeCurrentUser();
+    signOutEverywhere();
     navigate("/login", { replace: true });
   };
 

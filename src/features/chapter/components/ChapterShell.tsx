@@ -24,6 +24,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { NotificationBell } from "@/components/shared/NotificationBell";
 import { useChapterProfile } from "../api/auth";
 import { chapterNotifications } from "../api/notifications";
+import { AreaSwitch } from "@/components/shared/AreaSwitch";
+import { signOutEverywhere } from "@/lib/auth/session";
 import { useChapterSession } from "../store/useChapterSession";
 import { PORTAL_ROLE_LABELS, type PortalRole } from "../types";
 import { ChapterAuthGuard } from "./ChapterAuthGuard";
@@ -73,7 +75,6 @@ function ChapterFrame() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const profile = useChapterSession((s) => s.profile);
-  const signOut = useChapterSession((s) => s.signOut);
   const [menuOpen, setMenuOpen] = useState(false);
 
   // Keep the profile (and the counsellor's chapter list) fresh.
@@ -86,9 +87,9 @@ function ChapterFrame() {
   const current = items.find((item) => isActive(pathname, item.href));
 
   const handleSignOut = () => {
-    signOut();
-    queryClient.removeQueries({ queryKey: ["chapter-portal"] });
-    navigate("/chapter/login", { replace: true });
+    signOutEverywhere();
+    queryClient.clear();
+    navigate("/login", { replace: true });
   };
 
   return (
@@ -183,7 +184,8 @@ function ChapterFrame() {
             <LuMenu size={20} />
           </button>
           <p className="truncate text-sm font-semibold text-primary">{current?.label ?? "Chapter Portal"}</p>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-2">
+            {!mustChangePassword && <AreaSwitch to="admin" />}
             {!mustChangePassword && <NotificationBell hooks={chapterNotifications} />}
           </div>
         </header>
