@@ -5,6 +5,8 @@ export interface UserType {
   name: string;
   email: string;
   role: ExecutiveRole;
+  /** Financial Secretary / Treasurer: verifies or rejects chapter payments. */
+  isFinance?: boolean;
   token: string;
   phone?: string;
   image?: string | null;
@@ -38,9 +40,16 @@ export const ROLE_LABELS: Record<ExecutiveRole, string> = {
   viewer: "Viewer",
 };
 
-/** Creating dues/levies and verifying chapter payments. */
-export function canManageFinance(role?: string | null) {
-  return role === "super_admin" || role === "admin" || role === "finance";
+type FinanceActor = { role?: string | null; isFinance?: boolean } | null | undefined;
+
+/** Creating, changing and reminding about dues/levies: finance officers and super admins. */
+export function canManageDues(user: FinanceActor) {
+  return !!user && (user.isFinance === true || user.role === "super_admin");
+}
+
+/** Verifying or rejecting chapter payments: finance officers only. */
+export function canApprovePayments(user: FinanceActor) {
+  return user?.isFinance === true;
 }
 
 export function isSuperAdmin(role?: string | null) {

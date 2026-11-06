@@ -18,11 +18,12 @@ import { cn } from "@/lib/utils";
 import { type PaymentStatus, type QueuedPayment, billPlace, naira } from "@/types/finance";
 
 /**
- * Payments from chapters/churches. Pending ones wait for finance to check
- * the proof against the bank statement, then verify (issues a receipt
- * number and updates the bill) or reject with a reason.
+ * Payments from chapters/churches. Pending ones wait for a finance officer
+ * (Financial Secretary / Treasurer) to check the proof against the bank
+ * statement, then verify (issues a receipt number and updates the bill) or
+ * reject with a reason. Everyone else sees the queue read-only.
  */
-export function PaymentsQueue({ canManage }: { canManage: boolean }) {
+export function PaymentsQueue({ canApprove }: { canApprove: boolean }) {
   const [status, setStatus] = useState<PaymentStatus>("pending");
   const { data: payments = [], isLoading } = usePayments(status);
   const verify = useVerifyPayment();
@@ -67,6 +68,12 @@ export function PaymentsQueue({ canManage }: { canManage: boolean }) {
         ))}
       </div>
 
+      {status === "pending" && !canApprove && (
+        <p className="rounded-xl bg-gold/10 px-4 py-3 text-xs text-text-dark ring-1 ring-gold/20">
+          Only the Financial Secretary or Treasurer can verify or reject payments. You can view them here.
+        </p>
+      )}
+
       {isLoading ? (
         <div className="flex justify-center py-16"><Spinner /></div>
       ) : payments.length === 0 ? (
@@ -97,7 +104,7 @@ export function PaymentsQueue({ canManage }: { canManage: boolean }) {
               <a href={p.proofUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sm text-primary underline">
                 <LuFileText size={14} /> View proof
               </a>
-              {status === "pending" && canManage && (
+              {status === "pending" && canApprove && (
                 <div className="flex gap-2">
                   <Button size="sm" className="bg-emerald-600 text-white hover:bg-emerald-700" onClick={() => handleVerify(p)} loading={verify.isPending && verify.variables === p.id}>
                     <LuCheck size={14} /> Verify

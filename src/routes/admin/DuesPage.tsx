@@ -13,7 +13,7 @@ import useCurrentUser from "@/hooks/useCurrentUser";
 import { useDues } from "@/lib/api/finance";
 import { cn } from "@/lib/utils";
 import { naira } from "@/types/finance";
-import { canManageFinance } from "@/types/user";
+import { canApprovePayments, canManageDues } from "@/types/user";
 
 type Tab = "dues" | "payments" | "statements";
 const TABS: { id: Tab; label: string }[] = [
@@ -28,7 +28,8 @@ const TABS: { id: Tab; label: string }[] = [
  */
 export default function DuesPage() {
   const { user } = useCurrentUser();
-  const canManage = canManageFinance(user?.role);
+  const canManage = canManageDues(user);
+  const canApprove = canApprovePayments(user);
   const [params, setParams] = useSearchParams();
   const tab = (TABS.find((t) => t.id === params.get("tab"))?.id ?? "dues") as Tab;
   const [createOpen, setCreateOpen] = useState(false);
@@ -43,7 +44,7 @@ export default function DuesPage() {
         actionLabel={tab === "dues" ? "New due or levy" : undefined}
         onAction={tab === "dues" ? () => setCreateOpen(true) : undefined}
         actionDisabled={!canManage}
-        actionDisabledText="Only finance, admins and super admins can create dues."
+        actionDisabledText="Only the Financial Secretary, Treasurer or a super admin can create dues."
       />
 
       <div className="flex w-fit gap-1 rounded-xl bg-surface p-1 ring-1 ring-text-dark/5">
@@ -59,7 +60,7 @@ export default function DuesPage() {
         ))}
       </div>
 
-      {tab === "payments" && <PaymentsQueue canManage={canManage} />}
+      {tab === "payments" && <PaymentsQueue canApprove={canApprove} />}
       {tab === "statements" && <StatementView />}
       {tab === "dues" &&
         (isLoading ? (

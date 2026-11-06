@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
+import { useProfile } from "@/lib/api/auth";
 import { cn } from "@/lib/utils";
 import { GlobalDrawer } from "../drawers/GlobalDrawer";
 import { Sidebar } from "./Sidebar";
@@ -11,6 +12,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const { pathname } = useLocation();
+  // Keeps the signed-in user's role and finance access up to date.
+  useProfile(true);
 
   useEffect(() => {
     setMobileOpen(false);

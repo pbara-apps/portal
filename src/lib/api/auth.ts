@@ -37,6 +37,7 @@ type RawProfileUser = {
   church?: { _id?: string; name?: string; chapter?: string };
   rank?: { _id?: string; name?: string };
   role?: UserType["role"];
+  is_finance?: boolean;
 };
 
 function mapProfileUser(user: RawProfileUser): UserType {
@@ -59,6 +60,7 @@ function mapProfileUser(user: RawProfileUser): UserType {
     startYear: user.start_year,
     endYear: user.end_year ?? null,
     role: user.role ?? "viewer",
+    isFinance: user.is_finance === true,
     token: "",
   };
 }

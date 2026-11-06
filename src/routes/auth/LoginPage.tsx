@@ -72,6 +72,7 @@ export default function LoginPage() {
         church?: { _id?: string; name?: string; chapter?: string };
         rank?: { _id?: string; name?: string };
         role?: "super_admin" | "admin" | "editor" | "finance" | "viewer";
+        is_finance?: boolean;
       };
       setCurrentUser({
         user: {
@@ -90,6 +91,7 @@ export default function LoginPage() {
           startYear: user.start_year,
           endYear: user.end_year ?? null,
           role: user.role ?? "viewer",
+          isFinance: user.is_finance === true,
           token: response.token,
         },
         token: response.token,
