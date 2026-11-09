@@ -34,7 +34,7 @@ import {
   adminTableScrollCx,
   adminTableSectionCx,
 } from "@/features/admin/components/shared/adminLayout";
-import { ConfirmDialog } from "@/features/admin/components/shared/ConfirmDialog";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import useCurrentUser from "@/hooks/useCurrentUser";
 import { useDeleteRank, useGetRanks, useReorderRanks } from "@/lib/api/rank";
 import { useDrawer } from "@/store/useDrawer";

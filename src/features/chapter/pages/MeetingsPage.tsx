@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { errorToast, successToast } from "@/components/shared/toast-notification";
-import { ConfirmDialog } from "@/features/admin/components/shared/ConfirmDialog";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { type Meeting, useDeleteMeeting, useMeetings, useSaveMeeting } from "../api/engagement";
 import { useChapterMembers } from "../api/members";
 import { ChapterSwitcher } from "../components/ChapterSwitcher";

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { TemporaryPasswordDialog } from "@/components/shared/TemporaryPasswordDialog";
 import { errorToast, successToast } from "@/components/shared/toast-notification";
-import { ConfirmDialog } from "@/features/admin/components/shared/ConfirmDialog";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import {
   useAssignOfficer,
   useOfficers,

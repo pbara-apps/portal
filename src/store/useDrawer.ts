@@ -1,3 +1,4 @@
+import type { SheetSize } from "@/components/ui/sheet";
 import { create } from "zustand";
 
 export type DrawerView =
@@ -26,106 +27,35 @@ export type DrawerView =
   | "edit-director-desk"
   | "edit-profile";
 
-export type DrawerSize =
-  | "xs"
-  | "sm"
-  | "md"
-  | "lg"
-  | "xl"
-  | "2xl"
-  | "3xl"
-  | "4xl"
-  | "5xl"
-  | "full";
+export type { SheetSize as DrawerSize } from "@/components/ui/sheet";
 
-export type DrawerPlacement = "right" | "left" | "top" | "bottom";
-
-const FORM_DRAWER_VIEWS: DrawerView[] = [
-  "create-executive",
-  "edit-executive",
-  "view-executive",
-  "create-office",
-  "edit-office",
-  "create-rank",
-  "edit-rank",
-  "create-church",
-  "edit-church",
-  "create-patron",
-  "edit-patron",
-  "create-news",
-  "edit-news",
-  "create-event",
-  "edit-event",
-  "create-gallery",
-  "edit-gallery",
-  "create-program",
-  "edit-program",
-  "view-registration",
-  "create-registration",
-  "view-program-participants",
-  "edit-director-desk",
-  "edit-profile",
-];
-
-const DEFAULT_CONFIG = {
-  size: "md" as DrawerSize,
-  placement: "right" as DrawerPlacement,
-};
-
-const FORM_DRAWER_CONFIG = {
-  size: "3xl" as DrawerSize,
-  placement: "right" as DrawerPlacement,
-};
-
-interface DrawerOptions {
-  size?: DrawerSize;
-  placement?: DrawerPlacement;
-}
+/** Every admin view is a full form or record panel, so they share the widest size. */
+const DEFAULT_SIZE: SheetSize = "2xl";
 
 type DrawerBody = object;
 
 interface DrawerState {
   view: DrawerView | null;
   body: DrawerBody;
-  config: {
-    size: DrawerSize;
-    placement: DrawerPlacement;
-  };
-  openDrawer: (
-    view: DrawerView,
-    options?: { config?: DrawerOptions; body?: object },
-  ) => void;
+  size: SheetSize;
+  openDrawer: (view: DrawerView, options?: { size?: SheetSize; body?: object }) => void;
   closeDrawer: () => void;
 }
 
 export const useDrawer = create<DrawerState>((set) => ({
   view: null,
   body: {},
-  config: DEFAULT_CONFIG,
+  size: DEFAULT_SIZE,
   openDrawer: (view, options) =>
-    set(() => ({
-      view,
-      body: options?.body ?? {},
-      config: {
-        ...(FORM_DRAWER_VIEWS.includes(view)
-          ? FORM_DRAWER_CONFIG
-          : DEFAULT_CONFIG),
-        ...(options?.config ?? {}),
-      },
-    })),
-  closeDrawer: () =>
-    set({
-      view: null,
-      body: {},
-      config: DEFAULT_CONFIG,
-    }),
+    set({ view, body: options?.body ?? {}, size: options?.size ?? DEFAULT_SIZE }),
+  closeDrawer: () => set({ view: null, body: {}, size: DEFAULT_SIZE }),
 }));
 
 /**
  * Type-safe payload reader. Cast to `T` at the call site:
  *
  * ```ts
- * const exec = useDrawerPayload<AdminExecutive>();
+ * const exec = useDrawerBody<AdminExecutive>();
  * ```
  */
 export function useDrawerBody<T>() {

@@ -1,7 +1,5 @@
-import { useEffect, useState } from "react";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import useCurrentUser from "@/hooks/useCurrentUser";
-import { cn } from "@/lib/utils";
 import { useDrawer } from "@/store/useDrawer";
 import type {
   AdminChapter,
@@ -39,28 +37,13 @@ export function GlobalDrawer() {
   const closeDrawer = useDrawer((s) => s.closeDrawer);
   const { user } = useCurrentUser();
   const canManage = canWriteAdminContent(user?.role);
+  const size = useDrawer((s) => s.size);
   const isOpen = view !== null;
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 1023px)");
-    const update = () => setIsMobile(mq.matches);
-    update();
-    mq.addEventListener("change", update);
-    return () => mq.removeEventListener("change", update);
-  }, []);
-
   const onClose = () => closeDrawer();
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && closeDrawer()}>
-      <SheetContent
-        side="right"
-        className={cn(
-          "flex h-full max-h-[100dvh] flex-col overflow-hidden",
-          isMobile ? "w-full max-w-full sm:max-w-full" : "w-full sm:max-w-2xl lg:max-w-3xl xl:max-w-4xl",
-        )}
-      >
+      <SheetContent side="right" size={size}>
         <div className="flex h-full min-h-0 flex-col">
           {view === "create-executive" && (
             <ExecutiveFormDrawer mode="create" onClose={onClose} />

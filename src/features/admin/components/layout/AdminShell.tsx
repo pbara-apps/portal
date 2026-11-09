@@ -1,88 +1,77 @@
-import { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useMemo, type ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
+import { AppShell } from "@/components/layout/AppShell";
+import type { ShellConfig } from "@/components/layout/types";
+import { AreaSwitch } from "@/components/shared/AreaSwitch";
+import { NotificationBell } from "@/components/shared/NotificationBell";
+import useCurrentUser from "@/hooks/useCurrentUser";
 import { useProfile } from "@/lib/api/auth";
-import { cn } from "@/lib/utils";
-import { GlobalDrawer } from "../drawers/GlobalDrawer";
-import { Sidebar } from "./Sidebar";
-import { Topbar } from "./Topbar";
+import { useRecruitmentPendingCount } from "@/lib/api/chapter-admin";
+import { useGetUnreadMessageCount } from "@/lib/api/message";
+import { adminNotifications } from "@/lib/api/notification";
+import { useGetPendingRegistrationCount } from "@/lib/api/registration";
+import { signOutEverywhere } from "@/lib/auth/session";
+import { ROLE_LABELS } from "@/types/user";
+import { adminAccountLinks, adminNavGroups, isNavActive } from "./nav";
 
-const COLLAPSE_KEY = "pba.admin.sidebar.collapsed";
-
-export function AdminShell({ children }: { children: React.ReactNode }) {
-  const [collapsed, setCollapsed] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const { pathname } = useLocation();
+/** Admin area frame: the shared AppShell with admin navigation and counts. */
+export function AdminShell({ children }: { children: ReactNode }) {
+  const navigate = useNavigate();
+  const user = useCurrentUser((s) => s.user);
+  const superAdmin = user?.role === "super_admin";
   // Keeps the signed-in user's role and finance access up to date.
   useProfile(true);
 
-  useEffect(() => {
-    setMobileOpen(false);
-  }, [pathname]);
+  const { data: unread = 0 } = useGetUnreadMessageCount();
+  const { data: pendingRegistrations = 0 } = useGetPendingRegistrationCount();
+  const { data: pendingRecruitment = 0 } = useRecruitmentPendingCount();
 
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(COLLAPSE_KEY);
-      if (saved !== null) setCollapsed(saved === "1");
-    } catch {
-      // ignore
-    }
-  }, []);
-
-  useEffect(() => {
-    const mq = window.matchMedia("(min-width: 1024px)");
-    const handler = (e: MediaQueryListEvent) => {
-      if (e.matches) setMobileOpen(false);
+  const config = useMemo<ShellConfig>(() => {
+    const badges: Record<string, number> = {
+      "/admin/messages": unread,
+      "/admin/registrations": pendingRegistrations,
+      "/admin/recruitment": pendingRecruitment,
     };
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
-  }, []);
-
-  useEffect(() => {
-    if (!mobileOpen) return;
-    const original = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = original;
+    return {
+      area: "Admin",
+      homeHref: "/admin",
+      workspaceLabel: "Association admin",
+      storageKey: "pba.admin.shell",
+      isActive: isNavActive,
+      groups: adminNavGroups
+        .map((group) => ({
+          ...group,
+          items: group.items
+            .filter((item) => !item.superAdminOnly || superAdmin)
+            .map(({ superAdminOnly: _, ...item }) => ({ ...item, badge: badges[item.href] })),
+        }))
+        .filter((group) => group.items.length > 0),
+      account: {
+        name: user?.name ?? "Admin",
+        email: user?.email,
+        role: user?.role ? ROLE_LABELS[user.role] : "Admin",
+        image: user?.image,
+        tag: user?.isFinance ? "Finance" : undefined,
+      },
+      accountLinks: adminAccountLinks,
+      onSignOut: () => {
+        signOutEverywhere();
+        navigate("/login", { replace: true });
+      },
     };
-  }, [mobileOpen]);
-
-  const toggleCollapse = () => {
-    setCollapsed((prev) => {
-      const next = !prev;
-      try {
-        localStorage.setItem(COLLAPSE_KEY, next ? "1" : "0");
-      } catch {
-        // ignore
-      }
-      return next;
-    });
-  };
+  }, [user, superAdmin, unread, pendingRegistrations, pendingRecruitment, navigate]);
 
   return (
-    <div className="minh-screen overflow-xhidden bg-background text-text-dark">
-      <Sidebar
-        collapsed={collapsed}
-        mobileOpen={mobileOpen}
-        onMobileClose={() => setMobileOpen(false)}
-        onToggleCollapse={toggleCollapse}
-      />
-
-      <div
-        className={cn(
-          "flex min-h-screen min-w-0 flex-col overflow-xhidden transition-[margin,width] duration-300 ease-out",
-          "w-full",
-          collapsed
-            ? "lg:ml-[76px] lg:w-[calc(100%-76px)]"
-            : "lg:ml-[280px] lg:w-[calc(100%-280px)]",
-        )}
-      >
-        <Topbar onOpenMobileSidebar={() => setMobileOpen(true)} />
-        <main className="min-w-0 flex-1 overflow-x-hidden px-4 py-6 pb-24 sm:px-6 lg:px-8 lg:py-8 lg:pb-28">
-          {children}
-        </main>
-      </div>
-
-      <GlobalDrawer />
-    </div>
+    <AppShell
+      config={config}
+      topbarActions={
+        <>
+          <AreaSwitch to="chapter" />
+          <NotificationBell hooks={adminNotifications} />
+        </>
+      }
+    >
+      {children}
+    </AppShell>
   );
 }

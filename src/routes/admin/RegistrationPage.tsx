@@ -114,7 +114,6 @@ export default function RegistrationAdminPage() {
   const openRegistration = (item: AdminRegistration) => {
     openDrawer("view-registration", {
       body: item,
-      config: { size: "3xl" },
     });
   };
 
@@ -138,7 +137,6 @@ export default function RegistrationAdminPage() {
             body: {
               programId: programId !== "all" ? programId : null,
             },
-            config: { size: "3xl" },
           })
         }
         actionDisabled={!canManage}

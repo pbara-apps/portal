@@ -22,7 +22,7 @@ import {
   adminPageCx,
 } from "@/features/admin/components/shared/adminLayout";
 import { BulkActionBar } from "@/features/admin/components/shared/BulkActionBar";
-import { ConfirmDialog } from "@/features/admin/components/shared/ConfirmDialog";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import {
   errorToast,
   successToast,
@@ -101,7 +101,7 @@ export default function GalleryAdminPage() {
         title="Media Gallery"
         description="Manage photos and videos displayed on the public media page."
         actionLabel="Add Media"
-        onAction={() => openDrawer("create-gallery", { config: { size: "4xl" } })}
+        onAction={() => openDrawer("create-gallery")}
         actionDisabled={!canManage}
         actionDisabledText="Your role does not permit gallery updates."
         stats={
@@ -142,7 +142,7 @@ export default function GalleryAdminPage() {
         <div className="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-text-dark/10 py-20">
           <LuImage size={32} className="text-primary/40" />
           <p className="text-sm text-text-muted">No gallery items yet.</p>
-          <Button className="bg-primary text-white" onClick={() => openDrawer("create-gallery", { config: { size: "4xl" } })} disabled={!canManage}>
+          <Button className="bg-primary text-white" onClick={() => openDrawer("create-gallery")} disabled={!canManage}>
             <LuPlus size={16} />
             Add Media
           </Button>

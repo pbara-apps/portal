@@ -26,9 +26,11 @@ function Checkbox({ checked, onCheckedChange, disabled, className, ...props }: C
       isDisabled={disabled}
       className={cn("shrink-0", className)}
     >
-      <HeroCheckbox.Control>
-        <HeroCheckbox.Indicator />
-      </HeroCheckbox.Control>
+      <HeroCheckbox.Content>
+        <HeroCheckbox.Control>
+          <HeroCheckbox.Indicator />
+        </HeroCheckbox.Control>
+      </HeroCheckbox.Content>
     </HeroCheckbox>
   );
 }

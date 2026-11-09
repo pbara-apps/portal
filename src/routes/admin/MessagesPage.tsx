@@ -35,7 +35,7 @@ import {
   adminTableSectionCx,
 } from "@/features/admin/components/shared/adminLayout";
 import { BulkActionBar } from "@/features/admin/components/shared/BulkActionBar";
-import { ConfirmDialog } from "@/features/admin/components/shared/ConfirmDialog";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import {
   errorToast,
   successToast,

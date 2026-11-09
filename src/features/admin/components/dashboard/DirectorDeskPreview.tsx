@@ -22,9 +22,6 @@ export function DirectorDeskPreview({
 
   const handleEdit = () => {
     openDrawer("edit-director-desk", {
-      config: {
-        size: "3xl",
-      },
       body: directorDesk,
     });
   };

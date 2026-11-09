@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { LuPlus } from "react-icons/lu";
+import { PageHeader } from "@/components/shared/PageHeader";
 import { Button } from "@/components/ui/button";
 
 interface AdminPageHeaderProps {
@@ -12,6 +13,10 @@ interface AdminPageHeaderProps {
   stats?: ReactNode;
 }
 
+/**
+ * Admin page title with an optional "Add" action.
+ * A shortcut over <PageHeader> for the common single-action case.
+ */
 export function AdminPageHeader({
   title,
   description,
@@ -22,25 +27,23 @@ export function AdminPageHeader({
   stats,
 }: AdminPageHeaderProps) {
   return (
-    <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-      <div className="min-w-0 flex-1">
-        <h1 className="text-xl font-bold tracking-tight text-primary sm:text-2xl lg:text-3xl">
-          {title}
-        </h1>
-        <p className="mt-1 text-sm text-text-muted">{description}</p>
-        {stats ? <div className="mt-3 flex flex-wrap gap-2">{stats}</div> : null}
-      </div>
-      {actionLabel && onAction ? (
-        <Button
-          onClick={onAction}
-          disabled={actionDisabled}
-          title={actionDisabled ? actionDisabledText : undefined}
-          className="w-full sm:w-auto"
-        >
-          <LuPlus size={18} />
-          {actionLabel}
-        </Button>
-      ) : null}
-    </header>
+    <PageHeader
+      title={title}
+      description={description}
+      meta={stats}
+      actions={
+        actionLabel && onAction ? (
+          <Button
+            type="button"
+            onClick={onAction}
+            disabled={actionDisabled}
+            title={actionDisabled ? actionDisabledText : undefined}
+          >
+            <LuPlus size={16} />
+            {actionLabel}
+          </Button>
+        ) : null
+      }
+    />
   );
 }

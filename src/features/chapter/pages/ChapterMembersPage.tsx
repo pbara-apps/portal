@@ -21,7 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { errorToast, successToast } from "@/components/shared/toast-notification";
-import { ConfirmDialog } from "@/features/admin/components/shared/ConfirmDialog";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { cn } from "@/lib/utils";
 import { type MemberView, useChapterMembers, useRanks, useWithdrawMember } from "../api/members";
 import { ChapterSwitcher } from "../components/ChapterSwitcher";

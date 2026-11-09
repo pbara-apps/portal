@@ -16,7 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { errorToast, successToast } from "@/components/shared/toast-notification";
 import { AdminPageHeader } from "@/features/admin/components/shared/AdminPageHeader";
 import { adminPageCx } from "@/features/admin/components/shared/adminLayout";
-import { ConfirmDialog } from "@/features/admin/components/shared/ConfirmDialog";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { formatDate } from "@/features/chapter/lib/member-utils";
 import useCurrentUser from "@/hooks/useCurrentUser";
 import { useGetChapters } from "@/lib/api/church";

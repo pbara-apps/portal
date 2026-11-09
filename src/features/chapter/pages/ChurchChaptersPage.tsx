@@ -14,7 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { errorToast, successToast } from "@/components/shared/toast-notification";
-import { ConfirmDialog } from "@/features/admin/components/shared/ConfirmDialog";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { useCancelChapterRequest, useChapterOverview, useCreateChapterRequest } from "../api/chapters";
 import { useChapterMembers } from "../api/members";
 import { MemberPicker } from "../components/MemberPicker";

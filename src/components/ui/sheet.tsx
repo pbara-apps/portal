@@ -28,15 +28,26 @@ function Sheet({ children, ...state }: SheetProps) {
 
 type SheetSide = "right" | "left" | "top" | "bottom";
 
+/** Panel width for side drawers. Phones always get the full width. */
+export type SheetSize = "md" | "lg" | "xl" | "2xl";
+
+const SIZE_CX: Record<SheetSize, string> = {
+  md: "sm:max-w-xl",
+  lg: "sm:max-w-2xl",
+  xl: "sm:max-w-2xl lg:max-w-3xl",
+  "2xl": "sm:max-w-2xl lg:max-w-3xl xl:max-w-4xl",
+};
+
 interface SheetContentProps {
   side?: SheetSide;
+  size?: SheetSize;
   className?: string;
   children: React.ReactNode;
   hideClose?: boolean;
   "aria-label"?: string;
 }
 
-function SheetContent({ side = "right", className, children, hideClose, ...props }: SheetContentProps) {
+function SheetContent({ side = "right", size = "md", className, children, hideClose, ...props }: SheetContentProps) {
   const { open, onOpenChange } = React.use(SheetStateContext);
   return (
     <Drawer.Backdrop variant="opaque" isOpen={open} onOpenChange={onOpenChange}>
@@ -45,7 +56,7 @@ function SheetContent({ side = "right", className, children, hideClose, ...props
           {...props}
           className={cn(
             "max-h-dvh overflow-hidden p-0 text-foreground",
-            (side === "right" || side === "left") && "w-full max-w-full sm:max-w-xl",
+            (side === "right" || side === "left") && ["w-full max-w-full", SIZE_CX[size]],
             className,
           )}
         >
@@ -99,7 +110,7 @@ function SheetDescription({ className, ...props }: React.HTMLAttributes<HTMLPara
 function SheetBody({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <Drawer.Body
-      className={cn("min-h-0 flex-1 overflow-y-auto overflow-x-hidden py-6", PANEL_X, className)}
+      className={cn("min-h-0 flex-1 overflow-y-auto overflow-x-hidden py-6 text-foreground", PANEL_X, className)}
       {...props}
     />
   );

@@ -60,6 +60,11 @@
   --field-shadow: 0 1px 2px 0 rgb(5 6 31 / 0.04);
   --backdrop: rgb(5 6 31 / 0.45);
 
+  /* App shell */
+  --sidebar-width: 16.5rem;
+  --sidebar-rail: 4.5rem;
+  --content-max: 100rem;
+
   --tooltip-delay: 500ms;
   --tooltip-close-delay: 150ms;
 }
@@ -72,6 +77,8 @@
   --color-gold: #d4af36;
   --color-gold-soft: #e4c766;
   --color-mist: #f1f1f6;
+  /* Sidebar: a shade deeper than primary so the navy reads as a surface. */
+  --color-sidebar: #070928;
 
   /* Text */
   --color-text-dark: #05061f;
@@ -133,16 +140,63 @@
     border-radius: var(--radius-xl);
   }
 
+  /* Destructive menu rows are red as a whole, not only a nested Label. */
+  .menu-item.menu-item--danger {
+    color: var(--danger);
+  }
+
+  .menu-item.menu-item--danger:is([data-hovered="true"], [data-focused="true"]) {
+    background: color-mix(in oklab, var(--danger) 8%, transparent);
+  }
+
   .tooltip {
     border-radius: var(--radius-md);
   }
 
-  .modal__dialog {
+  .modal__dialog,
+  .alert-dialog__dialog {
     border-radius: var(--radius-2xl);
   }
 
   .chip {
     border-radius: 9999px;
+  }
+
+  /*
+   * DataTable: flat header band and quiet row states inside a bordered card,
+   * instead of HeroUI's rounded header pills and column dividers.
+   */
+  .data-table.table-root--secondary .table__header .table__column {
+    height: 2.5rem;
+    padding-block: 0;
+    border-radius: 0;
+    border-bottom: 1px solid var(--separator);
+    background: var(--surface-secondary);
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--muted);
+  }
+
+  .data-table.table-root--secondary .table__column::after {
+    content: none;
+  }
+
+  .data-table.table-root--secondary .table__row .table__cell {
+    border-bottom: 1px solid var(--separator);
+  }
+
+  .data-table.table-root--secondary .table__body .table__row:last-child .table__cell {
+    border-bottom: 0;
+  }
+
+  .data-table.table-root--secondary .table__row[data-selected="true"] .table__cell {
+    background: color-mix(in oklab, var(--accent) 4%, var(--surface));
+  }
+
+  @media (hover: hover) {
+    .data-table.table-root--secondary .table__row:hover .table__cell {
+      background: color-mix(in oklab, var(--accent) 2.5%, var(--surface));
+    }
   }
 
   /* Icons sit inside the field, without HeroUI's divider line. */
@@ -207,5 +261,50 @@
   .aurora-blob-1,
   .aurora-blob-2 {
     animation: none;
+  }
+}
+
+@layer components {
+  /* Small key hint, e.g. ⌘ K in the search button. */
+  .kbd-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.125rem;
+    min-width: 1.25rem;
+    height: 1.25rem;
+    justify-content: center;
+    padding-inline: 0.3rem;
+    border: 1px solid var(--border);
+    border-radius: 0.3rem;
+    background: var(--surface);
+    font-family: var(--font-sans);
+    font-size: 0.6875rem;
+    font-weight: 500;
+    line-height: 1;
+    color: var(--muted);
+  }
+
+  /*
+   * Page search (⌘K): the field is the dialog's header, so it drops its own
+   * border and ring; the highlighted result is a soft fill, not a focus ring.
+   */
+  .page-search .search-field__group,
+  .page-search .search-field__group:is(:focus-within, [data-focus-within="true"], :hover) {
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
+    outline: none;
+  }
+
+  .page-search .menu-item:is([data-focused="true"], [data-focus-visible="true"]) {
+    background: var(--surface-secondary);
+    box-shadow: none;
+    outline: none;
+  }
+
+  /* Thin, low-contrast scrollbar on the dark sidebar. */
+  .sidebar-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(255 255 255 / 0.12) transparent;
   }
 }

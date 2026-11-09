@@ -1,4 +1,4 @@
-import type { IconType } from "react-icons";
+import type { ShellAccountLink, ShellNavItem } from "@/components/layout/types";
 import {
   LuLayoutDashboard,
   LuUsers,
@@ -28,23 +28,15 @@ import {
   LuKeyRound,
 } from "react-icons/lu";
 
-export type NavItem = {
-  label: string;
-  href: string;
-  icon: IconType;
-  badge?: number;
+export type AdminNavItem = Omit<ShellNavItem, "badge"> & {
   /** Hidden from everyone except super admins. */
   superAdminOnly?: boolean;
 };
 
-export type NavGroup = {
-  id: string;
-  label: string;
-  items: NavItem[];
-};
+export type AdminNavGroup = { id: string; label: string; items: AdminNavItem[] };
 
 /** Sidebar sections. Order here is the order shown. */
-export const adminNavGroups: NavGroup[] = [
+export const adminNavGroups: AdminNavGroup[] = [
   {
     id: "overview",
     label: "Overview",
@@ -116,12 +108,10 @@ export const adminNavGroups: NavGroup[] = [
   },
 ];
 
-export const adminFooterNav: NavItem[] = [
+/** Account menu links (also searchable with ⌘K). */
+export const adminAccountLinks: ShellAccountLink[] = [
   { label: "Profile", href: "/admin/profile", icon: LuUser },
 ];
-
-/** Every page in one flat list (used for page titles). */
-export const adminNav: NavItem[] = adminNavGroups.flatMap((g) => g.items);
 
 export function isNavActive(pathname: string, href: string) {
   if (href === "/admin") return pathname === "/admin";

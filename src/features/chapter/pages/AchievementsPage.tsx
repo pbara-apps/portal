@@ -20,7 +20,7 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { errorToast, successToast } from "@/components/shared/toast-notification";
-import { ConfirmDialog } from "@/features/admin/components/shared/ConfirmDialog";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { type Achievement, MONTHS, monthYear } from "@/types/achievement";
 import {
   useAchievements,

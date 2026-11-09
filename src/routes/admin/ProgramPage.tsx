@@ -49,7 +49,7 @@ import {
   adminTableScrollCx,
   adminTableSectionCx,
 } from "@/features/admin/components/shared/adminLayout";
-import { ConfirmDialog } from "@/features/admin/components/shared/ConfirmDialog";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { useDeleteProgram, useGetPrograms } from "@/lib/api/program";
 import { useGetParticipantCountsByProgram } from "@/lib/api/registration";
 import { countParticipantsByCategory } from "@/lib/registrations/participants";
@@ -124,7 +124,6 @@ export default function ProgramAdminPage() {
   const openParticipants = (program: AdminProgram) => {
     openDrawer("view-program-participants", {
       body: program,
-      config: { size: "4xl" },
     });
   };
 

@@ -37,7 +37,6 @@ export function RegistrationDetailDrawer({
           onUpdated={(updated) =>
             openDrawer("view-registration", {
               body: updated,
-              config: { size: "3xl" },
             })
           }
         />

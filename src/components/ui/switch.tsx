@@ -22,9 +22,11 @@ function Switch({ checked, onCheckedChange, disabled, className, ...props }: Swi
       isDisabled={disabled}
       className={cn("shrink-0", className)}
     >
-      <HeroSwitch.Control>
-        <HeroSwitch.Thumb />
-      </HeroSwitch.Control>
+      <HeroSwitch.Content>
+        <HeroSwitch.Control>
+          <HeroSwitch.Thumb />
+        </HeroSwitch.Control>
+      </HeroSwitch.Content>
     </HeroSwitch>
   );
 }
