@@ -1,125 +1,130 @@
 import { Link } from "react-router-dom";
-import { LuArrowUpRight, LuShieldCheck } from "react-icons/lu";
+import type { IconType } from "react-icons";
+import { LuCheck, LuChevronRight, LuMinus, LuSettings, LuShieldCheck, LuUser } from "react-icons/lu";
+import { PageHeader } from "@/components/shared/PageHeader";
+import { Panel } from "@/components/shared/Panel";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { AdminPageHeader } from "@/features/admin/components/shared/AdminPageHeader";
 import { DirectorDeskPreview } from "@/features/admin/components/dashboard/DirectorDeskPreview";
-import { adminPageCx } from "@/features/admin/components/shared/adminLayout";
 import useCurrentUser from "@/hooks/useCurrentUser";
+import { cn } from "@/lib/utils";
 import {
   ROLE_LABELS,
   canManageDirectorDesk,
+  canManageDues,
   canWriteAdminContent,
+  type ExecutiveRole,
 } from "@/types/user";
 
-const ACCESS_SCOPES = [
-  { role: "Super Admin", permissions: "Full access including role management" },
-  { role: "Admin", permissions: "Content and leadership management" },
-  { role: "Editor", permissions: "Content updates only" },
-  { role: "Viewer", permissions: "Read-only access" },
+const ACCESS_SCOPES: { role: ExecutiveRole; permissions: string }[] = [
+  { role: "super_admin", permissions: "Full access, including accounts and roles" },
+  { role: "admin", permissions: "Content, leadership and the Director's Desk" },
+  { role: "editor", permissions: "Content updates only" },
+  { role: "finance", permissions: "Dues, levies and payment approvals" },
+  { role: "viewer", permissions: "Read-only access" },
 ];
 
+const LINKS: { label: string; description: string; href: string; icon: IconType }[] = [
+  { label: "Profile", description: "Your details and password", href: "/admin/profile", icon: LuUser },
+  { label: "Settings", description: "Association-wide configuration", href: "/admin/settings", icon: LuSettings },
+];
+
+function Permission({ allowed, children }: { allowed: boolean; children: string }) {
+  return (
+    <li className="flex items-center gap-2.5 text-sm">
+      <span
+        className={cn(
+          "flex size-5 shrink-0 items-center justify-center rounded-full",
+          allowed ? "bg-success/10 text-success" : "bg-default text-muted",
+        )}
+        aria-hidden
+      >
+        {allowed ? <LuCheck size={12} /> : <LuMinus size={12} />}
+      </span>
+      <span className={allowed ? "text-foreground" : "text-muted"}>{children}</span>
+      <span className="sr-only">{allowed ? "(allowed)" : "(not allowed)"}</span>
+    </li>
+  );
+}
+
 export default function AdministrativePage() {
-  const { user } = useCurrentUser();
+  const user = useCurrentUser((s) => s.user);
   const role = user?.role;
 
   return (
-    <div className={adminPageCx}>
-      <AdminPageHeader
-        title="Administrative Center"
-        description="Governance tools, account posture, and organization-wide controls."
+    <div className="min-w-0 space-y-6">
+      <PageHeader
+        title="Administrative center"
+        description="Your access level, what each role can do, and the Director's Desk."
       />
 
-      <section className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-        <Card className="border border-text-dark/[0.06] bg-surface shadow-[0_12px_24px_rgba(15,23,42,0.06)]">
-          <CardHeader className="border-b border-text-dark/[0.06] px-6 py-5">
-            <div>
-              <h2 className="text-base font-semibold text-primary">Administrative Posture</h2>
-              <p className="mt-1 text-xs text-text-muted">
-                Current privileges for your signed-in account.
-              </p>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-5 px-6 py-6">
-            <div className="flex flex-wrap gap-2">
-              <Badge className="bg-primary/10 text-primary">
-                {role ? ROLE_LABELS[role] : "Admin"}
-              </Badge>
-              <Badge
-                variant={canWriteAdminContent(role) ? "success" : "secondary"}
-                className={
-                  canWriteAdminContent(role)
-                    ? "bg-emerald-100 text-emerald-700"
-                    : "bg-amber-100 text-amber-700"
-                }
-              >
-                {canWriteAdminContent(role) ? "Update access" : "Read-only access"}
-              </Badge>
-              <Badge
-                className={
-                  canManageDirectorDesk(role)
-                    ? "bg-indigo-100 text-indigo-700"
-                    : "bg-slate-100 text-slate-600"
-                }
-              >
-                {canManageDirectorDesk(role)
-                  ? "Director Desk management enabled"
-                  : "Director Desk management restricted"}
-              </Badge>
-            </div>
+      <div className="grid min-w-0 gap-6 xl:grid-cols-[1.4fr_1fr]">
+        <div className="min-w-0 space-y-6">
+          <Panel
+            title="Your access"
+            description="What your signed-in account can do"
+            action={<Badge>{role ? ROLE_LABELS[role] : "Admin"}</Badge>}
+          >
+            <ul className="grid gap-3 sm:grid-cols-2">
+              <Permission allowed={canWriteAdminContent(role)}>Create and edit content</Permission>
+              <Permission allowed={canManageDirectorDesk(role)}>Manage the Director&apos;s Desk</Permission>
+              <Permission allowed={canManageDues(user)}>Manage dues and levies</Permission>
+              <Permission allowed={role === "super_admin"}>Manage accounts and roles</Permission>
+            </ul>
+          </Panel>
 
-            <div className="rounded-xl border border-text-dark/[0.06] bg-background/50 p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.1em] text-text-muted">
-                Access Matrix
-              </p>
-              <div className="mt-3 space-y-2">
-                {ACCESS_SCOPES.map((scope) => (
-                  <div
+          <Panel title="Roles" description="Access granted to each admin role" bodyClassName="p-0">
+            <ul className="divide-y divide-separator">
+              {ACCESS_SCOPES.map((scope) => {
+                const current = scope.role === role;
+                return (
+                  <li
                     key={scope.role}
-                    className="flex flex-col gap-1 rounded-lg border border-text-dark/[0.04] bg-surface px-3 py-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3"
+                    className={cn(
+                      "flex flex-col gap-1 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-5",
+                      current && "bg-surface-secondary",
+                    )}
                   >
-                    <span className="text-sm font-medium text-text-dark">{scope.role}</span>
-                    <span className="text-xs text-text-muted sm:text-right">{scope.permissions}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-3">
-              <Button asChild variant="secondary" className="bg-primary/10 text-primary">
-                <Link to="/admin/profile">
-                  Open profile
-                  <LuArrowUpRight size={14} />
-                </Link>
-              </Button>
-              <Button asChild variant="secondary" className="bg-slate-100 text-slate-700">
-                <Link to="/admin/settings">
-                  Open settings
-                  <LuArrowUpRight size={14} />
-                </Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        <div className="space-y-6">
-          <DirectorDeskPreview badge="Leadership" />
-          <Card className="border border-text-dark/[0.06] bg-surface shadow-[0_12px_24px_rgba(15,23,42,0.06)]">
-            <CardContent className="flex items-center gap-3 px-5 py-4">
-              <span className="rounded-lg bg-emerald-100 p-2 text-emerald-700">
-                <LuShieldCheck size={18} />
-              </span>
-              <div>
-                <p className="text-sm font-semibold text-text-dark">Security hardening active</p>
-                <p className="text-xs text-text-muted">
-                  Role-based controls and restricted mutation actions are now enforced.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+                    <span className="flex items-center gap-2 text-sm font-medium text-foreground">
+                      {ROLE_LABELS[scope.role]}
+                      {current ? <Badge variant="outline">You</Badge> : null}
+                    </span>
+                    <span className="text-sm text-muted sm:text-right">{scope.permissions}</span>
+                  </li>
+                );
+              })}
+            </ul>
+            <p className="flex items-start gap-2 border-t border-separator px-4 py-3 text-xs text-muted sm:px-5">
+              <LuShieldCheck size={14} aria-hidden className="mt-px shrink-0 text-success" />
+              Permissions are checked by the server on every request, not only hidden in the interface.
+            </p>
+          </Panel>
         </div>
-      </section>
+
+        <div className="min-w-0 space-y-6">
+          <DirectorDeskPreview />
+          <Panel title="Account" bodyClassName="p-2">
+            <ul className="space-y-0.5">
+              {LINKS.map(({ label, description, href, icon: Icon }) => (
+                <li key={href}>
+                  <Link
+                    to={href}
+                    className="group flex items-center gap-3 rounded-lg px-2.5 py-2.5 outline-none transition-colors hover:bg-surface-secondary focus-visible:ring-2 focus-visible:ring-focus"
+                  >
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-border text-muted">
+                      <Icon size={16} aria-hidden />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-medium text-foreground">{label}</span>
+                      <span className="block truncate text-xs text-muted">{description}</span>
+                    </span>
+                    <LuChevronRight size={16} aria-hidden className="text-muted" />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </Panel>
+        </div>
+      </div>
     </div>
   );
 }

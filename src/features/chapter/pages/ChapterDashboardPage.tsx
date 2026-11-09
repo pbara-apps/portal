@@ -1,26 +1,27 @@
+import { Skeleton } from "@heroui/react";
 import { Link } from "react-router-dom";
-import { LuCake, LuClock, LuTriangleAlert, LuUserPlus, LuUsers } from "react-icons/lu";
-import type { IconType } from "react-icons";
-import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
+import {
+  LuArrowRight,
+  LuCake,
+  LuCircleX,
+  LuClock,
+  LuMedal,
+  LuRefreshCw,
+  LuTriangleAlert,
+  LuUserPlus,
+  LuUsers,
+} from "react-icons/lu";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { PageHeader } from "@/components/shared/PageHeader";
+import { Panel } from "@/components/shared/Panel";
+import { StatCard } from "@/components/shared/StatCard";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { useChapterDashboard } from "../api/members";
 import { ChapterSwitcher } from "../components/ChapterSwitcher";
 import { MemberAvatar } from "../components/MemberAvatar";
 import { useActiveChapterId, useChapterSession } from "../store/useChapterSession";
 
-function StatCard({ label, value, icon: Icon, tone }: { label: string; value: number; icon: IconType; tone: string }) {
-  return (
-    <div className="flex items-center gap-4 rounded-2xl border border-text-dark/5 bg-surface p-5">
-      <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${tone}`}>
-        <Icon size={20} />
-      </div>
-      <div>
-        <p className="text-2xl font-bold text-primary">{value}</p>
-        <p className="text-xs text-text-muted">{label}</p>
-      </div>
-    </div>
-  );
-}
+const AWAITING = "/chapter/members?view=awaiting";
 
 /**
  * Chapter dashboard: member totals, members per rank (in ladder order)
@@ -29,98 +30,159 @@ function StatCard({ label, value, icon: Icon, tone }: { label: string; value: nu
 export default function ChapterDashboardPage() {
   const profile = useChapterSession((s) => s.profile);
   const chapterId = useActiveChapterId();
-  const { data, isLoading, isError, refetch } = useChapterDashboard(chapterId);
+  const { data, isLoading, isError, refetch, isRefetching } = useChapterDashboard(chapterId);
 
+  const totals = data?.totals;
+  const needsAttention = totals ? totals.changesRequested + totals.rejected : 0;
   const maxRankCount = Math.max(1, ...(data?.byRank.map((r) => r.count) ?? [0]));
+  const firstName = profile?.name?.trim().split(/\s+/)[0];
 
   return (
-    <div className="space-y-6">
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-primary lg:text-3xl">
-            Welcome, {profile?.name?.split(" ")[0]}
-          </h1>
-          <p className="mt-1 text-sm text-text-muted">{profile?.church?.name}</p>
-        </div>
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <ChapterSwitcher />
-          <Button asChild className="bg-primary text-white">
-            <Link to="/chapter/members/add">
-              <LuUserPlus size={16} />
-              Add Members
+    <div className="min-w-0 space-y-6 lg:space-y-8">
+      <PageHeader
+        title={firstName ? `Welcome, ${firstName}` : "Welcome"}
+        description={profile?.church?.name}
+        actions={
+          <>
+            <ChapterSwitcher />
+            <Link to="/chapter/members/add" className={buttonVariants()}>
+              <LuUserPlus size={16} aria-hidden />
+              Add members
             </Link>
-          </Button>
-        </div>
-      </header>
+          </>
+        }
+      />
 
-      {isLoading ? (
-        <div className="flex justify-center py-20"><Spinner label="Loading dashboard…" /></div>
-      ) : isError || !data ? (
-        <div className="flex flex-col items-center gap-3 py-20">
-          <p className="text-sm text-rose-600">Unable to load the dashboard.</p>
-          <Button size="sm" onClick={() => refetch()}>Retry</Button>
+      {isError ? (
+        <div className="rounded-xl border border-border bg-surface">
+          <EmptyState
+            tone="danger"
+            title="We couldn't load the dashboard"
+            description="Check your connection and try again."
+            action={
+              <Button type="button" variant="outline" onClick={() => refetch()} loading={isRefetching}>
+                <LuRefreshCw size={15} aria-hidden />
+                Try again
+              </Button>
+            }
+          />
         </div>
       ) : (
         <>
-          <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <StatCard label="Active ambassadors" value={data.totals.active} icon={LuUsers} tone="bg-primary/10 text-primary" />
-            <StatCard label="Awaiting approval" value={data.totals.awaitingApproval} icon={LuClock} tone="bg-sky-100 text-sky-700" />
-            <StatCard label="Changes requested" value={data.totals.changesRequested} icon={LuTriangleAlert} tone="bg-amber-100 text-amber-700" />
-            <StatCard label="Rejected" value={data.totals.rejected} icon={LuTriangleAlert} tone="bg-rose-100 text-rose-700" />
-          </section>
-
-          {data.totals.changesRequested + data.totals.rejected > 0 && (
-            <div className="flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-sm text-amber-900">
-                Some members need your attention: the association has asked for changes or rejected them.
+          {needsAttention > 0 ? (
+            <Link
+              to={AWAITING}
+              className="group flex items-center gap-3 rounded-xl border border-warning/25 bg-warning/[0.06] px-4 py-3 outline-none transition-colors hover:bg-warning/10 focus-visible:ring-2 focus-visible:ring-focus"
+            >
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-warning/15 text-warning">
+                <LuTriangleAlert size={17} aria-hidden />
+              </span>
+              <p className="min-w-0 flex-1 text-sm text-foreground">
+                <span className="font-semibold">
+                  {needsAttention} member{needsAttention === 1 ? "" : "s"} need your attention.
+                </span>{" "}
+                <span className="text-muted">The association asked for changes or rejected them.</span>
               </p>
-              <Button asChild size="sm" variant="outline">
-                <Link to="/chapter/members?view=awaiting">Review members</Link>
-              </Button>
-            </div>
-          )}
+              <span className="hidden items-center gap-1 text-sm font-medium sm:flex">
+                Review
+                <LuArrowRight size={15} aria-hidden className="transition-transform group-hover:translate-x-0.5" />
+              </span>
+            </Link>
+          ) : null}
 
-          <section className="grid gap-6 lg:grid-cols-3">
-            <div className="rounded-2xl border border-text-dark/5 bg-surface p-5 lg:col-span-2">
-              <h2 className="text-base font-semibold text-primary">Ambassadors by rank</h2>
-              <p className="text-xs text-text-muted">Active members only, from the first rank upwards.</p>
-              <ul className="mt-5 space-y-3">
-                {data.byRank.map((rank) => (
-                  <li key={rank.rankId} className="grid grid-cols-[minmax(0,10rem)_1fr_2.5rem] items-center gap-3">
-                    <span className="truncate text-sm text-text-dark">{rank.name}</span>
-                    <div className="h-2.5 overflow-hidden rounded-full bg-background">
-                      <div
-                        className="h-full rounded-full bg-primary"
-                        style={{ width: `${(rank.count / maxRankCount) * 100}%` }}
-                      />
-                    </div>
-                    <span className="text-right text-sm font-semibold text-primary">{rank.count}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+          <div role="group" aria-label="Member totals" className="grid grid-cols-2 gap-3 xl:grid-cols-4 xl:gap-4">
+            <StatCard
+              label="Active ambassadors"
+              value={totals?.active.toLocaleString()}
+              icon={LuUsers}
+              to="/chapter/members"
+              loading={isLoading}
+            />
+            <StatCard
+              label="Awaiting approval"
+              value={totals?.awaitingApproval.toLocaleString()}
+              icon={LuClock}
+              tone={totals?.awaitingApproval ? "gold" : "default"}
+              to={AWAITING}
+              loading={isLoading}
+            />
+            <StatCard
+              label="Changes requested"
+              value={totals?.changesRequested.toLocaleString()}
+              icon={LuTriangleAlert}
+              tone={totals?.changesRequested ? "warning" : "default"}
+              to={AWAITING}
+              loading={isLoading}
+            />
+            <StatCard
+              label="Rejected"
+              value={totals?.rejected.toLocaleString()}
+              icon={LuCircleX}
+              tone={totals?.rejected ? "danger" : "default"}
+              to={AWAITING}
+              loading={isLoading}
+            />
+          </div>
 
-            <div className="rounded-2xl border border-text-dark/5 bg-surface p-5">
-              <h2 className="flex items-center gap-2 text-base font-semibold text-primary">
-                <LuCake size={16} /> Birthdays this month
-              </h2>
-              {data.birthdays.length === 0 ? (
-                <p className="mt-4 text-sm text-text-muted">No birthdays this month.</p>
+          <div className="grid min-w-0 gap-6 lg:grid-cols-3">
+            <Panel
+              title="Ambassadors by rank"
+              description="Active members only, from the first rank upwards"
+              className="lg:col-span-2"
+            >
+              {isLoading ? (
+                <div className="space-y-4">
+                  {Array.from({ length: 6 }, (_, i) => (
+                    <Skeleton key={i} className="h-4 w-full rounded" />
+                  ))}
+                </div>
+              ) : !data?.byRank.length ? (
+                <EmptyState icon={LuMedal} title="No ranks yet" description="Ranks appear once members are approved." className="py-8" />
               ) : (
-                <ul className="mt-4 space-y-3">
+                <ul className="space-y-3.5">
+                  {data.byRank.map((rank) => (
+                    <li key={rank.rankId} className="grid grid-cols-[minmax(0,9rem)_1fr_2.5rem] items-center gap-3 sm:grid-cols-[minmax(0,11rem)_1fr_3rem]">
+                      <span className="truncate text-sm text-foreground">{rank.name}</span>
+                      <span className="h-2 overflow-hidden rounded-full bg-surface-secondary" aria-hidden>
+                        <span
+                          className="block h-full rounded-full bg-primary transition-[width] duration-500 motion-reduce:transition-none"
+                          style={{ width: `${(rank.count / maxRankCount) * 100}%` }}
+                        />
+                      </span>
+                      <span className="text-right text-sm font-semibold tabular-nums text-foreground">
+                        {rank.count}
+                        <span className="sr-only"> members</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Panel>
+
+            <Panel title="Birthdays this month" action={<LuCake size={17} aria-hidden className="mt-1 text-gold" />} bodyClassName="p-0">
+              {isLoading ? (
+                <div className="space-y-3 p-5">
+                  {Array.from({ length: 3 }, (_, i) => (
+                    <Skeleton key={i} className="h-8 w-full rounded-lg" />
+                  ))}
+                </div>
+              ) : !data?.birthdays.length ? (
+                <EmptyState icon={LuCake} title="No birthdays this month" className="py-10" />
+              ) : (
+                <ul className="divide-y divide-separator">
                   {data.birthdays.map((b) => (
-                    <li key={b.id} className="flex items-center gap-3">
+                    <li key={b.id} className="flex items-center gap-3 px-4 py-3 sm:px-5">
                       <MemberAvatar photo={b.photo} name={b.fullName} size={32} />
-                      <span className="flex-1 truncate text-sm">{b.fullName}</span>
-                      <span className="text-xs text-text-muted">
+                      <span className="min-w-0 flex-1 truncate text-sm text-foreground">{b.fullName}</span>
+                      <span className="shrink-0 rounded-md bg-gold/10 px-2 py-0.5 text-xs font-medium text-[#7a5f0c]">
                         {new Date(b.dateOfBirth).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
                       </span>
                     </li>
                   ))}
                 </ul>
               )}
-            </div>
-          </section>
+            </Panel>
+          </div>
         </>
       )}
     </div>

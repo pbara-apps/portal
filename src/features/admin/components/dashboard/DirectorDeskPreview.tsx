@@ -1,78 +1,95 @@
-import { LuArrowRight, LuPencil, LuQuote } from "react-icons/lu";
+import { Skeleton } from "@heroui/react";
+import { useState } from "react";
+import { LuBookOpen, LuPencil, LuQuote } from "react-icons/lu";
+import { DetailDrawer } from "@/components/shared/DetailDrawer";
 import { Button } from "@/components/ui/button";
+import type { DirectorDeskBody } from "@/features/admin/components/director-desk/DirectorDeskView";
+import useCurrentUser from "@/hooks/useCurrentUser";
 import { useGetAdminDirectorDesk } from "@/lib/api/admin";
 import { useDrawer } from "@/store/useDrawer";
-import useCurrentUser from "@/hooks/useCurrentUser";
 import { canManageDirectorDesk } from "@/types/user";
 
-export interface DirectorDeskPreviewProps {
-  badge?: string;
-  onRead?: () => void;
-}
-
-export function DirectorDeskPreview({
-  badge = "Editorial",
-  onRead,
-}: DirectorDeskPreviewProps) {
+/** The Director's Desk message shown on the public site: preview, read in full, edit. */
+export function DirectorDeskPreview() {
   const openDrawer = useDrawer((s) => s.openDrawer);
-  const { user } = useCurrentUser();
-  const canManage = canManageDirectorDesk(user?.role);
+  const canManage = canManageDirectorDesk(useCurrentUser((s) => s.user)?.role);
+  const { data, isLoading } = useGetAdminDirectorDesk();
+  const desk = data as DirectorDeskBody | undefined;
+  const [reading, setReading] = useState(false);
+  const hasMessage = Boolean(desk?.title || desk?.description);
 
-  const { data: directorDesk } = useGetAdminDirectorDesk();
-
-  const handleEdit = () => {
-    openDrawer("edit-director-desk", {
-      body: directorDesk,
-    });
-  };
   return (
-    <article className="overflow-hidden rounded-2xl border border-text-dark/[0.05] bg-surface shadow-[0_1px_2px_rgba(27,36,82,0.04)]">
-      <div className="relative h-36 overflow-hidden bg-gradient-to-br from-primary via-[#1B2452] to-[#040e3d]">
-        <div className="absolute inset-0 opacity-60 [background:radial-gradient(circle_at_30%_20%,rgba(200,168,75,0.35),transparent_55%),radial-gradient(circle_at_80%_80%,rgba(200,168,75,0.18),transparent_50%)]" />
-        <LuQuote
-          className="absolute right-4 top-4 text-gold"
-          size={64}
-          aria-hidden
-        />
-        <div className="absolute bottom-4 left-5 right-5">
-          <div className="flex justify-between items-end">
-            <div>
-              <span className="inline-block rounded-md bg-gold px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-primary">
-                {badge}
-              </span>
-              <h3 className="mt-2 text-lg font-bold leading-tight text-white">
-                The Director&apos;s Desk
-              </h3>
-            </div>
-            <Button
-              size="sm"
-              className="rounded-full"
-              onClick={handleEdit}
-              disabled={!canManage}
-            >
-              <LuPencil size={16} />
-              {canManage ? "Edit" : "Read only"}
-            </Button>
+    <section
+      aria-labelledby="director-desk-heading"
+      className="relative overflow-hidden rounded-xl bg-sidebar text-white shadow-[var(--surface-shadow)]"
+    >
+      <div aria-hidden className="pointer-events-none absolute -right-16 -top-20 size-56 rounded-full bg-gold/15 blur-3xl" />
+      <div className="relative p-5">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-gold">Director&apos;s Desk</p>
+          <LuQuote size={22} aria-hidden className="text-white/20" />
+        </div>
+
+        {isLoading ? (
+          <div className="mt-4 space-y-2.5">
+            <Skeleton className="h-5 w-3/4 rounded bg-white/10" />
+            <Skeleton className="h-3.5 w-full rounded bg-white/10" />
+            <Skeleton className="h-3.5 w-2/3 rounded bg-white/10" />
           </div>
+        ) : (
+          <div className="mt-3 flex gap-4">
+            {desk?.image ? (
+              <img src={desk.image} alt="" className="size-16 shrink-0 rounded-lg object-cover ring-1 ring-white/15" />
+            ) : null}
+            <div className="min-w-0">
+              <h2 id="director-desk-heading" className="text-base font-semibold leading-snug">
+                {desk?.title || "No message yet"}
+              </h2>
+              <p className="mt-1.5 line-clamp-3 text-sm leading-relaxed text-white/65">
+                {desk?.description || "The director's message for the public website will appear here."}
+              </p>
+            </div>
+          </div>
+        )}
+
+        <div className="mt-5 flex gap-2">
+          {hasMessage ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              onClick={() => setReading(true)}
+              className="flex-1 bg-white/10 text-white hover:bg-white/15"
+            >
+              <LuBookOpen size={15} aria-hidden />
+              Read message
+            </Button>
+          ) : null}
+          {canManage ? (
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => openDrawer("edit-director-desk", { body: desk ?? {}, size: "lg" })}
+              className="flex-1 bg-gold text-primary hover:bg-gold-soft"
+            >
+              <LuPencil size={15} aria-hidden />
+              Edit
+            </Button>
+          ) : null}
         </div>
       </div>
 
-      <div className="p-5">
-        <h4 className="text-base font-semibold tracking-tight text-primary">
-          {directorDesk?.title}
-        </h4>
-        <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-text-muted">
-          {directorDesk?.description}
-        </p>
-        <button
-          type="button"
-          onClick={onRead}
-          className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-primary/15 bg-primary/[0.03] py-2.5 text-sm font-semibold text-primary transition-all hover:border-primary hover:bg-primary hover:text-white"
-        >
-          Read Full Message
-          <LuArrowRight size={14} />
-        </button>
-      </div>
-    </article>
+      <DetailDrawer
+        open={reading}
+        onClose={() => setReading(false)}
+        title={desk?.title || "Director's Desk"}
+        description="Message from the Director, as shown on the website"
+        media={
+          desk?.image ? <img src={desk.image} alt="" className="size-16 rounded-xl object-cover" /> : undefined
+        }
+      >
+        <p className="whitespace-pre-line text-[15px] leading-7 text-foreground">{desk?.description}</p>
+      </DetailDrawer>
+    </section>
   );
 }
