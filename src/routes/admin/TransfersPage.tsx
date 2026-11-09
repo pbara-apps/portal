@@ -1,39 +1,93 @@
 import { useState } from "react";
-import { LuArrowRight, LuCheck, LuX } from "react-icons/lu";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Spinner } from "@/components/ui/spinner";
-import { Textarea } from "@/components/ui/textarea";
+import { LuArrowRight, LuCheck, LuShuffle, LuX } from "react-icons/lu";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { DataTable, type DataTableColumn } from "@/components/shared/DataTable";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { PageHeader } from "@/components/shared/PageHeader";
+import { RowActions } from "@/components/shared/RowActions";
+import { ViewTabs } from "@/components/shared/ViewTabs";
 import { errorToast, successToast } from "@/components/shared/toast-notification";
-import { AdminPageHeader } from "@/features/admin/components/shared/AdminPageHeader";
-import { adminPageCx } from "@/features/admin/components/shared/adminLayout";
+import { Textarea } from "@/components/ui/textarea";
 import { MemberAvatar } from "@/features/chapter/components/MemberAvatar";
 import { formatDate } from "@/features/chapter/lib/member-utils";
 import useCurrentUser from "@/hooks/useCurrentUser";
 import { useAdminTransfers, useApproveTransfer, useRejectTransfer } from "@/lib/api/chapter-admin";
-import { cn } from "@/lib/utils";
 import type { Transfer } from "@/types/transfer";
 import { isSuperAdmin } from "@/types/user";
 
 type Status = Transfer["status"];
 
+const TABS: { id: Status; label: string }[] = [
+  { id: "pending", label: "Awaiting approval" },
+  { id: "approved", label: "Approved" },
+  { id: "rejected", label: "Rejected" },
+];
+
+function TransferMember({ t }: { t: Transfer }) {
+  return (
+    <div className="flex min-w-0 items-center gap-3">
+      <MemberAvatar photo={t.member?.photo} name={t.member?.fullName ?? ""} size={34} />
+      <div className="min-w-0">
+        <p className="truncate font-medium text-foreground">{t.member?.fullName}</p>
+        <p className="truncate text-xs text-muted">{t.member?.memberId}</p>
+      </div>
+    </div>
+  );
+}
+
+function Move({ t }: { t: Transfer }) {
+  return (
+    <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-sm">
+      <span className="min-w-0">
+        {t.fromChapter?.name}
+        <span className="block truncate text-xs text-muted">{t.fromChapter?.churchName}</span>
+      </span>
+      <LuArrowRight size={14} aria-label="to" className="shrink-0 text-muted" />
+      <span className="min-w-0">
+        {t.toChapter?.name}
+        <span className="block truncate text-xs text-muted">{t.toChapter?.churchName}</span>
+      </span>
+    </div>
+  );
+}
+
+const COLUMNS: DataTableColumn<Transfer>[] = [
+  { id: "member", header: "Member", isRowHeader: true, cell: (t) => <TransferMember t={t} /> },
+  { id: "move", header: "From → to", cell: (t) => <Move t={t} /> },
+  {
+    id: "requested",
+    header: "Requested",
+    hideBelow: "lg",
+    cell: (t) => (
+      <div className="text-sm">
+        {formatDate(t.createdAt)}
+        {t.requestedBy ? <span className="block text-xs text-muted">by {t.requestedBy.name}</span> : null}
+      </div>
+    ),
+  },
+  {
+    id: "note",
+    header: "Reason",
+    hideBelow: "xl",
+    cell: (t) => (
+      <p className="line-clamp-2 max-w-xs text-sm text-muted">
+        {t.reason || "—"}
+        {t.reviewNote ? <span className="block text-danger">Rejected: {t.reviewNote}</span> : null}
+      </p>
+    ),
+  },
+];
+
 /** Member transfers between chapters. Only a super admin can approve or reject. */
 export default function TransfersAdminPage() {
-  const { user } = useCurrentUser();
-  const canReview = isSuperAdmin(user?.role);
+  const canReview = isSuperAdmin(useCurrentUser((s) => s.user)?.role);
   const [status, setStatus] = useState<Status>("pending");
-  const { data: transfers = [], isLoading } = useAdminTransfers(status);
+  const { data: transfers = [], isLoading, isError, refetch } = useAdminTransfers(status);
   const approve = useApproveTransfer();
   const reject = useRejectTransfer();
   const [rejecting, setRejecting] = useState<Transfer | null>(null);
   const [note, setNote] = useState("");
+  const [noteError, setNoteError] = useState("");
 
   const handleApprove = async (t: Transfer) => {
     try {
@@ -44,88 +98,109 @@ export default function TransfersAdminPage() {
     }
   };
 
+  const closeReject = () => {
+    setRejecting(null);
+    setNote("");
+    setNoteError("");
+  };
+
   const handleReject = async () => {
     if (!rejecting) return;
-    if (note.trim().length < 3) return errorToast("Give a reason.", "Reason needed");
+    if (note.trim().length < 3) {
+      setNoteError("Give the chapter a short reason (at least 3 characters).");
+      return;
+    }
     try {
       await reject.mutateAsync({ id: rejecting.id, note: note.trim() });
       successToast("Transfer rejected.");
-      setRejecting(null);
-      setNote("");
+      closeReject();
     } catch (err) {
       errorToast((err as { message?: string })?.message ?? "Unable to reject.", "Error");
     }
   };
 
+  const reviewing = status === "pending" && canReview;
+
   return (
-    <div className={adminPageCx}>
-      <AdminPageHeader title="Transfers" description="Members moving between chapters. They keep their member ID and history." />
-      <div className="flex w-fit gap-1 rounded-xl bg-surface p-1 ring-1 ring-text-dark/5">
-        {(["pending", "approved", "rejected"] as Status[]).map((s) => (
-          <button
-            key={s}
-            type="button"
-            onClick={() => setStatus(s)}
-            className={cn("rounded-lg px-4 py-2 text-sm font-medium capitalize", status === s ? "bg-primary text-white" : "text-text-muted hover:text-primary")}
-          >
-            {s === "pending" ? "Awaiting approval" : s}
-          </button>
-        ))}
-      </div>
+    <div className="min-w-0 space-y-6">
+      <PageHeader title="Transfers" description="Members moving between chapters. They keep their member ID and history." />
 
-      {isLoading ? (
-        <div className="flex justify-center py-20"><Spinner /></div>
-      ) : transfers.length === 0 ? (
-        <p className="rounded-2xl border border-text-dark/5 bg-surface py-16 text-center text-sm text-text-muted">Nothing here.</p>
-      ) : (
-        <ul className="space-y-3">
-          {transfers.map((t) => (
-            <li key={t.id} className="flex flex-col gap-3 rounded-2xl border border-text-dark/5 bg-surface p-4 lg:flex-row lg:items-center">
-              <div className="flex min-w-0 flex-1 items-center gap-3">
-                <MemberAvatar photo={t.member?.photo} name={t.member?.fullName ?? ""} size={44} />
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-primary">
-                    {t.member?.fullName} <span className="font-normal text-text-muted">{t.member?.memberId}</span>
-                  </p>
-                  <p className="flex flex-wrap items-center gap-1 text-xs text-text-muted">
-                    {t.fromChapter?.name} ({t.fromChapter?.churchName}) <LuArrowRight size={12} /> {t.toChapter?.name} ({t.toChapter?.churchName})
-                  </p>
-                  <p className="text-xs text-text-muted">
-                    {formatDate(t.createdAt)}
-                    {t.requestedBy ? ` · by ${t.requestedBy.name}` : ""}
-                    {t.reason ? ` · ${t.reason}` : ""}
-                    {t.reviewNote ? ` · Reason: ${t.reviewNote}` : ""}
-                  </p>
-                </div>
-              </div>
-              {status === "pending" && canReview && (
-                <div className="flex gap-2">
-                  <Button size="sm" className="bg-emerald-600 text-white hover:bg-emerald-700" loading={approve.isPending && approve.variables === t.id} onClick={() => handleApprove(t)}>
-                    <LuCheck size={14} /> Approve
-                  </Button>
-                  <Button size="sm" variant="ghost" className="text-rose-600" onClick={() => setRejecting(t)}>
-                    <LuX size={14} /> Reject
-                  </Button>
-                </div>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
+      {status === "pending" && !canReview ? (
+        <p className="rounded-lg border border-border bg-surface-secondary px-4 py-3 text-sm text-muted">
+          Only a super admin can approve or reject transfers.
+        </p>
+      ) : null}
 
-      <Dialog open={!!rejecting} onOpenChange={(o) => !o && setRejecting(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Reject transfer</DialogTitle>
-            <DialogDescription>The chapter will see this reason.</DialogDescription>
-          </DialogHeader>
-          <Textarea label="Reason" rows={3} value={note} onChange={(e) => setNote(e.target.value)} />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setRejecting(null)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleReject} loading={reject.isPending}>Reject</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ViewTabs aria-label="Transfer status" tabs={TABS} value={status} onChange={setStatus} />
+
+      <DataTable
+        aria-label={`${status} transfers`}
+        columns={COLUMNS}
+        rows={transfers}
+        getRowId={(t) => t.id}
+        isLoading={isLoading}
+        isError={isError}
+        errorMessage="We couldn't load transfers."
+        onRetry={() => refetch()}
+        rowActions={
+          reviewing
+            ? (t) => (
+                <RowActions
+                  actions={[
+                    {
+                      label: approve.isPending && approve.variables === t.id ? "Approving…" : "Approve transfer",
+                      icon: LuCheck,
+                      tone: "success",
+                      disabled: approve.isPending,
+                      onAction: () => handleApprove(t),
+                    },
+                    { label: "Reject transfer", icon: LuX, danger: true, onAction: () => setRejecting(t) },
+                  ]}
+                />
+              )
+            : undefined
+        }
+        renderCard={(t) => (
+          <div className="space-y-2">
+            <TransferMember t={t} />
+            <div className="pl-[46px]">
+              <Move t={t} />
+              <p className="mt-1 text-xs text-muted">{formatDate(t.createdAt)}</p>
+            </div>
+          </div>
+        )}
+        emptyState={
+          <EmptyState
+            icon={LuShuffle}
+            title={status === "pending" ? "No transfers waiting" : `No ${status} transfers`}
+            description={status === "pending" ? "Transfer requests from chapters appear here." : undefined}
+          />
+        }
+        summary={`${transfers.length} transfer${transfers.length === 1 ? "" : "s"}`}
+        minWidth={760}
+      />
+
+      <ConfirmDialog
+        isOpen={!!rejecting}
+        title="Reject transfer?"
+        message={`${rejecting?.member?.fullName ?? "The member"} stays in ${rejecting?.fromChapter?.name ?? "their chapter"}. The chapter will see your reason.`}
+        confirmLabel="Reject transfer"
+        loading={reject.isPending}
+        onClose={closeReject}
+        onConfirm={handleReject}
+      >
+        <Textarea
+          label="Reason"
+          rows={3}
+          value={note}
+          error={noteError || undefined}
+          onChange={(e) => {
+            setNote(e.target.value);
+            if (noteError) setNoteError("");
+          }}
+          autoFocus
+        />
+      </ConfirmDialog>
     </div>
   );
 }

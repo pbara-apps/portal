@@ -1,4 +1,4 @@
-import { ListBox, Select as HeroSelect, Separator } from "@heroui/react";
+import { Label, ListBox, Select as HeroSelect, Separator } from "@heroui/react";
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
@@ -20,6 +20,8 @@ interface SelectProps {
   disabled?: boolean;
   required?: boolean;
   name?: string;
+  /** Visible label above the field (forms). Filters use the trigger's aria-label instead. */
+  label?: React.ReactNode;
   children: React.ReactNode;
 }
 
@@ -41,7 +43,7 @@ function findTriggerProps(children: React.ReactNode): SelectTriggerProps {
   return found;
 }
 
-function Select({ value, defaultValue, onValueChange, disabled, required, name, children }: SelectProps) {
+function Select({ value, defaultValue, onValueChange, disabled, required, name, label, children }: SelectProps) {
   const trigger = findTriggerProps(children);
   return (
     <HeroSelect
@@ -56,8 +58,9 @@ function Select({ value, defaultValue, onValueChange, disabled, required, name, 
       aria-label={trigger["aria-label"]}
       aria-labelledby={trigger["aria-labelledby"]}
       fullWidth
-      className={cn("min-w-0", trigger.className)}
+      className={cn("min-w-0", label ? "gap-1.5" : null, trigger.className)}
     >
+      {label ? <Label isRequired={required}>{label}</Label> : null}
       {children}
     </HeroSelect>
   );

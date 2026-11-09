@@ -11,6 +11,8 @@ interface ConfirmDialogProps {
   /** "danger" for irreversible actions (the default), "accent" for everything else. */
   tone?: "danger" | "accent";
   loading?: boolean;
+  /** Extra fields, e.g. a reason the action needs. Keep it to one or two. */
+  children?: ReactNode;
   onClose: () => void;
   onConfirm: () => void;
 }
@@ -27,6 +29,7 @@ export function ConfirmDialog({
   cancelLabel = "Cancel",
   tone = "danger",
   loading = false,
+  children,
   onClose,
   onConfirm,
 }: ConfirmDialogProps) {
@@ -45,6 +48,7 @@ export function ConfirmDialog({
           </AlertDialog.Header>
           <AlertDialog.Body>
             <div className="text-sm leading-relaxed text-muted">{message}</div>
+            {children ? <div className="mt-4">{children}</div> : null}
           </AlertDialog.Body>
           <AlertDialog.Footer>
             <Button type="button" variant="ghost" onClick={onClose} disabled={loading}>

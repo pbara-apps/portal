@@ -1,38 +1,27 @@
-import { useMemo, useState } from "react";
-import { LuCheck, LuPencilLine, LuSearch, LuTriangleAlert, LuUserCheck, LuX } from "react-icons/lu";
+import { Skeleton } from "@heroui/react";
+import { useEffect, useState } from "react";
+import { LuCheck, LuPencilLine, LuRefreshCw, LuTriangleAlert, LuUserCheck, LuX } from "react-icons/lu";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { PageHeader } from "@/components/shared/PageHeader";
+import { TableToolbar } from "@/components/shared/TableToolbar";
+import { ViewTabs } from "@/components/shared/ViewTabs";
+import { errorToast, successToast } from "@/components/shared/toast-notification";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Spinner } from "@/components/ui/spinner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { errorToast, successToast } from "@/components/shared/toast-notification";
-import { AdminPageHeader } from "@/features/admin/components/shared/AdminPageHeader";
-import { adminFilterBarCx, adminPageCx } from "@/features/admin/components/shared/adminLayout";
+import { BulkActionBar } from "@/features/admin/components/shared/BulkActionBar";
 import { MemberAvatar } from "@/features/chapter/components/MemberAvatar";
 import { ageFrom, ageWarning, formatDate } from "@/features/chapter/lib/member-utils";
 import useCurrentUser from "@/hooks/useCurrentUser";
 import {
   useApproveMembers,
+  useMergeDuplicate,
   useRecruitmentRequests,
   useRejectMembers,
   useRequestMemberChanges,
-  useMergeDuplicate,
 } from "@/lib/api/chapter-admin";
 import { useGetChapters } from "@/lib/api/church";
 import { cn } from "@/lib/utils";
@@ -41,57 +30,68 @@ import { isSuperAdmin } from "@/types/user";
 
 type Tab = "pending" | "rejected";
 type NoteAction = { kind: "reject" | "changes"; ids: string[] } | null;
+type MergeTarget = { request: RecruitmentRequest; match: DuplicateMatch } | null;
 
-/** One line describing a possible duplicate, e.g. "Same name & date of birth · Antioch Chapter, ANTIOCH BC". */
+const TABS: { id: Tab; label: string }[] = [
+  { id: "pending", label: "Awaiting review" },
+  { id: "rejected", label: "Rejected" },
+];
+
 /**
  * One possible duplicate. For an approved member, a super admin can say
  * "same person": the new entry is dropped and the existing record moves to
  * the submitting chapter (keeping their member ID and history).
  */
 function DuplicateLine({ match, onSamePerson }: { match: DuplicateMatch; onSamePerson?: () => void }) {
-  const where = match.sameChapter
-    ? "in the same chapter"
-    : [match.chapterName, match.churchName].filter(Boolean).join(", ");
+  const where = match.sameChapter ? "in the same chapter" : [match.chapterName, match.churchName].filter(Boolean).join(", ");
   return (
-    <li className="flex items-center gap-2">
-      <MemberAvatar photo={match.photo} name={match.fullName} size={24} />
-      <span>
-        <strong>{match.fullName}</strong>
-        {match.memberId ? ` (${match.memberId})` : ""} —{" "}
-        {match.strength === "strong" ? "same name & date of birth" : "same name"} · {where} ·{" "}
-        {match.status === "active" ? "approved member" : match.status}
+    <li className="flex flex-col gap-2 sm:flex-row sm:items-center">
+      <span className="flex min-w-0 items-center gap-2">
+        <MemberAvatar photo={match.photo} name={match.fullName} size={24} />
+        <span className="min-w-0">
+          <strong className="font-semibold">{match.fullName}</strong>
+          {match.memberId ? ` (${match.memberId})` : ""}: {match.strength === "strong" ? "same name and date of birth" : "same name"} · {where} ·{" "}
+          {match.status === "active" ? "approved member" : match.status}
+        </span>
       </span>
-      {onSamePerson && match.status === "active" && (
-        <button type="button" onClick={onSamePerson} className="ml-auto shrink-0 rounded-md bg-white px-2 py-1 font-semibold text-primary ring-1 ring-amber-300 hover:bg-amber-100">
-          Same person — use existing record
-        </button>
-      )}
+      {onSamePerson && match.status === "active" ? (
+        <Button type="button" size="sm" variant="outline" onClick={onSamePerson} className="shrink-0 bg-surface sm:ml-auto">
+          Same person: use existing record
+        </Button>
+      ) : null}
     </li>
   );
 }
 
 /**
- * Recruitment Board — the association reviews members added by chapters.
+ * Recruitment Board: the association reviews members added by chapters.
  *
- * Every admin can view it; only a super_admin can approve, reject or ask
+ * Every admin can view it; only a super admin can approve, reject or ask
  * for changes. Each request shows possible duplicates found anywhere in the
  * association so the reviewer can spot double entries and members who moved.
  */
 export default function RecruitmentPage() {
-  const { user } = useCurrentUser();
-  const canReview = isSuperAdmin(user?.role);
+  const canReview = isSuperAdmin(useCurrentUser((s) => s.user)?.role);
 
   const [tab, setTab] = useState<Tab>("pending");
   const [search, setSearch] = useState("");
+  const [debounced, setDebounced] = useState("");
   const [churchId, setChurchId] = useState("all");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [noteAction, setNoteAction] = useState<NoteAction>(null);
   const [note, setNote] = useState("");
+  const [noteError, setNoteError] = useState("");
+  const [mergeTarget, setMergeTarget] = useState<MergeTarget>(null);
+
+  useEffect(() => {
+    const t = window.setTimeout(() => setDebounced(search.trim()), 350);
+    return () => window.clearTimeout(t);
+  }, [search]);
 
   const { data: churches = [] } = useGetChapters();
-  const { data: requests = [], isLoading, isError, refetch } = useRecruitmentRequests({
+  const { data: requests = [], isLoading, isError, refetch, isRefetching } = useRecruitmentRequests({
     status: tab,
-    search: search.trim() || undefined,
+    search: debounced || undefined,
     churchId: churchId === "all" ? undefined : churchId,
   });
   const approve = useApproveMembers();
@@ -99,18 +99,8 @@ export default function RecruitmentPage() {
   const requestChanges = useRequestMemberChanges();
   const merge = useMergeDuplicate();
 
-  const handleMerge = async (r: RecruitmentRequest, d: DuplicateMatch) => {
-    const moving = d.sameChapter ? "" : ` and move ${d.fullName} to ${r.chapter?.name}`;
-    if (!window.confirm(`Remove this new entry${moving}? They keep member ID ${d.memberId}.`)) return;
-    try {
-      await merge.mutateAsync({ pendingId: r.id, existingId: d.id });
-      successToast("Merged into the existing member record.");
-    } catch (err) {
-      errorToast((err as { message?: string })?.message ?? "Unable to merge.", "Error");
-    }
-  };
-
-  const duplicateCount = useMemo(() => requests.filter((r) => r.duplicates.length > 0).length, [requests]);
+  const reviewing = tab === "pending" && canReview;
+  const duplicateCount = requests.filter((r) => r.duplicates.length > 0).length;
   const allSelected = requests.length > 0 && requests.every((r) => selected.has(r.id));
 
   const toggle = (id: string, on: boolean) =>
@@ -131,236 +121,311 @@ export default function RecruitmentPage() {
     }
   };
 
+  const closeNote = () => {
+    setNoteAction(null);
+    setNote("");
+    setNoteError("");
+  };
+
   const handleNoteSubmit = async () => {
     if (!noteAction) return;
-    if (note.trim().length < 3) return errorToast("Please add a short reason.", "Reason needed");
+    if (note.trim().length < 3) {
+      setNoteError("Add a short reason so the chapter knows what to do (at least 3 characters).");
+      return;
+    }
     try {
       const mutation = noteAction.kind === "reject" ? reject : requestChanges;
       const result = await mutation.mutateAsync({ ids: noteAction.ids, note: note.trim() });
       successToast(
         noteAction.kind === "reject"
-          ? `${result.updated} member(s) rejected.`
-          : `Sent ${result.updated} member(s) back to the chapter for changes.`,
+          ? `${result.updated} member${result.updated === 1 ? "" : "s"} rejected.`
+          : `Sent ${result.updated} member${result.updated === 1 ? "" : "s"} back to the chapter for changes.`,
       );
       setSelected(new Set());
-      setNoteAction(null);
-      setNote("");
+      closeNote();
     } catch (err) {
       errorToast((err as { message?: string })?.message ?? "Unable to save.", "Error");
     }
   };
 
-  const renderRow = (r: RecruitmentRequest) => {
+  const handleMerge = async () => {
+    if (!mergeTarget) return;
+    try {
+      await merge.mutateAsync({ pendingId: mergeTarget.request.id, existingId: mergeTarget.match.id });
+      successToast("Merged into the existing member record.");
+      setMergeTarget(null);
+    } catch (err) {
+      errorToast((err as { message?: string })?.message ?? "Unable to merge.", "Error");
+    }
+  };
+
+  const renderRequest = (r: RecruitmentRequest) => {
     const age = ageFrom(r.dateOfBirth);
     const warning = ageWarning(r.dateOfBirth, r.rank);
+    const strongDuplicate = r.duplicates.some((d) => d.strength === "strong");
     return (
       <li
         key={r.id}
         className={cn(
-          "rounded-2xl border bg-surface p-4",
-          r.duplicates.some((d) => d.strength === "strong") ? "border-amber-300" : "border-text-dark/5",
+          "rounded-xl border bg-surface shadow-[var(--surface-shadow)]",
+          strongDuplicate ? "border-warning/40" : "border-border",
+          selected.has(r.id) && "ring-2 ring-focus/30",
         )}
       >
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
+        <div className="flex flex-col gap-4 p-4 sm:p-5 lg:flex-row lg:items-center">
           <div className="flex min-w-0 flex-1 items-center gap-3">
-            {tab === "pending" && canReview && (
-              <Checkbox
-                checked={selected.has(r.id)}
-                onCheckedChange={(v) => toggle(r.id, v === true)}
-                aria-label={`Select ${r.fullName}`}
-              />
-            )}
-            <MemberAvatar photo={r.photo} name={r.fullName} size={52} />
+            {reviewing ? (
+              <Checkbox checked={selected.has(r.id)} onCheckedChange={(v) => toggle(r.id, v === true)} aria-label={`Select ${r.fullName}`} />
+            ) : null}
+            <MemberAvatar photo={r.photo} name={r.fullName} size={48} />
             <div className="min-w-0">
-              <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-primary">
+              <p className="flex flex-wrap items-center gap-2 font-semibold text-foreground">
                 {r.fullName}
-                {r.changesRequested && <Badge className="bg-amber-100 text-amber-800">Waiting on chapter</Badge>}
+                {r.changesRequested ? <Badge variant="warning">Waiting on chapter</Badge> : null}
               </p>
-              <p className="text-xs text-text-muted">
+              <p className="text-sm text-muted">
                 {r.rank?.name ?? "No rank"} · {r.dateOfBirth ? `${formatDate(r.dateOfBirth)} (age ${age})` : "No date of birth"}
               </p>
-              <p className="text-xs text-text-muted">
+              <p className="text-sm text-muted">
                 {r.chapter?.name} · {r.church?.name}
               </p>
             </div>
           </div>
 
-          <div className="text-xs text-text-muted lg:w-48">
+          <div className="text-xs text-muted lg:w-48">
             <p>Submitted {formatDate(r.createdAt)}</p>
-            {r.submittedBy && <p>by {r.submittedBy.name} ({r.submittedBy.role})</p>}
+            {r.submittedBy ? (
+              <p>
+                by {r.submittedBy.name} ({r.submittedBy.role})
+              </p>
+            ) : null}
           </div>
 
-          {tab === "pending" && canReview && (
+          {reviewing ? (
             <div className="flex flex-wrap gap-2 lg:justify-end">
-              <Button size="sm" className="bg-emerald-600 text-white hover:bg-emerald-700" onClick={() => handleApprove([r.id])} loading={approve.isPending && approve.variables?.ids.includes(r.id)}>
-                <LuCheck size={14} /> Approve
+              <Button type="button" size="sm" variant="ghost" className="text-danger" onClick={() => setNoteAction({ kind: "reject", ids: [r.id] })}>
+                <LuX size={14} aria-hidden />
+                Reject
               </Button>
-              <Button size="sm" variant="outline" onClick={() => setNoteAction({ kind: "changes", ids: [r.id] })}>
-                <LuPencilLine size={14} /> Changes
+              <Button type="button" size="sm" variant="outline" onClick={() => setNoteAction({ kind: "changes", ids: [r.id] })}>
+                <LuPencilLine size={14} aria-hidden />
+                Request changes
               </Button>
-              <Button size="sm" variant="ghost" className="text-rose-600" onClick={() => setNoteAction({ kind: "reject", ids: [r.id] })}>
-                <LuX size={14} /> Reject
+              <Button
+                type="button"
+                size="sm"
+                className="bg-success text-white hover:bg-success/90"
+                onClick={() => handleApprove([r.id])}
+                loading={approve.isPending && approve.variables?.ids.includes(r.id)}
+              >
+                <LuCheck size={14} aria-hidden />
+                Approve
               </Button>
             </div>
-          )}
+          ) : null}
         </div>
 
-        {warning && <p className="mt-3 text-xs text-amber-700">{warning}</p>}
-
-        {r.reviewNote && (
-          <p className="mt-3 rounded-lg bg-background p-2 text-xs text-text-muted">
-            <strong>{r.status === "rejected" ? "Rejection reason" : "Changes requested"}:</strong> {r.reviewNote}
-          </p>
-        )}
-
-        {r.duplicates.length > 0 && (
-          <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
-            <p className="mb-2 flex items-center gap-1.5 font-semibold">
-              <LuTriangleAlert size={14} /> Possible duplicate — check before approving
-            </p>
-            <ul className="space-y-1.5">
-              {r.duplicates.map((d) => (
-                <DuplicateLine
-                  key={d.id}
-                  match={d}
-                  onSamePerson={tab === "pending" && canReview ? () => handleMerge(r, d) : undefined}
-                />
-              ))}
-            </ul>
+        {warning || r.reviewNote || r.duplicates.length > 0 ? (
+          <div className="space-y-3 border-t border-separator px-4 py-3 sm:px-5">
+            {warning ? <p className="text-sm text-warning">{warning}</p> : null}
+            {r.reviewNote ? (
+              <p className="text-sm text-muted">
+                <span className="font-medium text-foreground">{r.status === "rejected" ? "Rejection reason" : "Changes requested"}:</span>{" "}
+                {r.reviewNote}
+              </p>
+            ) : null}
+            {r.duplicates.length > 0 ? (
+              <div className="rounded-lg border border-warning/30 bg-warning/[0.06] p-3 text-sm text-foreground">
+                <p className="mb-2 flex items-center gap-1.5 font-semibold text-warning">
+                  <LuTriangleAlert size={15} aria-hidden />
+                  Possible duplicate: check before approving
+                </p>
+                <ul className="space-y-2">
+                  {r.duplicates.map((d) => (
+                    <DuplicateLine
+                      key={d.id}
+                      match={d}
+                      onSamePerson={reviewing ? () => setMergeTarget({ request: r, match: d }) : undefined}
+                    />
+                  ))}
+                </ul>
+              </div>
+            ) : null}
           </div>
-        )}
+        ) : null}
       </li>
     );
   };
 
   return (
-    <div className={adminPageCx}>
-      <AdminPageHeader
-        title="Recruitment Board"
+    <div className="min-w-0 space-y-6">
+      <PageHeader
+        title="Recruitment board"
         description="Members added by chapters wait here until a super admin approves them. Approved members get a member ID and count in all totals."
-        stats={
+      />
+
+      {!canReview ? (
+        <p className="rounded-lg border border-border bg-surface-secondary px-4 py-3 text-sm text-muted">
+          You can view requests. Only a super admin can approve, reject or request changes.
+        </p>
+      ) : null}
+
+      <ViewTabs
+        aria-label="Request status"
+        tabs={TABS.map((t) => (t.id === tab && !isLoading ? { ...t, count: requests.length } : t))}
+        value={tab}
+        onChange={(id) => {
+          setTab(id);
+          setSelected(new Set());
+        }}
+      />
+
+      <div className="space-y-3">
+        <TableToolbar
+          search={{ value: search, onChange: setSearch, placeholder: "Search by name…" }}
+          filters={
+            <Select value={churchId} onValueChange={setChurchId}>
+              <SelectTrigger aria-label="Church">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All churches</SelectItem>
+                {churches.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          }
+          actions={
+            <div className="flex items-center gap-3">
+              {duplicateCount > 0 ? <Badge variant="warning">{duplicateCount} with possible duplicates</Badge> : null}
+              {reviewing && requests.length > 0 ? (
+                <Checkbox
+                  checked={allSelected}
+                  onCheckedChange={(v) => setSelected(v === true ? new Set(requests.map((r) => r.id)) : new Set())}
+                  label="Select all"
+                />
+              ) : null}
+            </div>
+          }
+        />
+
+        {isLoading ? (
+          <div className="space-y-3">
+            {[0, 1, 2].map((i) => (
+              <Skeleton key={i} className="h-28 w-full rounded-xl" />
+            ))}
+          </div>
+        ) : isError ? (
+          <div className="rounded-xl border border-border bg-surface">
+            <EmptyState
+              tone="danger"
+              title="We couldn't load requests"
+              action={
+                <Button type="button" variant="outline" onClick={() => refetch()} loading={isRefetching}>
+                  <LuRefreshCw size={15} aria-hidden />
+                  Try again
+                </Button>
+              }
+            />
+          </div>
+        ) : requests.length === 0 ? (
+          <div className="rounded-xl border border-border bg-surface">
+            <EmptyState
+              icon={LuUserCheck}
+              title={tab === "pending" ? "No members waiting for review" : "No rejected members"}
+              description={tab === "pending" ? "Members that chapters add will appear here for approval." : undefined}
+            />
+          </div>
+        ) : (
+          <ul className="space-y-3">{requests.map(renderRequest)}</ul>
+        )}
+      </div>
+
+      <BulkActionBar
+        count={selected.size}
+        entityLabel="Member"
+        onClear={() => setSelected(new Set())}
+        actions={
           <>
-            <Badge className="bg-primary/10 text-primary">{requests.length} {tab === "pending" ? "awaiting review" : "rejected"}</Badge>
-            {duplicateCount > 0 && (
-              <Badge className="bg-amber-100 text-amber-800">{duplicateCount} with possible duplicates</Badge>
-            )}
+            <button
+              type="button"
+              onClick={() => handleApprove([...selected])}
+              disabled={approve.isPending}
+              className="flex h-9 items-center gap-1.5 rounded-lg bg-success px-3 font-medium text-white outline-none transition-colors hover:bg-success/90 focus-visible:ring-2 focus-visible:ring-gold/60 disabled:opacity-60"
+            >
+              <LuCheck size={15} aria-hidden />
+              {approve.isPending ? "Approving…" : "Approve"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setNoteAction({ kind: "changes", ids: [...selected] })}
+              className="flex h-9 items-center gap-1.5 rounded-lg px-3 font-medium text-white/85 outline-none transition-colors hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-gold/60"
+            >
+              <LuPencilLine size={15} aria-hidden />
+              <span className="hidden sm:inline">Request changes</span>
+              <span className="sm:hidden">Changes</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setNoteAction({ kind: "reject", ids: [...selected] })}
+              className="flex h-9 items-center gap-1.5 rounded-lg px-3 font-medium text-[#ffb4b4] outline-none transition-colors hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-gold/60"
+            >
+              <LuX size={15} aria-hidden />
+              Reject
+            </button>
           </>
         }
       />
 
-      {!canReview && (
-        <p className="rounded-lg border border-text-dark/5 bg-surface p-3 text-sm text-text-muted">
-          You can view requests. Only a super admin can approve, reject or request changes.
-        </p>
-      )}
+      <ConfirmDialog
+        isOpen={!!noteAction}
+        title={`${noteAction?.kind === "reject" ? "Reject" : "Request changes for"} ${noteAction?.ids.length ?? 0} member${noteAction?.ids.length === 1 ? "" : "s"}?`}
+        message={
+          noteAction?.kind === "reject"
+            ? "The chapter will see your reason."
+            : "The member goes back to the chapter to fix. They can edit and resubmit."
+        }
+        tone={noteAction?.kind === "reject" ? "danger" : "accent"}
+        confirmLabel={noteAction?.kind === "reject" ? "Reject" : "Send back"}
+        loading={reject.isPending || requestChanges.isPending}
+        onClose={closeNote}
+        onConfirm={handleNoteSubmit}
+      >
+        <Textarea
+          label={noteAction?.kind === "reject" ? "Reason for rejection" : "What needs to change?"}
+          rows={3}
+          value={note}
+          error={noteError || undefined}
+          placeholder={
+            noteAction?.kind === "reject" ? "e.g. Already registered in Blessed Chapter" : "e.g. The photo is unclear, please upload a new one"
+          }
+          onChange={(e) => {
+            setNote(e.target.value);
+            if (noteError) setNoteError("");
+          }}
+          autoFocus
+        />
+      </ConfirmDialog>
 
-      <section className={adminFilterBarCx}>
-        <div className="flex gap-1 rounded-lg bg-background p-1">
-          {(["pending", "rejected"] as Tab[]).map((t) => (
-            <button
-              key={t}
-              type="button"
-              onClick={() => { setTab(t); setSelected(new Set()); }}
-              className={cn(
-                "rounded-md px-3 py-1.5 text-sm font-medium",
-                tab === t ? "bg-primary text-white" : "text-text-muted hover:text-primary",
-              )}
-            >
-              {t === "pending" ? "Awaiting review" : "Rejected"}
-            </button>
-          ))}
-        </div>
-          <Input
-            placeholder="Search by name…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            startContent={<LuSearch size={16} />}
-            className="w-full sm:max-w-xs"
-          />
-          <Select value={churchId} onValueChange={setChurchId}>
-            <SelectTrigger className="w-full sm:w-56" aria-label="Filter by church"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All churches</SelectItem>
-              {churches.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-            </SelectContent>
-          </Select>
-
-        {tab === "pending" && canReview && requests.length > 0 && (
-          <label className="flex items-center gap-2 text-sm text-text-muted sm:ml-auto">
-            <Checkbox
-              checked={allSelected}
-              onCheckedChange={(v) => setSelected(v === true ? new Set(requests.map((r) => r.id)) : new Set())}
-            />
-            Select all
-          </label>
-        )}
-      </section>
-
-      {isLoading ? (
-        <div className="flex justify-center py-20"><Spinner label="Loading requests…" /></div>
-      ) : isError ? (
-        <div className="flex flex-col items-center gap-3 py-20">
-          <p className="text-sm text-rose-600">Unable to load requests.</p>
-          <Button size="sm" onClick={() => refetch()}>Retry</Button>
-        </div>
-      ) : requests.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-2xl border border-text-dark/5 bg-surface py-16 text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/[0.06] text-primary">
-            <LuUserCheck size={20} />
-          </div>
-          <p className="text-sm font-semibold">{tab === "pending" ? "No members waiting for review" : "No rejected members"}</p>
-        </div>
-      ) : (
-        <ul className="space-y-3">{requests.map(renderRow)}</ul>
-      )}
-
-      {selected.size > 0 && (
-        <div className="fixed inset-x-4 bottom-4 z-40 mx-auto flex max-w-2xl flex-col gap-2 rounded-2xl bg-primary p-3 text-white shadow-2xl sm:flex-row sm:items-center">
-          <p className="flex-1 px-2 text-sm">{selected.size} selected</p>
-          <Button size="sm" className="bg-emerald-500 text-white hover:bg-emerald-600" onClick={() => handleApprove([...selected])} loading={approve.isPending}>
-            <LuCheck size={14} /> Approve all
-          </Button>
-          <Button size="sm" variant="outline" className="text-primary" onClick={() => setNoteAction({ kind: "changes", ids: [...selected] })}>
-            Request changes
-          </Button>
-          <Button size="sm" variant="destructive" onClick={() => setNoteAction({ kind: "reject", ids: [...selected] })}>
-            Reject
-          </Button>
-        </div>
-      )}
-
-      <Dialog open={!!noteAction} onOpenChange={(open) => !open && setNoteAction(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>
-              {noteAction?.kind === "reject" ? "Reject" : "Request changes for"} {noteAction?.ids.length} member
-              {noteAction?.ids.length === 1 ? "" : "s"}
-            </DialogTitle>
-            <DialogDescription>
-              {noteAction?.kind === "reject"
-                ? "The chapter will see this reason."
-                : "The member goes back to the chapter to fix. They can edit and resubmit."}
-            </DialogDescription>
-          </DialogHeader>
-          <Textarea
-            label={noteAction?.kind === "reject" ? "Reason for rejection" : "What needs to change?"}
-            rows={4}
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder={noteAction?.kind === "reject" ? "e.g. Already registered in Blessed Chapter" : "e.g. The photo is unclear, please upload a new one"}
-          />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setNoteAction(null)}>Cancel</Button>
-            <Button
-              onClick={handleNoteSubmit}
-              loading={reject.isPending || requestChanges.isPending}
-              variant={noteAction?.kind === "reject" ? "destructive" : "default"}
-            >
-              {noteAction?.kind === "reject" ? "Reject" : "Send back"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ConfirmDialog
+        isOpen={!!mergeTarget}
+        title="Use the existing record?"
+        message={
+          mergeTarget
+            ? `This new entry is removed${
+                mergeTarget.match.sameChapter ? "" : ` and ${mergeTarget.match.fullName} moves to ${mergeTarget.request.chapter?.name}`
+              }. They keep member ID ${mergeTarget.match.memberId}.`
+            : ""
+        }
+        tone="accent"
+        confirmLabel="Merge records"
+        loading={merge.isPending}
+        onClose={() => setMergeTarget(null)}
+        onConfirm={handleMerge}
+      />
     </div>
   );
 }

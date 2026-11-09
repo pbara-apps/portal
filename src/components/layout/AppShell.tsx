@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { useLocation } from "react-router-dom";
 import { MEDIA, useMediaQuery } from "@/hooks/useMediaQuery";
 import { cn } from "@/lib/utils";
@@ -47,7 +47,11 @@ export function AppShell({ config, topbarActions, children }: AppShellProps) {
   }, []);
 
   return (
-    <div className="min-h-dvh bg-background text-foreground">
+    <div
+      className="min-h-dvh bg-background text-foreground"
+      // Current sidebar width, for fixed elements that centre on the content (e.g. the bulk action bar).
+      style={{ "--shell-offset": collapsed ? "var(--sidebar-rail)" : "var(--sidebar-width)" } as CSSProperties}
+    >
       <a
         href="#main"
         className="sr-only z-50 rounded-lg bg-surface px-4 py-2 text-sm font-medium shadow-[var(--overlay-shadow)] focus:not-sr-only focus:fixed focus:left-4 focus:top-3"
