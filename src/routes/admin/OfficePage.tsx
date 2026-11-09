@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { LuBriefcase, LuPencil, LuPlus, LuTrash2 } from "react-icons/lu";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { DataTable, type DataTableColumn } from "@/components/shared/DataTable";
@@ -8,8 +7,7 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { RowActions } from "@/components/shared/RowActions";
 import { TableToolbar } from "@/components/shared/TableToolbar";
 import { errorToast, successToast } from "@/components/shared/toast-notification";
-import { AdminPageHeader } from "@/features/admin/components/shared/AdminPageHeader";
-import { adminPageCx } from "@/features/admin/components/shared/adminLayout";
+import { PageHeader } from "@/components/shared/PageHeader";
 import { BulkActionBar } from "@/features/admin/components/shared/BulkActionBar";
 import { useClientTable } from "@/hooks/useClientTable";
 import useCurrentUser from "@/hooks/useCurrentUser";
@@ -76,15 +74,18 @@ export default function OfficeAdminPage() {
   const hasSearch = table.query.trim() !== "";
 
   return (
-    <div className={adminPageCx}>
-      <AdminPageHeader
-        title="Offices & Positions"
-        description="Define executive roles used when assigning officers across chapters."
-        actionLabel="Add office"
-        onAction={openCreate}
-        actionDisabled={!canManage}
-        actionDisabledText="Your role does not permit office updates."
-        stats={isLoading ? null : <Badge variant="secondary">{offices.length} offices registered</Badge>}
+    <div className="min-w-0 space-y-6">
+      <PageHeader
+        title="Offices & positions"
+        description="Executive roles used when assigning officers across chapters."
+        actions={
+          canManage ? (
+            <Button type="button" onClick={openCreate}>
+              <LuPlus size={16} aria-hidden />
+              Add office
+            </Button>
+          ) : null
+        }
       />
 
       <div className="space-y-3">
@@ -102,24 +103,26 @@ export default function OfficeAdminPage() {
           onRetry={() => refetch()}
           sort={table.sort}
           onSortChange={table.setSort}
-          selectedIds={table.selectedIds}
-          onSelectionChange={table.setSelectedIds}
+          selectedIds={canManage ? table.selectedIds : undefined}
+          onSelectionChange={canManage ? table.setSelectedIds : undefined}
           onRowAction={canManage ? openEdit : undefined}
-          rowActions={(office) => (
-            <RowActions
-              label={`Actions for ${office.name}`}
-              actions={[
-                { label: "Edit office", icon: LuPencil, tone: "accent", disabled: !canManage, onAction: () => openEdit(office) },
-                {
-                  label: "Delete office",
-                  icon: LuTrash2,
-                  danger: true,
-                  disabled: !canManage,
-                  onAction: () => setDeleteTarget({ ids: [office.id], label: office.name }),
-                },
-              ]}
-            />
-          )}
+          rowActions={
+            canManage
+              ? (office) => (
+                  <RowActions
+                    actions={[
+                      { label: "Edit office", icon: LuPencil, tone: "accent", onAction: () => openEdit(office) },
+                      {
+                        label: "Delete office",
+                        icon: LuTrash2,
+                        danger: true,
+                        onAction: () => setDeleteTarget({ ids: [office.id], label: office.name }),
+                      },
+                    ]}
+                  />
+                )
+              : undefined
+          }
           renderCard={(office) => (
             <>
               <p className="text-sm font-medium text-foreground">{office.name}</p>
@@ -144,10 +147,12 @@ export default function OfficeAdminPage() {
                 title="No offices defined yet"
                 description="Offices are the roles executives hold, such as President or Treasurer."
                 action={
-                  <Button type="button" size="sm" onClick={openCreate} disabled={!canManage}>
-                    <LuPlus size={14} />
-                    Add office
-                  </Button>
+                  canManage ? (
+                    <Button type="button" size="sm" onClick={openCreate}>
+                      <LuPlus size={14} aria-hidden />
+                      Add office
+                    </Button>
+                  ) : undefined
                 }
               />
             )

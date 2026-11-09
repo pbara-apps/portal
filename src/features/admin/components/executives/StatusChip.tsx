@@ -1,35 +1,45 @@
-import type { ExecutiveStatus, ChapterStatus } from "@/types/admin";
-import { Badge } from "@/components/ui/badge";
+import type { ChapterStatus, ExecutiveStatus } from "@/types/admin";
 import { cn } from "@/lib/utils";
 
-const executiveStatusMap: Record<ExecutiveStatus, { label: string; className: string }> = {
-  active: { label: "Active", className: "bg-emerald-100 text-emerald-700 ring-emerald-200/60" },
-  inactive: { label: "Inactive", className: "bg-rose-100 text-rose-700 ring-rose-200/60" },
-  completed: {
-    label: "Completed",
-    className: "bg-text-dark/[0.06] text-text-muted ring-text-dark/[0.08]",
-  },
+type Tone = "success" | "danger" | "neutral";
+
+const TONE_CX: Record<Tone, string> = {
+  success: "bg-success/10 text-success",
+  danger: "bg-danger/[0.08] text-danger",
+  neutral: "bg-default text-muted",
 };
 
-const chapterStatusMap: Record<ChapterStatus, { label: string; className: string }> = {
-  active: { label: "Active", className: "bg-emerald-100 text-emerald-700 ring-emerald-200/60" },
-  inactive: { label: "Inactive", className: "bg-rose-100 text-rose-700 ring-rose-200/60" },
+const DOT_CX: Record<Tone, string> = {
+  success: "bg-success",
+  danger: "bg-danger",
+  neutral: "bg-muted/60",
 };
 
-export function StatusChip({ status }: { status: ExecutiveStatus }) {
-  const s = executiveStatusMap[status];
+/** Small status pill with a coloured dot (colour is never the only cue: the label is always shown). */
+function StatusPill({ tone, label }: { tone: Tone; label: string }) {
   return (
-    <Badge className={cn("ring-1 px-2 text-[10px] font-bold uppercase tracking-[0.08em]", s.className)}>
-      {s.label}
-    </Badge>
+    <span className={cn("inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium", TONE_CX[tone])}>
+      <span className={cn("size-1.5 rounded-full", DOT_CX[tone])} aria-hidden />
+      {label}
+    </span>
   );
 }
 
+const EXECUTIVE: Record<ExecutiveStatus, { label: string; tone: Tone }> = {
+  active: { label: "Active", tone: "success" },
+  inactive: { label: "Inactive", tone: "danger" },
+  completed: { label: "Completed", tone: "neutral" },
+};
+
+const CHAPTER: Record<ChapterStatus, { label: string; tone: Tone }> = {
+  active: { label: "Active", tone: "success" },
+  inactive: { label: "Inactive", tone: "neutral" },
+};
+
+export function StatusChip({ status }: { status: ExecutiveStatus }) {
+  return <StatusPill {...EXECUTIVE[status]} />;
+}
+
 export function ChapterStatusChip({ status }: { status: ChapterStatus }) {
-  const s = chapterStatusMap[status];
-  return (
-    <Badge className={cn("ring-1 px-2 text-[10px] font-bold uppercase tracking-[0.08em]", s.className)}>
-      {s.label}
-    </Badge>
-  );
+  return <StatusPill {...CHAPTER[status]} />;
 }

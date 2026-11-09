@@ -1,478 +1,256 @@
-import { useMemo, useState } from "react";
-import {
-  LuEye,
-  LuPencil,
-  LuPlus,
-  LuSearch,
-  LuTrash2,
-  LuUsers,
-} from "react-icons/lu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import { Pagination } from "@/components/ui/pagination";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Spinner } from "@/components/ui/spinner";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { StatusChip } from "@/features/admin/components/executives/StatusChip";
-import { AdminPageHeader } from "@/features/admin/components/shared/AdminPageHeader";
-import {
-  adminFilterBarCx,
-  adminFilterSearchCx,
-  adminFilterSelectCx,
-  adminFilterSelectExtraWideCx,
-  adminFilterSelectWideCx,
-  adminPageCx,
-  adminTableFooterCx,
-  adminTableMinCx,
-  adminTableScrollCx,
-  adminTableSectionCx,
-} from "@/features/admin/components/shared/adminLayout";
-import { BulkActionBar } from "@/features/admin/components/shared/BulkActionBar";
+import { useState } from "react";
+import { LuEye, LuPencil, LuPlus, LuTrash2, LuUsers } from "react-icons/lu";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
-import {
-  errorToast,
-  successToast,
-} from "@/components/shared/toast-notification";
-import { useGetChapters } from "@/lib/api/church";
-import {
-  useDeleteExecutive,
-  useDeleteExecutivesBulk,
-  useGetExecutives,
-} from "@/lib/api/executive";
-import { useGetOffices } from "@/lib/api/office";
+import { DataTable, type DataTableColumn } from "@/components/shared/DataTable";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { PageHeader } from "@/components/shared/PageHeader";
+import { RowActions } from "@/components/shared/RowActions";
+import { TableToolbar } from "@/components/shared/TableToolbar";
+import { errorToast, successToast } from "@/components/shared/toast-notification";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { StatusChip } from "@/features/admin/components/executives/StatusChip";
+import { BulkActionBar } from "@/features/admin/components/shared/BulkActionBar";
+import { useClientTable } from "@/hooks/useClientTable";
 import useCurrentUser from "@/hooks/useCurrentUser";
+import { useGetChapters } from "@/lib/api/church";
+import { useDeleteExecutive, useDeleteExecutivesBulk, useGetExecutives } from "@/lib/api/executive";
+import { useGetOffices } from "@/lib/api/office";
 import { useDrawer } from "@/store/useDrawer";
-import type { ExecutiveStatus } from "@/types/admin";
-import { EXECUTIVE_STATUSES } from "@/types/admin";
+import { EXECUTIVE_STATUSES, type AdminExecutive, type ExecutiveStatus } from "@/types/admin";
 import { canWriteAdminContent } from "@/types/user";
 
-const PAGE_SIZE = 8;
+function ExecutiveName({ exec }: { exec: AdminExecutive }) {
+  return (
+    <div className="flex min-w-0 items-center gap-3">
+      <Avatar className="size-9">
+        {exec.image ? <AvatarImage src={exec.image} alt="" /> : null}
+        <AvatarFallback>{exec.name.slice(0, 2).toUpperCase()}</AvatarFallback>
+      </Avatar>
+      <div className="min-w-0">
+        <p className="truncate font-medium text-foreground">{exec.name}</p>
+        <p className="truncate text-xs text-muted">{exec.email || exec.phone}</p>
+      </div>
+    </div>
+  );
+}
+
+const COLUMNS: DataTableColumn<AdminExecutive>[] = [
+  { id: "name", header: "Executive", sortable: true, isRowHeader: true, cell: (e) => <ExecutiveName exec={e} /> },
+  { id: "office", header: "Office", sortable: true, cell: (e) => e.officeName || <span className="text-muted">—</span> },
+  {
+    id: "chapter",
+    header: "Chapter",
+    sortable: true,
+    hideBelow: "lg",
+    cell: (e) => (
+      <div className="min-w-0">
+        <p className="truncate">{e.chapterName}</p>
+        <p className="truncate text-xs text-muted">{e.churchName}</p>
+      </div>
+    ),
+  },
+  { id: "status", header: "Status", sortable: true, className: "w-32", cell: (e) => <StatusChip status={e.status} /> },
+];
+
+const searchText = (e: AdminExecutive) =>
+  `${e.name} ${e.email} ${e.officeName} ${e.chapterName} ${e.churchName}`;
+const sortValue = (e: AdminExecutive, column: string) =>
+  ({ office: e.officeName, chapter: e.chapterName, status: e.status })[column] ?? e.name;
 
 export default function ExecutiveAdminPage() {
   const openDrawer = useDrawer((s) => s.openDrawer);
-  const { user } = useCurrentUser();
-  const canManage = canWriteAdminContent(user?.role);
-  const {
-    data: executives = [],
-    isLoading,
-    isError,
-    refetch,
-  } = useGetExecutives();
+  const canManage = canWriteAdminContent(useCurrentUser((s) => s.user)?.role);
+  const { data: executives = [], isLoading, isError, refetch } = useGetExecutives();
   const { data: offices = [] } = useGetOffices();
   const { data: chapters = [] } = useGetChapters();
   const deleteExecutive = useDeleteExecutive();
   const deleteBulk = useDeleteExecutivesBulk();
 
-  const [search, setSearch] = useState("");
-  const [officeFilter, setOfficeFilter] = useState<string>("all");
-  const [chapterFilter, setChapterFilter] = useState<string>("all");
-  const [statusFilter, setStatusFilter] = useState<ExecutiveStatus | "all">(
-    "all",
+  const [office, setOffice] = useState("all");
+  const [chapter, setChapter] = useState("all");
+  const [status, setStatus] = useState<ExecutiveStatus | "all">("all");
+  const [deleteTarget, setDeleteTarget] = useState<{ ids: string[]; label: string } | null>(null);
+
+  const filteredRows = executives.filter(
+    (e) =>
+      (office === "all" || e.officeId === office) &&
+      (chapter === "all" || e.churchId === chapter) &&
+      (status === "all" || e.status === status),
   );
-  const [page, setPage] = useState(1);
-  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
-  const [deleteTarget, setDeleteTarget] = useState<{
-    ids: string[];
-    label: string;
-  } | null>(null);
+  const table = useClientTable({
+    rows: filteredRows,
+    searchText,
+    sortValue,
+    resetKey: `${office}|${chapter}|${status}`,
+  });
+  const filtering = table.query.trim() !== "" || office !== "all" || chapter !== "all" || status !== "all";
 
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return executives.filter((e) => {
-      if (officeFilter !== "all" && e.officeId !== officeFilter) return false;
-      if (chapterFilter !== "all" && e.churchId !== chapterFilter) return false;
-      if (statusFilter !== "all" && e.status !== statusFilter) return false;
-      if (!q) return true;
-      return (
-        e.name.toLowerCase().includes(q) ||
-        e.email.toLowerCase().includes(q) ||
-        e.officeName.toLowerCase().includes(q) ||
-        e.chapterName.toLowerCase().includes(q) ||
-        e.churchName.toLowerCase().includes(q)
-      );
-    });
-  }, [executives, search, officeFilter, chapterFilter, statusFilter]);
-
-  const pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const pageItems = useMemo(() => {
-    const start = (page - 1) * PAGE_SIZE;
-    return filtered.slice(start, start + PAGE_SIZE);
-  }, [filtered, page]);
-
-  const pageIds = pageItems.map((e) => e.id);
-  const allPageSelected =
-    pageIds.length > 0 && pageIds.every((id) => selectedKeys.has(id));
-
-  const activeCount = executives.filter((e) => e.status === "active").length;
-
-  const togglePageSelection = (checked: boolean) => {
-    setSelectedKeys((prev) => {
-      const next = new Set(prev);
-      pageIds.forEach((id) => {
-        if (checked) next.add(id);
-        else next.delete(id);
-      });
-      return next;
-    });
-  };
-
-  const toggleRowSelection = (id: string, checked: boolean) => {
-    setSelectedKeys((prev) => {
-      const next = new Set(prev);
-      if (checked) next.add(id);
-      else next.delete(id);
-      return next;
-    });
+  const openCreate = () => openDrawer("create-executive");
+  const openView = (exec: AdminExecutive) => openDrawer("view-executive", { body: exec });
+  const openEdit = (exec: AdminExecutive) => openDrawer("edit-executive", { body: exec });
+  const clearFilters = () => {
+    table.setQuery("");
+    setOffice("all");
+    setChapter("all");
+    setStatus("all");
   };
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
     try {
-      if (deleteTarget.ids.length === 1) {
-        await deleteExecutive.mutateAsync(deleteTarget.ids[0]);
-      } else {
-        await deleteBulk.mutateAsync(deleteTarget.ids);
-      }
-      successToast(
-        deleteTarget.ids.length === 1
-          ? "Executive deleted."
-          : `${deleteTarget.ids.length} executives deleted.`,
-      );
-      setSelectedKeys(new Set());
+      if (deleteTarget.ids.length === 1) await deleteExecutive.mutateAsync(deleteTarget.ids[0]);
+      else await deleteBulk.mutateAsync(deleteTarget.ids);
+      successToast(deleteTarget.ids.length === 1 ? "Executive deleted." : `${deleteTarget.ids.length} executives deleted.`);
+      table.clearSelection();
       setDeleteTarget(null);
     } catch (err) {
-      errorToast(
-        (err as { message?: string })?.message ?? "Delete failed.",
-        "Error",
-      );
+      errorToast((err as { message?: string })?.message ?? "Delete failed.", "Error");
     }
   };
 
   return (
-    <div className={adminPageCx}>
-      <AdminPageHeader
-        title="Executive Leadership"
-        description="Manage association executives, office assignments, and public visibility."
-        actionLabel="Add Executive"
-        onAction={() => openDrawer("create-executive")}
-        actionDisabled={!canManage}
-        actionDisabledText="Your role does not permit executive updates."
-        stats={
-          <>
-            <Badge className="bg-primary/10 text-primary">
-              {executives.length} total
-            </Badge>
-            <Badge variant="success">{activeCount} active</Badge>
-          </>
+    <div className="min-w-0 space-y-6">
+      <PageHeader
+        title="Executives"
+        description="Association executives, their offices and public visibility."
+        actions={
+          canManage ? (
+            <Button type="button" onClick={openCreate}>
+              <LuPlus size={16} aria-hidden />
+              Add executive
+            </Button>
+          ) : null
         }
       />
 
-      <section className={adminFilterBarCx}>
-        <div className={adminFilterSearchCx}>
-          <Input
-            placeholder="Search by name, email, office, chapter…"
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
-            startContent={<LuSearch size={16} className="text-text-muted" />}
-          />
-        </div>
+      <div className="space-y-3">
+        <TableToolbar
+          search={{ value: table.query, onChange: table.setQuery, placeholder: "Search name, email, office…" }}
+          filters={
+            <>
+              <Select value={office} onValueChange={setOffice}>
+                <SelectTrigger aria-label="Office">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All offices</SelectItem>
+                  {offices.map((o) => (
+                    <SelectItem key={o.id} value={o.id}>
+                      {o.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={chapter} onValueChange={setChapter}>
+                <SelectTrigger aria-label="Chapter">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All chapters</SelectItem>
+                  {chapters.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.chapter} · {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={status} onValueChange={(v) => setStatus(v as ExecutiveStatus | "all")}>
+                <SelectTrigger aria-label="Status">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All statuses</SelectItem>
+                  {EXECUTIVE_STATUSES.map((s) => (
+                    <SelectItem key={s} value={s} className="capitalize">
+                      {s}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </>
+          }
+        />
 
-        <Select
-          value={officeFilter}
-          onValueChange={(v) => {
-            setOfficeFilter(v);
-            setPage(1);
-          }}
-        >
-          <SelectTrigger className={adminFilterSelectWideCx}>
-            <SelectValue placeholder="All Offices" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Offices</SelectItem>
-            {offices.map((o) => (
-              <SelectItem key={o.id} value={o.id}>
-                {o.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Select
-          value={chapterFilter}
-          onValueChange={(v) => {
-            setChapterFilter(v);
-            setPage(1);
-          }}
-        >
-          <SelectTrigger className={adminFilterSelectExtraWideCx}>
-            <SelectValue placeholder="All Chapters" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Chapters</SelectItem>
-            {chapters.map((c) => (
-              <SelectItem key={c.id} value={c.id}>
-                {c.chapter} · {c.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Select
-          value={statusFilter}
-          onValueChange={(v) => {
-            setStatusFilter(v as ExecutiveStatus | "all");
-            setPage(1);
-          }}
-        >
-          <SelectTrigger className={adminFilterSelectCx}>
-            <SelectValue placeholder="All Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            {EXECUTIVE_STATUSES.map((s) => (
-              <SelectItem key={s} value={s} className="capitalize">
-                {s}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </section>
-
-      <section className={adminTableSectionCx}>
-        {isLoading ? (
-          <div className="flex flex-col items-center gap-3 py-20">
-            <Spinner label="Loading executives…" />
-          </div>
-        ) : isError ? (
-          <div className="flex flex-col items-center gap-4 py-20 text-center">
-            <p className="text-sm text-rose-600">Unable to load executives.</p>
-            <Button size="sm" onClick={() => refetch()}>
-              Retry
-            </Button>
-          </div>
-        ) : (
-          <>
-            <div className={adminTableScrollCx}>
-              <Table className={adminTableMinCx}>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-12">
-                      <Checkbox
-                        checked={allPageSelected}
-                        onCheckedChange={(v) => togglePageSelection(v === true)}
-                        aria-label="Select all on page"
-                      />
-                    </TableHead>
-                    <TableHead>EXECUTIVE</TableHead>
-                    <TableHead>OFFICE</TableHead>
-                    <TableHead>CHAPTER</TableHead>
-                    <TableHead className="text-center">STATUS</TableHead>
-                    <TableHead className="text-right">ACTIONS</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {pageItems.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={6}>
-                        <div className="flex flex-col items-center gap-3 py-16 text-center">
-                          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/[0.06] text-primary">
-                            <LuUsers size={20} />
-                          </div>
-                          <div>
-                            <p className="text-sm font-semibold text-text-dark">
-                              No executives found
-                            </p>
-                            <p className="mt-1 text-xs text-text-muted">
-                              Add your first executive or adjust filters.
-                            </p>
-                          </div>
-                          <Button
-                            size="sm"
-                            className="bg-primary text-white"
-                            onClick={() => openDrawer("create-executive")}
-                            disabled={!canManage}
-                          >
-                            <LuPlus size={14} />
-                            Add Executive
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    pageItems.map((exec) => (
-                      <TableRow
-                        key={exec.id}
-                        className="cursor-pointer hover:bg-background/60"
-                        onClick={() =>
-                          openDrawer("view-executive", { body: exec })
-                        }
-                      >
-                        <TableCell onClick={(e) => e.stopPropagation()}>
-                          <Checkbox
-                            checked={selectedKeys.has(exec.id)}
-                            onCheckedChange={(v) =>
-                              toggleRowSelection(exec.id, v === true)
-                            }
-                            aria-label={`Select ${exec.name}`}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <Avatar className="h-10 w-10 bg-linear-to-br from-primary to-[#040e3d] text-[14px] font-bold text-white">
-                              <AvatarImage
-                                src={exec.image ?? undefined}
-                                alt={exec.name}
-                              />
-                              <AvatarFallback>
-                                {exec.name.slice(0, 2).toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="min-w-0">
-                              <p className="truncate text-sm font-semibold text-primary">
-                                {exec.name}
-                              </p>
-                              <p className="truncate text-[11px] text-text-muted">
-                                {exec.email || exec.phone}
-                              </p>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <span className="text-sm font-medium text-text-dark">
-                            {exec.officeName || "—"}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <div className="min-w-0">
-                            <p className="truncate text-sm text-text-dark">
-                              {exec.chapterName}
-                            </p>
-                            <p className="truncate text-[11px] text-text-muted">
-                              {exec.churchName}
-                            </p>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex justify-center">
-                            <StatusChip status={exec.status} />
-                          </div>
-                        </TableCell>
-                        <TableCell onClick={(e) => e.stopPropagation()}>
-                          <div className="flex justify-end">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  aria-label="Open actions"
-                                  className="text-text-muted"
-                                >
-                                  ⋮
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem
-                                  onClick={() =>
-                                    openDrawer("view-executive", { body: exec })
-                                  }
-                                >
-                                  <LuEye size={14} />
-                                  View
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  disabled={!canManage}
-                                  onClick={() =>
-                                    openDrawer("edit-executive", { body: exec })
-                                  }
-                                >
-                                  <LuPencil size={14} />
-                                  Edit profile
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  disabled={!canManage}
-                                  className="text-rose-600 focus:text-rose-600"
-                                  onClick={() => {
-                                    if (!canManage) return;
-                                    setDeleteTarget({
-                                      ids: [exec.id],
-                                      label: exec.name,
-                                    });
-                                  }}
-                                >
-                                  <LuTrash2 size={14} />
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+        <DataTable
+          aria-label="Executives"
+          columns={COLUMNS}
+          rows={table.pageRows}
+          getRowId={(e) => e.id}
+          getRowLabel={(e) => e.name}
+          isLoading={isLoading}
+          isError={isError}
+          errorMessage="We couldn't load executives."
+          onRetry={() => refetch()}
+          sort={table.sort}
+          onSortChange={table.setSort}
+          selectedIds={canManage ? table.selectedIds : undefined}
+          onSelectionChange={canManage ? table.setSelectedIds : undefined}
+          onRowAction={openView}
+          rowActions={(exec) => (
+            <RowActions
+              label={`Actions for ${exec.name}`}
+              actions={[
+                { label: "View details", icon: LuEye, onAction: () => openView(exec) },
+                canManage && { label: "Edit executive", icon: LuPencil, tone: "accent", onAction: () => openEdit(exec) },
+                canManage && {
+                  label: "Delete executive",
+                  icon: LuTrash2,
+                  danger: true,
+                  onAction: () => setDeleteTarget({ ids: [exec.id], label: exec.name }),
+                },
+              ]}
+            />
+          )}
+          renderCard={(exec) => (
+            <div className="space-y-2">
+              <ExecutiveName exec={exec} />
+              <div className="flex flex-wrap items-center gap-2 pl-12 text-xs text-muted">
+                {exec.officeName ? <span>{exec.officeName}</span> : null}
+                <StatusChip status={exec.status} />
+              </div>
             </div>
-
-            <div className={adminTableFooterCx}>
-              <p className="text-xs text-text-muted">
-                Showing{" "}
-                <span className="font-semibold text-text-dark">
-                  {filtered.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1}
-                </span>
-                –
-                <span className="font-semibold text-text-dark">
-                  {Math.min(page * PAGE_SIZE, filtered.length)}
-                </span>{" "}
-                of{" "}
-                <span className="font-semibold text-text-dark">
-                  {filtered.length}
-                </span>{" "}
-                executives
-              </p>
-              <Pagination
-                page={page}
-                totalPages={pages}
-                onPageChange={setPage}
+          )}
+          emptyState={
+            filtering ? (
+              <EmptyState
+                icon={LuUsers}
+                title="No executives match your filters"
+                action={
+                  <Button type="button" size="sm" variant="outline" onClick={clearFilters}>
+                    Clear filters
+                  </Button>
+                }
               />
-            </div>
-          </>
-        )}
-      </section>
+            ) : (
+              <EmptyState
+                icon={LuUsers}
+                title="No executives yet"
+                description="Add the association's officers and assign their offices."
+                action={
+                  canManage ? (
+                    <Button type="button" size="sm" onClick={openCreate}>
+                      <LuPlus size={14} aria-hidden />
+                      Add executive
+                    </Button>
+                  ) : undefined
+                }
+              />
+            )
+          }
+          summary={`${table.total} executive${table.total === 1 ? "" : "s"}`}
+          pagination={{ page: table.page, totalPages: table.totalPages, onPageChange: table.setPage }}
+          minWidth={760}
+        />
+      </div>
 
       <BulkActionBar
-        count={selectedKeys.size}
+        count={table.selectedIds.size}
         entityLabel="Executive"
-        onClear={() => setSelectedKeys(new Set())}
+        onClear={table.clearSelection}
         onDelete={() =>
-          setDeleteTarget({
-            ids: Array.from(selectedKeys),
-            label: `${selectedKeys.size} selected executives`,
-          })
+          setDeleteTarget({ ids: Array.from(table.selectedIds), label: `${table.selectedIds.size} selected executives` })
         }
         deleting={deleteBulk.isPending}
         disabled={!canManage}
@@ -481,7 +259,7 @@ export default function ExecutiveAdminPage() {
       <ConfirmDialog
         isOpen={!!deleteTarget}
         title="Delete executive"
-        message={`This will permanently remove ${deleteTarget?.label ?? "the selected record(s)"}. This action cannot be undone.`}
+        message={`Remove ${deleteTarget?.label ?? "the selected executives"}? They will no longer appear on the public site.`}
         loading={deleteExecutive.isPending || deleteBulk.isPending}
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
