@@ -3,11 +3,8 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Controller, useForm, type SubmitHandler } from "react-hook-form";
 import {
   LuArrowRight,
-  LuCircleHelp,
   LuEye,
   LuEyeOff,
-  LuLock,
-  LuMail,
 } from "react-icons/lu";
 import { AuthBrandPanel } from "@/features/auth/components/AuthBrandPanel";
 import { ForgotPasswordDialog } from "@/features/auth/components/ForgotPasswordDialog";
