@@ -1,45 +1,19 @@
 import dayjs from "dayjs";
-import relativeTime from "dayjs/plugin/relativeTime";
-import { useMemo, useState } from "react";
-import { LuMail, LuSearch, LuTrash2 } from "react-icons/lu";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Pagination } from "@/components/ui/pagination";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Spinner } from "@/components/ui/spinner";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { AdminPageHeader } from "@/features/admin/components/shared/AdminPageHeader";
-import {
-  adminFilterBarCx,
-  adminFilterSearchCx,
-  adminFilterSelectWideCx,
-  adminPageCx,
-  adminTableMinCx,
-  adminTableScrollCx,
-  adminTableSectionCx,
-} from "@/features/admin/components/shared/adminLayout";
-import { BulkActionBar } from "@/features/admin/components/shared/BulkActionBar";
+import { useState } from "react";
+import { LuMail, LuMailCheck, LuReply, LuTrash2 } from "react-icons/lu";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
-import {
-  errorToast,
-  successToast,
-} from "@/components/shared/toast-notification";
+import { DataTable, type DataTableColumn } from "@/components/shared/DataTable";
+import { DetailDrawer, DetailItem, DetailList, DetailSection } from "@/components/shared/DetailDrawer";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { PageHeader } from "@/components/shared/PageHeader";
+import { RowActions } from "@/components/shared/RowActions";
+import { TableToolbar } from "@/components/shared/TableToolbar";
+import { ViewTabs } from "@/components/shared/ViewTabs";
+import { errorToast, successToast } from "@/components/shared/toast-notification";
+import { Button } from "@/components/ui/button";
+import { BulkActionBar } from "@/features/admin/components/shared/BulkActionBar";
+import { useClientTable } from "@/hooks/useClientTable";
+import useCurrentUser from "@/hooks/useCurrentUser";
 import {
   useDeleteMessage,
   useDeleteMessagesBulk,
@@ -47,364 +21,279 @@ import {
   useMarkMessageRead,
   useMarkMessagesReadBulk,
 } from "@/lib/api/message";
-import useCurrentUser from "@/hooks/useCurrentUser";
+import { cn } from "@/lib/utils";
 import type { AdminMessage } from "@/types/admin";
 import { canWriteAdminContent } from "@/types/user";
-import { cn } from "@/lib/utils";
 
-dayjs.extend(relativeTime);
+type View = "all" | "unread" | "read";
 
-const PAGE_SIZE = 10;
+const received = (iso: string) => {
+  if (!iso) return "—";
+  const d = dayjs(iso);
+  return d.isSame(dayjs(), "day") ? d.format("h:mm A") : d.isSame(dayjs(), "year") ? d.format("MMM D") : d.format("MMM D, YYYY");
+};
 
+function Sender({ m }: { m: AdminMessage }) {
+  return (
+    <div className="flex min-w-0 items-center gap-2.5">
+      <span
+        aria-hidden
+        className={cn("size-2 shrink-0 rounded-full", m.isRead ? "bg-transparent" : "bg-focus")}
+      />
+      <div className="min-w-0">
+        <p className={cn("truncate text-foreground", !m.isRead && "font-semibold")}>
+          {m.fullName}
+          {!m.isRead ? <span className="sr-only"> (unread)</span> : null}
+        </p>
+        <p className="truncate text-xs text-muted">{m.email}</p>
+      </div>
+    </div>
+  );
+}
+
+const COLUMNS: DataTableColumn<AdminMessage>[] = [
+  { id: "from", header: "From", sortable: true, isRowHeader: true, className: "w-64", cell: (m) => <Sender m={m} /> },
+  {
+    id: "subject",
+    header: "Message",
+    cell: (m) => (
+      <p className="max-w-xl truncate text-sm">
+        <span className={cn("text-foreground", !m.isRead && "font-semibold")}>{m.subject}</span>
+        <span className="text-muted"> — {m.message}</span>
+      </p>
+    ),
+  },
+  {
+    id: "received",
+    header: "Received",
+    sortable: true,
+    align: "end",
+    className: "w-28",
+    cell: (m) => <span className="whitespace-nowrap text-xs text-muted">{received(m.createdAt)}</span>,
+  },
+];
+
+/** Contact form submissions from the public website. */
 export default function MessagesAdminPage() {
-  const { user } = useCurrentUser();
-  const canManage = canWriteAdminContent(user?.role);
-  const { data: messages = [], isLoading, isError } = useGetMessages();
+  const canManage = canWriteAdminContent(useCurrentUser((s) => s.user)?.role);
+  const { data: messages = [], isLoading, isError, refetch } = useGetMessages();
   const markRead = useMarkMessageRead();
   const markReadBulk = useMarkMessagesReadBulk();
   const deleteMessage = useDeleteMessage();
   const deleteBulk = useDeleteMessagesBulk();
 
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [page, setPage] = useState(1);
-  const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [activeMessage, setActiveMessage] = useState<AdminMessage | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<{
-    ids: string[];
-    label: string;
-  } | null>(null);
+  const [view, setView] = useState<View>("all");
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ ids: string[]; label: string } | null>(null);
 
-  const unreadCount = useMemo(
-    () => messages.filter((m) => !m.isRead).length,
-    [messages],
-  );
+  const unread = messages.filter((m) => !m.isRead).length;
+  const table = useClientTable({
+    rows: messages.filter((m) => view === "all" || (view === "unread") === !m.isRead),
+    searchText: (m) => `${m.fullName} ${m.email} ${m.subject} ${m.message}`,
+    sortValue: (m, column) => (column === "from" ? m.fullName : new Date(m.createdAt).getTime()),
+    initialSort: { column: "received", direction: "descending" },
+    resetKey: view,
+  });
+  // Read from the list so the drawer reflects "read" once the mutation lands.
+  const open = messages.find((m) => m.id === openId) ?? null;
 
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return messages.filter((msg) => {
-      if (statusFilter === "unread" && msg.isRead) return false;
-      if (statusFilter === "read" && !msg.isRead) return false;
-      if (!q) return true;
-      return (
-        msg.fullName.toLowerCase().includes(q) ||
-        msg.email.toLowerCase().includes(q) ||
-        msg.subject.toLowerCase().includes(q) ||
-        msg.message.toLowerCase().includes(q)
-      );
-    });
-  }, [messages, search, statusFilter]);
-
-  const pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const pageItems = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  const pageIds = pageItems.map((m) => m.id);
-  const allPageSelected = pageIds.length > 0 && pageIds.every((id) => selected.has(id));
-
-  const openMessage = async (msg: AdminMessage) => {
-    setActiveMessage(msg);
-    if (!msg.isRead) {
-      if (!canManage) return;
-      try {
-        await markRead.mutateAsync(msg.id);
-      } catch {
-        // Non-blocking — detail still opens
-      }
-    }
+  const openMessage = (m: AdminMessage) => {
+    setOpenId(m.id);
+    // Opening marks it read; failing to do so shouldn't block reading.
+    if (!m.isRead && canManage) markRead.mutate(m.id);
   };
 
-  const handleMarkSelectedRead = async () => {
-    const ids = Array.from(selected);
-    if (ids.length === 0) return;
-    if (!canManage) return;
+  const handleMarkRead = async (ids: string[]) => {
     try {
       await markReadBulk.mutateAsync(ids);
-      setSelected(new Set());
-      successToast("Selected messages marked as read.");
+      table.clearSelection();
+      successToast(ids.length === 1 ? "Marked as read." : `${ids.length} messages marked as read.`);
     } catch (err) {
-      errorToast(
-        (err as { message?: string })?.message ?? "Action failed.",
-        "Error",
-      );
+      errorToast((err as { message?: string })?.message ?? "Action failed.", "Error");
     }
   };
 
-  const handleDeleteSelected = async () => {
+  const handleDelete = async () => {
     if (!deleteTarget) return;
-    if (!canManage) return;
     try {
-      await deleteBulk.mutateAsync(deleteTarget.ids);
-      setSelected(new Set());
-      setActiveMessage(null);
+      if (deleteTarget.ids.length === 1) await deleteMessage.mutateAsync(deleteTarget.ids[0]);
+      else await deleteBulk.mutateAsync(deleteTarget.ids);
+      if (openId && deleteTarget.ids.includes(openId)) setOpenId(null);
+      table.clearSelection();
+      successToast(deleteTarget.ids.length === 1 ? "Message deleted." : `${deleteTarget.ids.length} messages deleted.`);
       setDeleteTarget(null);
-      successToast("Selected messages deleted.");
     } catch (err) {
-      errorToast(
-        (err as { message?: string })?.message ?? "Delete failed.",
-        "Error",
-      );
+      errorToast((err as { message?: string })?.message ?? "Delete failed.", "Error");
     }
   };
 
-  const handleDeleteOne = async (id: string) => {
-    if (!canManage) return;
-    try {
-      await deleteMessage.mutateAsync(id);
-      if (activeMessage?.id === id) setActiveMessage(null);
-      successToast("Message deleted.");
-    } catch (err) {
-      errorToast(
-        (err as { message?: string })?.message ?? "Delete failed.",
-        "Error",
-      );
-    }
-  };
+  const selectedUnread = messages.filter((m) => table.selectedIds.has(m.id) && !m.isRead).map((m) => m.id);
 
   return (
-    <div className={adminPageCx}>
-      <AdminPageHeader
-        title="Messages"
-        description="Contact form submissions from the public website."
-        stats={
-          <>
-            <Badge className="bg-primary/10 text-primary">{messages.length} total</Badge>
-            {unreadCount > 0 ? (
-              <Badge className="bg-gold/15 text-primary">{unreadCount} unread</Badge>
-            ) : null}
-          </>
-        }
+    <div className="min-w-0 space-y-6">
+      <PageHeader title="Messages" description="Contact form submissions from the public website." />
+
+      <ViewTabs
+        aria-label="Message filter"
+        tabs={[
+          { id: "all", label: "All" },
+          { id: "unread", label: "Unread", count: unread },
+          { id: "read", label: "Read" },
+        ]}
+        value={view}
+        onChange={setView}
       />
 
-      <Card className="border border-text-dark/[0.05] bg-surface shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
-        <CardContent className={`${adminFilterBarCx} border-0 bg-transparent p-3 shadow-none`}>
-          <Input
-            placeholder="Search by name, email, subject…"
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
-            startContent={<LuSearch size={16} className="text-text-muted" />}
-            className={adminFilterSearchCx}
-          />
-          <Select
-            value={statusFilter}
-            onValueChange={(v) => {
-              setStatusFilter(v);
-              setPage(1);
-            }}
-          >
-            <SelectTrigger className={adminFilterSelectWideCx}>
-              <SelectValue placeholder="All" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All</SelectItem>
-              <SelectItem value="unread">Unread</SelectItem>
-              <SelectItem value="read">Read</SelectItem>
-            </SelectContent>
-          </Select>
-          {selected.size > 0 ? (
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={handleMarkSelectedRead}
-              disabled={!canManage}
-              className="bg-primary/10 text-primary"
-            >
-              Mark {selected.size} as read
-            </Button>
-          ) : null}
-        </CardContent>
-      </Card>
+      <div className="space-y-3">
+        <TableToolbar search={{ value: table.query, onChange: table.setQuery, placeholder: "Search name, email, subject…" }} />
+        <DataTable
+          aria-label="Messages"
+          columns={COLUMNS}
+          rows={table.pageRows}
+          getRowId={(m) => m.id}
+          getRowLabel={(m) => `message from ${m.fullName}`}
+          isLoading={isLoading}
+          isError={isError}
+          errorMessage="We couldn't load messages."
+          onRetry={() => refetch()}
+          sort={table.sort}
+          onSortChange={table.setSort}
+          selectedIds={canManage ? table.selectedIds : undefined}
+          onSelectionChange={canManage ? table.setSelectedIds : undefined}
+          onRowAction={openMessage}
+          rowActions={
+            canManage
+              ? (m) => (
+                  <RowActions
+                    label={`Actions for message from ${m.fullName}`}
+                    actions={[
+                      !m.isRead && { label: "Mark as read", icon: LuMailCheck, onAction: () => handleMarkRead([m.id]) },
+                      {
+                        label: "Delete message",
+                        icon: LuTrash2,
+                        danger: true,
+                        onAction: () => setDeleteTarget({ ids: [m.id], label: `the message from ${m.fullName}` }),
+                      },
+                    ]}
+                  />
+                )
+              : undefined
+          }
+          renderCard={(m) => (
+            <div className="space-y-1">
+              <div className="flex items-start justify-between gap-3">
+                <Sender m={m} />
+                <span className="shrink-0 text-xs text-muted">{received(m.createdAt)}</span>
+              </div>
+              <p className={cn("truncate pl-[18px] text-sm", m.isRead ? "text-foreground/80" : "font-semibold text-foreground")}>
+                {m.subject}
+              </p>
+              <p className="line-clamp-1 pl-[18px] text-xs text-muted">{m.message}</p>
+            </div>
+          )}
+          emptyState={
+            <EmptyState
+              icon={LuMail}
+              title={table.query ? "No messages match your search" : view === "unread" ? "You're all caught up" : "No messages yet"}
+              description={!table.query && view === "all" ? "Messages sent through the website's contact form appear here." : undefined}
+            />
+          }
+          summary={`${table.total} message${table.total === 1 ? "" : "s"}`}
+          pagination={{ page: table.page, totalPages: table.totalPages, onPageChange: table.setPage }}
+          minWidth={720}
+        />
+      </div>
+
+      <DetailDrawer
+        open={!!open}
+        onClose={() => setOpenId(null)}
+        size="lg"
+        title={open?.subject ?? ""}
+        description={open ? dayjs(open.createdAt).format("MMMM D, YYYY · h:mm A") : undefined}
+        footer={
+          open ? (
+            <div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:items-center [&>*]:w-full sm:[&>*]:w-auto">
+              {canManage ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="text-danger sm:mr-auto"
+                  onClick={() => setDeleteTarget({ ids: [open.id], label: `the message from ${open.fullName}` })}
+                >
+                  <LuTrash2 size={15} aria-hidden />
+                  Delete
+                </Button>
+              ) : null}
+              <Button asChild>
+                <a href={`mailto:${open.email}?subject=${encodeURIComponent(`Re: ${open.subject}`)}`}>
+                  <LuReply size={15} aria-hidden />
+                  Reply by email
+                </a>
+              </Button>
+            </div>
+          ) : undefined
+        }
+      >
+        {open ? (
+          <>
+            <DetailSection title="From">
+              <DetailList>
+                <DetailItem label="Name">{open.fullName}</DetailItem>
+                <DetailItem label="Email">
+                  <a href={`mailto:${open.email}`} className="text-focus hover:underline">
+                    {open.email}
+                  </a>
+                </DetailItem>
+                <DetailItem label="Phone">
+                  {open.phone ? (
+                    <a href={`tel:${open.phone}`} className="text-focus hover:underline">
+                      {open.phone}
+                    </a>
+                  ) : null}
+                </DetailItem>
+              </DetailList>
+            </DetailSection>
+            <DetailSection title="Message">
+              <p className="whitespace-pre-wrap rounded-xl bg-surface-secondary p-4 text-sm leading-relaxed text-foreground">
+                {open.message}
+              </p>
+            </DetailSection>
+          </>
+        ) : null}
+      </DetailDrawer>
 
       <BulkActionBar
-        count={selected.size}
+        count={table.selectedIds.size}
         entityLabel="Message"
-        onClear={() => setSelected(new Set())}
+        onClear={table.clearSelection}
         onDelete={() =>
-          setDeleteTarget({
-            ids: Array.from(selected),
-            label: `${selected.size} messages`,
-          })
+          setDeleteTarget({ ids: Array.from(table.selectedIds), label: `${table.selectedIds.size} selected messages` })
         }
         deleting={deleteBulk.isPending}
         disabled={!canManage}
+        actions={
+          selectedUnread.length > 0 ? (
+            <button
+              type="button"
+              onClick={() => handleMarkRead(selectedUnread)}
+              disabled={markReadBulk.isPending}
+              className="flex h-9 items-center gap-1.5 rounded-lg px-3 font-medium text-white/85 outline-none transition-colors hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-gold/60 disabled:opacity-50"
+            >
+              <LuMailCheck size={15} aria-hidden />
+              Mark read
+            </button>
+          ) : null
+        }
       />
-
-      <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-        <section className={adminTableSectionCx}>
-          {isLoading ? (
-            <div className="flex justify-center py-20">
-              <Spinner label="" />
-            </div>
-          ) : isError ? (
-            <p className="py-20 text-center text-sm text-rose-600">
-              Unable to load messages.
-            </p>
-          ) : (
-            <>
-              <div className={adminTableScrollCx}>
-                <Table className={adminTableMinCx}>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-12">
-                        <Checkbox
-                          checked={allPageSelected}
-                          onCheckedChange={(v) => {
-                            setSelected((prev) => {
-                              const next = new Set(prev);
-                              pageIds.forEach((id) => {
-                                if (v === true) next.add(id);
-                                else next.delete(id);
-                              });
-                              return next;
-                            });
-                          }}
-                          aria-label="Select all on page"
-                        />
-                      </TableHead>
-                      <TableHead>From</TableHead>
-                      <TableHead>Subject</TableHead>
-                      <TableHead>Received</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {pageItems.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={5} className="py-8 text-center text-sm text-text-muted">
-                          No messages yet.
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      pageItems.map((msg) => (
-                        <TableRow
-                          key={msg.id}
-                          className={cn(
-                            "cursor-pointer hover:bg-background/30",
-                            activeMessage?.id === msg.id && "bg-primary/[0.05]",
-                            !msg.isRead && "font-medium",
-                          )}
-                          onClick={() => openMessage(msg)}
-                        >
-                          <TableCell onClick={(e) => e.stopPropagation()}>
-                            <Checkbox
-                              checked={selected.has(msg.id)}
-                              onCheckedChange={(v) => {
-                                setSelected((prev) => {
-                                  const next = new Set(prev);
-                                  if (v === true) next.add(msg.id);
-                                  else next.delete(msg.id);
-                                  return next;
-                                });
-                              }}
-                              aria-label={`Select message from ${msg.fullName}`}
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <div>
-                              <p className="text-sm text-text-dark">{msg.fullName}</p>
-                              <p className="text-xs text-text-muted">{msg.email}</p>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <p className="max-w-[220px] truncate text-sm">{msg.subject}</p>
-                          </TableCell>
-                          <TableCell>
-                            <span className="text-xs text-text-muted">
-                              {msg.createdAt
-                                ? dayjs(msg.createdAt).format("MMM D, YYYY")
-                                : "—"}
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              className={
-                                msg.isRead
-                                  ? "bg-emerald-100 text-emerald-700"
-                                  : "bg-gold/15 text-primary"
-                              }
-                            >
-                              {msg.isRead ? "Read" : "New"}
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-
-              {pages > 1 ? (
-                <div className="flex justify-center border-t border-text-dark/[0.05] py-4">
-                  <Pagination page={page} totalPages={pages} onPageChange={setPage} />
-                </div>
-              ) : null}
-            </>
-          )}
-        </section>
-
-        <section className="rounded-2xl border border-text-dark/[0.05] bg-surface p-4 shadow-[0_10px_24px_rgba(15,23,42,0.06)] sm:p-6">
-          {activeMessage ? (
-            <div className="space-y-4">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h3 className="text-lg font-semibold text-primary">
-                    {activeMessage.subject}
-                  </h3>
-                  <p className="mt-1 text-sm text-text-muted">
-                    {activeMessage.fullName} · {activeMessage.email}
-                  </p>
-                  {activeMessage.phone ? (
-                    <p className="text-xs text-text-muted">{activeMessage.phone}</p>
-                  ) : null}
-                  <p className="mt-2 text-[11px] text-text-muted">
-                    {activeMessage.createdAt
-                      ? dayjs(activeMessage.createdAt).format("MMMM D, YYYY h:mm A")
-                      : ""}
-                  </p>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="text-rose-600 hover:text-rose-700"
-                  aria-label="Delete message"
-                  onClick={() => handleDeleteOne(activeMessage.id)}
-                  disabled={!canManage}
-                >
-                  <LuTrash2 size={16} />
-                </Button>
-              </div>
-
-              <div className="rounded-xl bg-background/60 p-4">
-                <p className="whitespace-pre-wrap text-sm leading-relaxed text-text-dark">
-                  {activeMessage.message}
-                </p>
-              </div>
-
-              <a
-                href={`mailto:${activeMessage.email}?subject=Re: ${encodeURIComponent(activeMessage.subject)}`}
-                className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline"
-              >
-                <LuMail size={14} /> Reply via email
-              </a>
-            </div>
-          ) : (
-            <div className="flex min-h-[280px] flex-col items-center justify-center text-center text-text-muted">
-              <LuMail size={32} className="mb-3 opacity-40" />
-              <p className="text-sm">Select a message to view details.</p>
-            </div>
-          )}
-        </section>
-      </div>
 
       <ConfirmDialog
         isOpen={!!deleteTarget}
         title="Delete messages?"
-        message={`This will permanently delete ${deleteTarget?.label ?? "selected messages"}.`}
+        message={`This permanently deletes ${deleteTarget?.label ?? "the selected messages"}.`}
         confirmLabel="Delete"
-        loading={deleteBulk.isPending}
+        loading={deleteMessage.isPending || deleteBulk.isPending}
         onClose={() => setDeleteTarget(null)}
-        onConfirm={handleDeleteSelected}
+        onConfirm={handleDelete}
       />
     </div>
   );

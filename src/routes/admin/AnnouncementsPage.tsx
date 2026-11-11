@@ -1,46 +1,73 @@
+import { Skeleton } from "@heroui/react";
 import { useState } from "react";
-import { LuMegaphone, LuTrash2 } from "react-icons/lu";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Spinner } from "@/components/ui/spinner";
-import { Textarea } from "@/components/ui/textarea";
-import { errorToast, successToast } from "@/components/shared/toast-notification";
-import { AdminPageHeader } from "@/features/admin/components/shared/AdminPageHeader";
-import { adminPageCx } from "@/features/admin/components/shared/adminLayout";
+import { LuEye, LuMegaphone, LuPlus, LuRefreshCw, LuTrash2 } from "react-icons/lu";
+import { CheckList } from "@/components/shared/CheckList";
+import { ChoiceCards } from "@/components/shared/ChoiceCards";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { DetailDrawer, DetailSection } from "@/components/shared/DetailDrawer";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { FormDrawer } from "@/components/shared/FormDrawer";
+import { PageHeader } from "@/components/shared/PageHeader";
+import { RowActions } from "@/components/shared/RowActions";
+import { TableToolbar } from "@/components/shared/TableToolbar";
+import { errorToast, successToast } from "@/components/shared/toast-notification";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Pagination } from "@/components/ui/pagination";
+import { Textarea } from "@/components/ui/textarea";
 import { formatDate } from "@/features/chapter/lib/member-utils";
+import { useClientTable } from "@/hooks/useClientTable";
 import useCurrentUser from "@/hooks/useCurrentUser";
 import { useGetChapters } from "@/lib/api/church";
-import { type AdminAnnouncement, useAdminAnnouncements, useCreateAnnouncement, useDeleteAnnouncement } from "@/lib/api/engagement";
+import {
+  type AdminAnnouncement,
+  useAdminAnnouncements,
+  useCreateAnnouncement,
+  useDeleteAnnouncement,
+} from "@/lib/api/engagement";
 import { canWriteAdminContent } from "@/types/user";
+
+const frame = "rounded-xl border border-border bg-surface shadow-[var(--surface-shadow)]";
+
+const audienceLabel = (a: AdminAnnouncement) =>
+  a.audience === "all" ? "All churches" : a.churches.length === 1 ? a.churches[0] : `${a.churches.length} churches`;
+
+function ReadMeter({ a }: { a: AdminAnnouncement }) {
+  const pct = a.recipientCount > 0 ? Math.min(100, Math.round((a.readCount / a.recipientCount) * 100)) : 0;
+  return (
+    <div className="w-full sm:w-40">
+      <div className="flex items-baseline justify-between text-xs">
+        <span className="text-muted">Read</span>
+        <span className="font-medium tabular-nums text-foreground">
+          {a.readCount} / {a.recipientCount}
+        </span>
+      </div>
+      <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-default" aria-hidden>
+        <div className="h-full rounded-full bg-focus" style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  );
+}
 
 /**
  * Announcements to chapter portal users — everyone, or selected churches.
  * Each shows how many recipients have read it.
  */
 export default function AnnouncementsAdminPage() {
-  const { user } = useCurrentUser();
-  const canPublish = canWriteAdminContent(user?.role);
-  const { data: items = [], isLoading } = useAdminAnnouncements();
+  const canPublish = canWriteAdminContent(useCurrentUser((s) => s.user)?.role);
+  const { data: items = [], isLoading, isError, refetch, isRefetching } = useAdminAnnouncements();
   const remove = useDeleteAnnouncement();
   const [createOpen, setCreateOpen] = useState(false);
-  const [readersOf, setReadersOf] = useState<AdminAnnouncement | null>(null);
+  const [viewing, setViewing] = useState<AdminAnnouncement | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<AdminAnnouncement | null>(null);
+  const list = useClientTable({ rows: items, searchText: (a) => `${a.title} ${a.body} ${a.churches.join(" ")}` });
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
     try {
       await remove.mutateAsync(deleteTarget.id);
       successToast("Announcement deleted.");
+      if (viewing?.id === deleteTarget.id) setViewing(null);
       setDeleteTarget(null);
     } catch (err) {
       errorToast((err as { message?: string })?.message ?? "Unable to delete.", "Error");
@@ -48,71 +75,151 @@ export default function AnnouncementsAdminPage() {
   };
 
   return (
-    <div className={adminPageCx}>
-      <AdminPageHeader
+    <div className="min-w-0 space-y-6">
+      <PageHeader
         title="Announcements"
-        description="Send circulars to counsellors, presidents and secretaries in the chapter portal."
-        actionLabel="New announcement"
-        onAction={() => setCreateOpen(true)}
-        actionDisabled={!canPublish}
+        description="Circulars for counsellors, presidents and secretaries in the chapter portal."
+        actions={
+          canPublish ? (
+            <Button type="button" onClick={() => setCreateOpen(true)}>
+              <LuPlus size={16} aria-hidden />
+              New announcement
+            </Button>
+          ) : null
+        }
       />
-      {isLoading ? (
-        <div className="flex justify-center py-20"><Spinner /></div>
-      ) : items.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-2xl border border-text-dark/5 bg-surface py-16 text-center">
-          <LuMegaphone size={20} className="text-primary" />
-          <p className="text-sm text-text-muted">No announcements yet.</p>
-        </div>
-      ) : (
-        <ul className="space-y-3">
-          {items.map((a) => (
-            <li key={a.id} className="rounded-2xl border border-text-dark/5 bg-surface p-5">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                <div className="min-w-0">
-                  <p className="text-base font-semibold text-primary">{a.title}</p>
-                  <p className="text-xs text-text-muted">
-                    {formatDate(a.createdAt)} · {a.audience === "all" ? "All churches" : a.churches.join(", ")}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button type="button" onClick={() => setReadersOf(a)} className="text-sm font-semibold text-primary underline">
-                    Read by {a.readCount} of {a.recipientCount}
-                  </button>
-                  {canPublish && (
-                    <Button size="icon" variant="ghost" className="text-rose-600" aria-label="Delete" onClick={() => setDeleteTarget(a)}>
-                      <LuTrash2 size={14} />
-                    </Button>
-                  )}
-                </div>
+
+      <div className="space-y-3">
+        <TableToolbar
+          search={{ value: list.query, onChange: list.setQuery, placeholder: "Search title, message, church…" }}
+          actions={!isLoading && !isError ? <p className="text-sm tabular-nums text-muted">{list.total} announcements</p> : null}
+        />
+
+        {isLoading ? (
+          <div className={`${frame} divide-y divide-separator`}>
+            {Array.from({ length: 3 }, (_, i) => (
+              <div key={i} className="space-y-2.5 p-5">
+                <Skeleton className="h-4 w-1/3 rounded" />
+                <Skeleton className="h-3 w-1/4 rounded" />
+                <Skeleton className="h-3 w-4/5 rounded" />
               </div>
-              <p className="mt-3 line-clamp-3 whitespace-pre-line text-sm">{a.body}</p>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      <CreateAnnouncementDialog open={createOpen} onClose={() => setCreateOpen(false)} />
-
-      <Dialog open={!!readersOf} onOpenChange={(o) => !o && setReadersOf(null)}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Read by</DialogTitle>
-            <DialogDescription>{readersOf?.title}</DialogDescription>
-          </DialogHeader>
-          {readersOf?.readers.length ? (
-            <ul className="max-h-72 space-y-1 overflow-y-auto text-sm">
-              {readersOf.readers.map((r, i) => <li key={i}>{r.name} <span className="text-xs capitalize text-text-muted">· {r.role}</span></li>)}
+            ))}
+          </div>
+        ) : isError ? (
+          <div className={frame}>
+            <EmptyState
+              tone="danger"
+              title="We couldn't load announcements"
+              action={
+                <Button type="button" variant="outline" onClick={() => refetch()} loading={isRefetching}>
+                  <LuRefreshCw size={15} aria-hidden />
+                  Try again
+                </Button>
+              }
+            />
+          </div>
+        ) : list.total === 0 ? (
+          <div className={frame}>
+            <EmptyState
+              icon={LuMegaphone}
+              title={list.query ? "No announcements match your search" : "No announcements yet"}
+              description={list.query ? undefined : "Recipients see announcements in their portal and get a notification."}
+              action={
+                !list.query && canPublish ? (
+                  <Button type="button" size="sm" onClick={() => setCreateOpen(true)}>
+                    <LuPlus size={14} aria-hidden />
+                    New announcement
+                  </Button>
+                ) : undefined
+              }
+            />
+          </div>
+        ) : (
+          <>
+            <ul aria-label="Announcements" className={`${frame} divide-y divide-separator`}>
+              {list.pageRows.map((a) => (
+                <li key={a.id} className="flex flex-col gap-4 p-5 sm:flex-row sm:items-start">
+                  <div className="flex min-w-0 flex-1 gap-4">
+                    <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-focus/[0.08] text-focus">
+                      <LuMegaphone size={18} aria-hidden />
+                    </span>
+                    <div className="min-w-0">
+                      <h3 className="font-medium text-foreground">{a.title}</h3>
+                      <p className="mt-0.5 text-xs text-muted">
+                        <time dateTime={a.createdAt}>{formatDate(a.createdAt)}</time> · {audienceLabel(a)}
+                      </p>
+                      <p className="mt-2 line-clamp-2 text-sm text-foreground/80">{a.body}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4 pl-14 sm:pl-0">
+                    <ReadMeter a={a} />
+                    <RowActions
+                      label={`Actions for ${a.title}`}
+                      actions={[
+                        { label: "View announcement and readers", icon: LuEye, onAction: () => setViewing(a) },
+                        canPublish && { label: "Delete announcement", icon: LuTrash2, danger: true, onAction: () => setDeleteTarget(a) },
+                      ]}
+                    />
+                  </div>
+                </li>
+              ))}
             </ul>
-          ) : (
-            <p className="text-sm text-text-muted">Nobody has opened it yet.</p>
-          )}
-        </DialogContent>
-      </Dialog>
+            {list.totalPages > 1 ? (
+              <div className="flex justify-center pt-1">
+                <Pagination page={list.page} totalPages={list.totalPages} onPageChange={list.setPage} />
+              </div>
+            ) : null}
+          </>
+        )}
+      </div>
+
+      <DetailDrawer
+        open={!!viewing}
+        onClose={() => setViewing(null)}
+        title={viewing?.title ?? ""}
+        description={viewing ? `${formatDate(viewing.createdAt)} · ${audienceLabel(viewing)}` : undefined}
+        footer={
+          canPublish && viewing ? (
+            <Button type="button" variant="ghost" className="text-danger" onClick={() => setDeleteTarget(viewing)}>
+              <LuTrash2 size={15} aria-hidden />
+              Delete announcement
+            </Button>
+          ) : undefined
+        }
+      >
+        {viewing ? (
+          <>
+            <p className="whitespace-pre-line text-sm leading-relaxed text-foreground">{viewing.body}</p>
+            {viewing.audience === "selected" ? (
+              <DetailSection title="Sent to">
+                <p className="text-sm text-foreground">{viewing.churches.join(", ")}</p>
+              </DetailSection>
+            ) : null}
+            <DetailSection title={`Read by ${viewing.readCount} of ${viewing.recipientCount}`}>
+              {viewing.readers.length ? (
+                <ul className="divide-y divide-separator rounded-xl border border-border">
+                  {viewing.readers.map((r, i) => (
+                    <li key={`${r.name}-${i}`} className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm">
+                      <span className="truncate text-foreground">{r.name}</span>
+                      <span className="shrink-0 text-xs capitalize text-muted">{r.role}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-muted">Nobody has opened it yet.</p>
+              )}
+            </DetailSection>
+          </>
+        ) : null}
+      </DetailDrawer>
+
+      <CreateAnnouncementDrawer open={createOpen} onClose={() => setCreateOpen(false)} />
 
       <ConfirmDialog
         isOpen={!!deleteTarget}
-        title="Delete announcement"
-        message={`Delete "${deleteTarget?.title ?? ""}"? Chapters will no longer see it.`}
+        title="Delete announcement?"
+        message={`“${deleteTarget?.title ?? ""}” will be removed from every chapter portal.`}
+        confirmLabel="Delete"
         loading={remove.isPending}
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
@@ -121,80 +228,103 @@ export default function AnnouncementsAdminPage() {
   );
 }
 
-function CreateAnnouncementDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+type Errors = Partial<Record<"title" | "body" | "churches", string>>;
+
+function CreateAnnouncementDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
   const create = useCreateAnnouncement();
   const { data: churches = [] } = useGetChapters();
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
-  const [everyone, setEveryone] = useState(true);
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [audience, setAudience] = useState<"all" | "selected">("all");
+  const [selected, setSelected] = useState<Set<string>>(() => new Set());
+  const [errors, setErrors] = useState<Errors>({});
+  const clear = (key: keyof Errors) => setErrors((e) => (e[key] ? { ...e, [key]: undefined } : e));
 
-  const reset = () => {
+  const close = () => {
     setTitle("");
     setBody("");
-    setEveryone(true);
+    setAudience("all");
     setSelected(new Set());
+    setErrors({});
+    onClose();
   };
 
-  const handleSave = async () => {
-    if (title.trim().length < 3 || body.trim().length < 5) return errorToast("Add a title and the message.", "Validation");
-    if (!everyone && selected.size === 0) return errorToast("Select at least one church.", "Validation");
+  const save = async () => {
+    const found: Errors = {};
+    if (title.trim().length < 3) found.title = "Enter a title (at least 3 characters).";
+    if (body.trim().length < 5) found.body = "Write the message (at least 5 characters).";
+    if (audience === "selected" && selected.size === 0) found.churches = "Select at least one church.";
+    setErrors(found);
+    if (Object.keys(found).length > 0) return;
     try {
       await create.mutateAsync({
         title: title.trim(),
         body: body.trim(),
-        audience: everyone ? "all" : "selected",
-        churchIds: everyone ? undefined : [...selected],
+        audience,
+        churchIds: audience === "selected" ? [...selected] : undefined,
       });
       successToast("Announcement published.");
-      reset();
-      onClose();
+      close();
     } catch (err) {
       errorToast((err as { message?: string })?.message ?? "Unable to publish.", "Error");
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>New announcement</DialogTitle>
-          <DialogDescription>Recipients also get a notification in their portal.</DialogDescription>
-        </DialogHeader>
-        <div className="space-y-4">
-          <Input label="Title" value={title} onChange={(e) => setTitle(e.target.value)} />
-          <Textarea label="Message" rows={6} value={body} onChange={(e) => setBody(e.target.value)} />
-          <label className="flex items-center gap-2 text-sm">
-            <Checkbox checked={everyone} onCheckedChange={(v) => setEveryone(v === true)} /> Send to all churches
-          </label>
-          {!everyone && (
-            <ul className="max-h-48 overflow-y-auto rounded-xl border border-text-dark/10">
-              {churches.map((c) => (
-                <li key={c.id}>
-                  <label className="flex cursor-pointer items-center gap-3 border-b border-text-dark/5 px-3 py-2 text-sm last:border-0">
-                    <Checkbox
-                      checked={selected.has(c.id)}
-                      onCheckedChange={() =>
-                        setSelected((prev) => {
-                          const next = new Set(prev);
-                          if (next.has(c.id)) next.delete(c.id);
-                          else next.add(c.id);
-                          return next;
-                        })
-                      }
-                    />
-                    {c.name}
-                  </label>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSave} loading={create.isPending} className="bg-primary text-white">Publish</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <FormDrawer
+      open={open}
+      title="New announcement"
+      description="Recipients see it in their portal and get a notification."
+      onSubmit={save}
+      onCancel={close}
+      submitting={create.isPending}
+      submitLabel="Publish"
+    >
+      <Input
+        label="Title"
+        value={title}
+        error={errors.title}
+        onChange={(e) => {
+          setTitle(e.target.value);
+          clear("title");
+        }}
+        autoFocus
+      />
+      <Textarea
+        label="Message"
+        rows={7}
+        value={body}
+        error={errors.body}
+        onChange={(e) => {
+          setBody(e.target.value);
+          clear("body");
+        }}
+      />
+      <ChoiceCards
+        label="Send to"
+        name="announcement-audience"
+        value={audience}
+        onChange={(v) => {
+          setAudience(v);
+          clear("churches");
+        }}
+        options={[
+          { value: "all", label: "All churches", hint: "Every chapter portal user" },
+          { value: "selected", label: "Selected churches", hint: "Pick below" },
+        ]}
+      />
+      {audience === "selected" ? (
+        <CheckList
+          aria-label="Churches to send to"
+          items={churches.map((c) => ({ id: c.id, label: c.name, hint: c.chapter && c.chapter !== c.name ? c.chapter : undefined }))}
+          selected={selected}
+          onChange={(next) => {
+            setSelected(next);
+            clear("churches");
+          }}
+          error={errors.churches}
+        />
+      ) : null}
+    </FormDrawer>
   );
 }

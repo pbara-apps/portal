@@ -49,7 +49,7 @@ export function RichTextEditor({
 
   return (
     <div className="rich-text-editor flex flex-col gap-1.5">
-      {label ? <span className="text-xs font-semibold text-text-dark">{label}</span> : null}
+      {label ? <span className="text-sm font-medium text-foreground">{label}</span> : null}
       <div style={{ ["--editor-min-height" as string]: `${minHeight}px` }}>
         <Suspense fallback={<EditorFallback />}>
           <ReactQuill

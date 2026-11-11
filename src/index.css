@@ -307,4 +307,28 @@
     scrollbar-width: thin;
     scrollbar-color: rgb(255 255 255 / 0.12) transparent;
   }
+
+  /* Rich text editor (Quill snow): match the form fields and honour minHeight. */
+  .rich-text-editor .ql-toolbar.ql-snow,
+  .rich-text-editor .ql-container.ql-snow {
+    border-color: var(--border);
+  }
+  .rich-text-editor .ql-toolbar.ql-snow {
+    border-radius: 0.75rem 0.75rem 0 0;
+    background: var(--surface-secondary);
+  }
+  .rich-text-editor .ql-container.ql-snow {
+    border-radius: 0 0 0.75rem 0.75rem;
+    font-family: inherit;
+    font-size: 0.875rem;
+    background: var(--surface);
+  }
+  .rich-text-editor .ql-editor {
+    min-height: var(--editor-min-height, 200px);
+    line-height: 1.6;
+  }
+  .rich-text-editor .ql-container.ql-snow:focus-within {
+    border-color: var(--focus);
+    box-shadow: 0 0 0 1px var(--focus);
+  }
 }

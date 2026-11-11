@@ -1,71 +1,13 @@
 import { useState } from "react";
+import { CheckList } from "@/components/shared/CheckList";
+import { ChoiceCards } from "@/components/shared/ChoiceCards";
 import { FormDrawer } from "@/components/shared/FormDrawer";
 import { errorToast, successToast } from "@/components/shared/toast-notification";
-import { Checkbox } from "@/components/ui/checkbox";
-import { FieldMessage } from "@/components/ui/field-message";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useAdminChapters } from "@/lib/api/chapter-admin";
 import { useGetChapters } from "@/lib/api/church";
 import { type CreateDuePayload, useCreateDue } from "@/lib/api/finance";
-import { cn } from "@/lib/utils";
-
-/** Two option cards backed by real radio inputs (arrow keys work). */
-function ChoiceCards<T extends string>({
-  label,
-  name,
-  value,
-  options,
-  onChange,
-}: {
-  label: string;
-  name: string;
-  value: T;
-  options: { value: T; label: string; hint: string }[];
-  onChange: (v: T) => void;
-}) {
-  return (
-    <fieldset className="space-y-1.5">
-      <legend className="mb-1.5 text-sm font-medium text-foreground">{label}</legend>
-      <div className="grid grid-cols-2 gap-2">
-        {options.map((o) => {
-          const checked = value === o.value;
-          return (
-            <label
-              key={o.value}
-              className={cn(
-                "relative cursor-pointer rounded-xl border p-3 transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-focus",
-                checked ? "border-focus/50 bg-focus/[0.05]" : "border-border hover:border-foreground/20",
-              )}
-            >
-              <input
-                type="radio"
-                name={name}
-                value={o.value}
-                checked={checked}
-                onChange={() => onChange(o.value)}
-                className="sr-only"
-              />
-              <span className="flex items-center gap-2 text-sm font-medium text-foreground">
-                <span
-                  aria-hidden
-                  className={cn(
-                    "flex size-4 shrink-0 items-center justify-center rounded-full border",
-                    checked ? "border-focus" : "border-foreground/25",
-                  )}
-                >
-                  {checked ? <span className="size-2 rounded-full bg-focus" /> : null}
-                </span>
-                {o.label}
-              </span>
-              <span className="mt-1 block pl-6 text-xs text-muted">{o.hint}</span>
-            </label>
-          );
-        })}
-      </div>
-    </fieldset>
-  );
-}
 
 const emptyForm = (): CreateDuePayload => ({
   title: "",
@@ -112,16 +54,6 @@ export function CreateDueDrawer({ open, onClose }: { open: boolean; onClose: () 
       ? chapters.map((c) => ({ id: c.id, label: c.name, hint: c.church?.name ?? "" }))
       : churches.filter((c) => c.status === "active").map((c) => ({ id: c.id, label: c.name, hint: c.chapter }));
   const place = form.billTo === "chapter" ? "chapter" : "church";
-
-  const toggleTarget = (id: string) => {
-    clearError("targets");
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
 
   const save = async () => {
     const amount = Number(amountText);
@@ -247,34 +179,16 @@ export function CreateDueDrawer({ open, onClose }: { open: boolean; onClose: () 
         ]}
       />
       {form.appliesTo === "selected" ? (
-        <div className="space-y-2">
-          <p className="text-xs tabular-nums text-muted">
-            {selected.size} of {targets.length} selected
-          </p>
-          <ul
-            aria-label={`${place === "chapter" ? "Chapters" : "Churches"} to bill`}
-            className={cn(
-              "max-h-64 divide-y divide-separator overflow-y-auto rounded-xl border",
-              errors.targets ? "border-danger" : "border-border",
-            )}
-          >
-            {targets.map((t) => (
-              <li key={t.id} className="px-3 py-2.5 hover:bg-surface-secondary">
-                <Checkbox
-                  checked={selected.has(t.id)}
-                  onCheckedChange={() => toggleTarget(t.id)}
-                  label={
-                    <>
-                      {t.label}
-                      {t.hint && t.hint !== t.label ? <span className="ml-1.5 text-xs text-muted">{t.hint}</span> : null}
-                    </>
-                  }
-                />
-              </li>
-            ))}
-          </ul>
-          <FieldMessage message={errors.targets} />
-        </div>
+        <CheckList
+          aria-label={`${place === "chapter" ? "Chapters" : "Churches"} to bill`}
+          items={targets.map((t) => ({ id: t.id, label: t.label, hint: t.hint && t.hint !== t.label ? t.hint : undefined }))}
+          selected={selected}
+          onChange={(next) => {
+            clearError("targets");
+            setSelected(next);
+          }}
+          error={errors.targets}
+        />
       ) : null}
       <Textarea
         label="Description (optional)"
