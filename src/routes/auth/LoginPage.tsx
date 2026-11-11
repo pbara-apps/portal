@@ -138,7 +138,6 @@ export default function LoginPage() {
                 placeholder="you@example.com"
                 autoComplete="email"
                 error={errors.email?.message}
-                size="lg"
               />
 
               <Input
@@ -159,7 +158,6 @@ export default function LoginPage() {
                 placeholder="••••••••"
                 autoComplete="current-password"
                 error={errors.password?.message}
-                size="lg"
                 endContent={
                   <button
                     type="button"
