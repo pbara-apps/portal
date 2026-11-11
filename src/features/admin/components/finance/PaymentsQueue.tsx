@@ -1,21 +1,85 @@
 import { useState } from "react";
-import { LuCheck, LuFileText, LuX } from "react-icons/lu";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Spinner } from "@/components/ui/spinner";
-import { Textarea } from "@/components/ui/textarea";
+import { LuCheck, LuFileText, LuReceipt, LuX } from "react-icons/lu";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { DataTable, type DataTableColumn } from "@/components/shared/DataTable";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { RowActions } from "@/components/shared/RowActions";
+import { ViewTabs } from "@/components/shared/ViewTabs";
 import { errorToast, successToast } from "@/components/shared/toast-notification";
+import { Textarea } from "@/components/ui/textarea";
 import { formatDate } from "@/features/chapter/lib/member-utils";
 import { usePayments, useRejectPayment, useVerifyPayment } from "@/lib/api/finance";
-import { cn } from "@/lib/utils";
 import { type PaymentStatus, type QueuedPayment, billPlace, naira } from "@/types/finance";
+
+const TABS: { id: PaymentStatus; label: string }[] = [
+  { id: "pending", label: "To verify" },
+  { id: "verified", label: "Verified" },
+  { id: "rejected", label: "Rejected" },
+];
+
+const openProof = (p: QueuedPayment) => window.open(p.proofUrl, "_blank", "noopener,noreferrer");
+
+const COLUMNS: DataTableColumn<QueuedPayment>[] = [
+  {
+    id: "payer",
+    header: "Paid by",
+    isRowHeader: true,
+    cell: (p) => (
+      <div className="min-w-0">
+        <p className="truncate font-medium text-foreground">{p.bill ? billPlace(p.bill) : "—"}</p>
+        <p className="truncate text-xs text-muted">{p.bill?.due?.title}</p>
+      </div>
+    ),
+  },
+  {
+    id: "amount",
+    header: "Amount",
+    align: "end",
+    cell: (p) => (
+      <div>
+        <p className="font-medium tabular-nums text-foreground">{naira(p.amount)}</p>
+        {p.bill ? (
+          <p className="text-xs tabular-nums text-muted">
+            Bill {naira(p.bill.amountDue)} · {naira(p.bill.amountPaid)} paid
+          </p>
+        ) : null}
+      </div>
+    ),
+  },
+  {
+    id: "paid",
+    header: "Paid on",
+    hideBelow: "lg",
+    cell: (p) => (
+      <div className="text-sm">
+        <span className="whitespace-nowrap">{formatDate(p.paidOn)}</span>
+        {p.reference ? <span className="block truncate text-xs text-muted">Ref {p.reference}</span> : null}
+      </div>
+    ),
+  },
+  {
+    id: "by",
+    header: "Submitted by",
+    hideBelow: "xl",
+    cell: (p) => <span className="text-muted">{p.submittedBy?.name ?? "—"}</span>,
+  },
+  {
+    id: "outcome",
+    header: "Outcome",
+    hideBelow: "lg",
+    cell: (p) =>
+      p.receiptNumber ? (
+        <span className="inline-flex items-center gap-1.5 font-mono text-xs text-success">
+          <LuReceipt size={13} aria-hidden />
+          {p.receiptNumber}
+        </span>
+      ) : p.reviewNote ? (
+        <p className="line-clamp-2 max-w-xs text-xs text-danger">{p.reviewNote}</p>
+      ) : (
+        <span className="text-xs text-muted">Waiting</span>
+      ),
+  },
+];
 
 /**
  * Payments from chapters/churches. Pending ones wait for a finance officer
@@ -25,11 +89,12 @@ import { type PaymentStatus, type QueuedPayment, billPlace, naira } from "@/type
  */
 export function PaymentsQueue({ canApprove }: { canApprove: boolean }) {
   const [status, setStatus] = useState<PaymentStatus>("pending");
-  const { data: payments = [], isLoading } = usePayments(status);
+  const { data: payments = [], isLoading, isError, refetch } = usePayments(status);
   const verify = useVerifyPayment();
   const reject = useRejectPayment();
   const [rejecting, setRejecting] = useState<QueuedPayment | null>(null);
   const [note, setNote] = useState("");
+  const [noteError, setNoteError] = useState("");
 
   const handleVerify = async (p: QueuedPayment) => {
     try {
@@ -40,98 +105,111 @@ export function PaymentsQueue({ canApprove }: { canApprove: boolean }) {
     }
   };
 
+  const closeReject = () => {
+    setRejecting(null);
+    setNote("");
+    setNoteError("");
+  };
+
   const handleReject = async () => {
     if (!rejecting) return;
-    if (note.trim().length < 3) return errorToast("Give a reason.", "Reason needed");
+    if (note.trim().length < 3) {
+      setNoteError("Give a reason (at least 3 characters).");
+      return;
+    }
     try {
       await reject.mutateAsync({ id: rejecting.id, note: note.trim() });
       successToast("Payment rejected.");
-      setRejecting(null);
-      setNote("");
+      closeReject();
     } catch (err) {
       errorToast((err as { message?: string })?.message ?? "Unable to reject.", "Error");
     }
   };
 
+  const reviewing = status === "pending" && canApprove;
+
   return (
     <div className="space-y-4">
-      <div className="flex w-fit gap-1 rounded-lg bg-surface p-1 ring-1 ring-text-dark/5">
-        {(["pending", "verified", "rejected"] as PaymentStatus[]).map((s) => (
-          <button
-            key={s}
-            type="button"
-            onClick={() => setStatus(s)}
-            className={cn("rounded-md px-3 py-1.5 text-sm font-medium", status === s ? "bg-primary text-white" : "text-text-muted hover:text-primary")}
-          >
-            {s === "pending" ? "To verify" : s === "verified" ? "Verified" : "Rejected"}
-          </button>
-        ))}
-      </div>
+      <ViewTabs aria-label="Payment status" tabs={TABS} value={status} onChange={setStatus} />
 
-      {status === "pending" && !canApprove && (
-        <p className="rounded-xl bg-gold/10 px-4 py-3 text-xs text-text-dark ring-1 ring-gold/20">
+      {status === "pending" && !canApprove ? (
+        <p className="rounded-lg border border-border bg-surface-secondary px-4 py-3 text-sm text-muted">
           Only the Financial Secretary or Treasurer can verify or reject payments. You can view them here.
         </p>
-      )}
+      ) : null}
 
-      {isLoading ? (
-        <div className="flex justify-center py-16"><Spinner /></div>
-      ) : payments.length === 0 ? (
-        <p className="rounded-2xl border border-text-dark/5 bg-surface py-14 text-center text-sm text-text-muted">
-          {status === "pending" ? "No payments waiting." : "Nothing here yet."}
-        </p>
-      ) : (
-        <ul className="space-y-3">
-          {payments.map((p) => (
-            <li key={p.id} className="flex flex-col gap-3 rounded-2xl border border-text-dark/5 bg-surface p-4 lg:flex-row lg:items-center">
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-primary">
-                  {naira(p.amount)} · {p.bill ? billPlace(p.bill) : "—"}
-                </p>
-                <p className="text-xs text-text-muted">
-                  {p.bill?.due?.title} · paid {formatDate(p.paidOn)}
-                  {p.reference ? ` · ref ${p.reference}` : ""}
-                  {p.submittedBy ? ` · by ${p.submittedBy.name}` : ""}
-                </p>
-                {p.bill && (
-                  <p className="text-xs text-text-muted">
-                    Bill {naira(p.bill.amountDue)} · already paid {naira(p.bill.amountPaid)}
-                  </p>
-                )}
-                {p.receiptNumber && <p className="text-xs text-emerald-700">Receipt {p.receiptNumber}</p>}
-                {p.reviewNote && <p className="text-xs text-rose-700">Reason: {p.reviewNote}</p>}
-              </div>
-              <a href={p.proofUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-sm text-primary underline">
-                <LuFileText size={14} /> View proof
-              </a>
-              {status === "pending" && canApprove && (
-                <div className="flex gap-2">
-                  <Button size="sm" className="bg-emerald-600 text-white hover:bg-emerald-700" onClick={() => handleVerify(p)} loading={verify.isPending && verify.variables === p.id}>
-                    <LuCheck size={14} /> Verify
-                  </Button>
-                  <Button size="sm" variant="ghost" className="text-rose-600" onClick={() => setRejecting(p)}>
-                    <LuX size={14} /> Reject
-                  </Button>
-                </div>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
+      <DataTable
+        aria-label={`${TABS.find((t) => t.id === status)?.label} payments`}
+        columns={COLUMNS}
+        rows={payments}
+        getRowId={(p) => p.id}
+        isLoading={isLoading}
+        isError={isError}
+        errorMessage="We couldn't load payments."
+        onRetry={() => refetch()}
+        rowActions={(p) => (
+          <RowActions
+            actions={[
+              { label: "View proof of payment", icon: LuFileText, onAction: () => openProof(p) },
+              reviewing && {
+                label: verify.isPending && verify.variables === p.id ? "Verifying…" : "Verify payment",
+                icon: LuCheck,
+                tone: "success",
+                disabled: verify.isPending,
+                onAction: () => handleVerify(p),
+              },
+              reviewing && { label: "Reject payment", icon: LuX, danger: true, onAction: () => setRejecting(p) },
+            ]}
+          />
+        )}
+        renderCard={(p) => (
+          <div className="space-y-1">
+            <div className="flex items-start justify-between gap-3">
+              <p className="min-w-0 font-medium text-foreground">{p.bill ? billPlace(p.bill) : "—"}</p>
+              <span className="font-medium tabular-nums text-foreground">{naira(p.amount)}</span>
+            </div>
+            <p className="text-xs text-muted">
+              {p.bill?.due?.title} · {formatDate(p.paidOn)}
+              {p.receiptNumber ? ` · ${p.receiptNumber}` : ""}
+            </p>
+            {p.reviewNote ? <p className="text-xs text-danger">{p.reviewNote}</p> : null}
+          </div>
+        )}
+        emptyState={
+          <EmptyState
+            icon={LuReceipt}
+            title={status === "pending" ? "No payments waiting" : `No ${status} payments yet`}
+            description={status === "pending" ? "Payments chapters submit from their portal appear here to verify." : undefined}
+          />
+        }
+        summary={`${payments.length} payment${payments.length === 1 ? "" : "s"}`}
+        minWidth={760}
+      />
 
-      <Dialog open={!!rejecting} onOpenChange={(o) => !o && setRejecting(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Reject payment</DialogTitle>
-            <DialogDescription>The chapter will see this reason and can submit again.</DialogDescription>
-          </DialogHeader>
-          <Textarea label="Reason" rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. Amount not found on the bank statement" />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setRejecting(null)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleReject} loading={reject.isPending}>Reject</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ConfirmDialog
+        isOpen={!!rejecting}
+        title="Reject payment?"
+        message={`${rejecting ? naira(rejecting.amount) : "This payment"} from ${
+          rejecting?.bill ? billPlace(rejecting.bill) : "the chapter"
+        } won't count toward the bill. They'll see your reason and can submit again.`}
+        confirmLabel="Reject payment"
+        loading={reject.isPending}
+        onClose={closeReject}
+        onConfirm={handleReject}
+      >
+        <Textarea
+          label="Reason"
+          rows={3}
+          value={note}
+          error={noteError || undefined}
+          placeholder="e.g. Amount not found on the bank statement"
+          onChange={(e) => {
+            setNote(e.target.value);
+            if (noteError) setNoteError("");
+          }}
+          autoFocus
+        />
+      </ConfirmDialog>
     </div>
   );
 }

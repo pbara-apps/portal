@@ -183,7 +183,7 @@ export function AdminMemberDrawer({
               media={<MemberAvatar photo={member.photo} name={member.fullName} size={56} />}
               badges={<MemberStatusBadge member={member} />}
               footer={
-                <div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:items-center">
+                <div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:items-center [&>*]:w-full sm:[&>*]:w-auto">
                   {canEdit && member.status === "active" ? (
                     <Button type="button" variant="ghost" className="text-danger sm:mr-auto" onClick={() => setConfirmInactive(true)}>
                       <LuUserX size={15} aria-hidden />

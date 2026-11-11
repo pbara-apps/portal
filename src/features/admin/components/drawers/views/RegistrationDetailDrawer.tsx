@@ -94,7 +94,7 @@ function RegistrationDetail({
       badges={<RegistrationStatusChip status={registration.status} />}
       footer={
         reviewing ? (
-          <div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end [&>*]:w-full sm:[&>*]:w-auto">
             <Button
               type="button"
               variant="outline"
