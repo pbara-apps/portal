@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { LuDownload, LuSearch, LuTrash2, LuUserPlus, LuUsers } from "react-icons/lu";
 import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,7 @@ import { errorToast, successToast } from "@/components/shared/toast-notification
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { cn } from "@/lib/utils";
 import { type MemberView, useChapterMembers, useRanks, useWithdrawMember } from "../api/members";
+import { ChapterAddMembersDrawer } from "../components/ChapterAddMembersDrawer";
 import { ChapterSwitcher } from "../components/ChapterSwitcher";
 import { MemberAvatar } from "../components/MemberAvatar";
 import { MemberStatusBadge } from "../components/MemberStatusBadge";
@@ -66,6 +67,15 @@ const TABS: { view: MemberView; label: string }[] = [
 export default function ChapterMembersPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const view: MemberView = searchParams.get("view") === "awaiting" ? "awaiting" : "active";
+  // ?add=1 opens the Add members drawer (old /chapter/members/add links land here).
+  const adding = searchParams.get("add") === "1";
+  const setAdding = (on: boolean) =>
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (on) next.set("add", "1");
+      else next.delete("add");
+      return next;
+    });
   const chapterId = useActiveChapterId();
   const [search, setSearch] = useState("");
   const [rankId, setRankId] = useState<string>("all");
@@ -107,8 +117,8 @@ export default function ChapterMembersPage() {
           <Button variant="outline" onClick={() => exportRoster(members)} disabled={members.length === 0}>
             <LuDownload size={16} /> Export
           </Button>
-          <Button asChild className="bg-primary text-white">
-            <Link to="/chapter/members/add"><LuUserPlus size={16} /> Add Members</Link>
+          <Button type="button" onClick={() => setAdding(true)} className="bg-primary text-white">
+            <LuUserPlus size={16} /> Add Members
           </Button>
         </div>
       </header>
@@ -165,8 +175,8 @@ export default function ChapterMembersPage() {
             <p className="text-sm font-semibold">
               {view === "active" ? "No approved members yet" : "Nothing awaiting approval"}
             </p>
-            <Button asChild size="sm" className="bg-primary text-white">
-              <Link to="/chapter/members/add"><LuUserPlus size={14} /> Add Members</Link>
+            <Button type="button" size="sm" onClick={() => setAdding(true)} className="bg-primary text-white">
+              <LuUserPlus size={14} /> Add Members
             </Button>
           </div>
         ) : (
@@ -226,6 +236,17 @@ export default function ChapterMembersPage() {
         )}
       </section>
 
+      <ChapterAddMembersDrawer
+        open={adding}
+        onClose={() => setAdding(false)}
+        onSaved={() =>
+          setSearchParams((prev) => {
+            const next = new URLSearchParams(prev);
+            next.set("view", "awaiting");
+            return next;
+          })
+        }
+      />
 
       <ConfirmDialog
         isOpen={!!withdrawTarget}

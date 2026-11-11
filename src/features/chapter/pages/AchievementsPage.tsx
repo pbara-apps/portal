@@ -1,14 +1,6 @@
 import { useEffect, useState } from "react";
 import { LuAward, LuFileText, LuPencil, LuPlus, LuTrash2 } from "react-icons/lu";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -21,6 +13,8 @@ import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { errorToast, successToast } from "@/components/shared/toast-notification";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { FormDrawer } from "@/components/shared/FormDrawer";
+import { useRetained } from "@/hooks/useRetained";
 import { type Achievement, MONTHS, monthYear } from "@/types/achievement";
 import {
   useAchievements,
@@ -107,7 +101,7 @@ export default function AchievementsPage() {
         </ul>
       )}
 
-      <AchievementDialog editing={editing} onClose={() => setEditing(null)} />
+      <AchievementDrawer editing={editing} onClose={() => setEditing(null)} />
       <ConfirmDialog
         isOpen={!!deleteTarget}
         title="Remove achievement"
@@ -122,16 +116,18 @@ export default function AchievementsPage() {
 
 type FormState = { name: string; proofUrl: string | null; month: string; year: string; description: string };
 
-function AchievementDialog({ editing, onClose }: { editing: Achievement | "new" | null; onClose: () => void }) {
+function AchievementDrawer({ editing, onClose }: { editing: Achievement | "new" | null; onClose: () => void }) {
   const { chapterId, chapterName } = useWorkingChapter();
   const create = useCreateAchievement();
   const update = useUpdateAchievement();
-  const now = new Date();
+  const shown = useRetained(editing);
   const [form, setForm] = useState<FormState>({ name: "", proofUrl: null, month: "", year: "", description: "" });
+  const [showErrors, setShowErrors] = useState(false);
 
   useEffect(() => {
     if (!editing) return;
     const today = new Date();
+    setShowErrors(false);
     setForm(
       editing === "new"
         ? { name: "", proofUrl: null, month: String(today.getMonth() + 1), year: String(today.getFullYear()), description: "" }
@@ -145,13 +141,16 @@ function AchievementDialog({ editing, onClose }: { editing: Achievement | "new" 
     );
   }, [editing]);
 
-  if (!editing) return null;
-  const isNew = editing === "new";
-  const years = Array.from({ length: 30 }, (_, i) => String(now.getFullYear() - i));
+  if (!shown) return null;
+  const isNew = shown === "new";
+  const thisYear = new Date().getFullYear();
+  const years = Array.from({ length: 30 }, (_, i) => String(thisYear - i));
+  const set = (patch: Partial<FormState>) => setForm((f) => ({ ...f, ...patch }));
+  const nameError = showErrors && form.name.trim().length < 3 ? "Describe the achievement (at least 3 characters)" : undefined;
 
   const handleSave = async () => {
-    if (form.name.trim().length < 3) return errorToast("Enter the achievement.", "Validation");
-    if (!form.proofUrl) return errorToast("Upload the proof.", "Proof needed");
+    setShowErrors(true);
+    if (form.name.trim().length < 3 || !form.proofUrl) return;
     const body = {
       name: form.name.trim(),
       proofUrl: form.proofUrl,
@@ -161,7 +160,7 @@ function AchievementDialog({ editing, onClose }: { editing: Achievement | "new" 
     };
     try {
       if (isNew) await create.mutateAsync({ ...body, chapterId });
-      else await update.mutateAsync({ id: editing.id, body });
+      else await update.mutateAsync({ id: shown.id, body });
       successToast(isNew ? "Achievement added." : "Achievement updated.");
       onClose();
     } catch (err) {
@@ -170,45 +169,43 @@ function AchievementDialog({ editing, onClose }: { editing: Achievement | "new" 
   };
 
   return (
-    <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>{isNew ? "Add achievement" : "Edit achievement"}</DialogTitle>
-          <DialogDescription>{isNew ? `For ${chapterName}. ` : ""}It shows straight away.</DialogDescription>
-        </DialogHeader>
-        <div className="space-y-4">
-          <Input label="Achievement" placeholder="e.g. 1st place, Association Bible Quiz" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Month</label>
-              <Select value={form.month} onValueChange={(v) => setForm((f) => ({ ...f, month: v }))}>
-                <SelectTrigger aria-label="Month"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {MONTHS.map((m, i) => <SelectItem key={m} value={String(i + 1)}>{m}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Year</label>
-              <Select value={form.year} onValueChange={(v) => setForm((f) => ({ ...f, year: v }))}>
-                <SelectTrigger aria-label="Year"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {years.map((y) => <SelectItem key={y} value={y}>{y}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <div>
-            <p className="mb-2 text-sm font-medium">Proof (certificate, photo or letter)</p>
-            <FileUploadButton purpose="achievement-proof" value={form.proofUrl} onChange={(url) => setForm((f) => ({ ...f, proofUrl: url }))} />
-          </div>
-          <Textarea label="Description (optional)" rows={3} value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} />
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSave} loading={create.isPending || update.isPending} className="bg-primary text-white">Save</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <FormDrawer
+      open={editing !== null}
+      title={isNew ? "Add achievement" : "Edit achievement"}
+      description={`${isNew ? `For ${chapterName}. ` : ""}It shows straight away.`}
+      onSubmit={handleSave}
+      onCancel={onClose}
+      submitting={create.isPending || update.isPending}
+      submitLabel={isNew ? "Add achievement" : "Save changes"}
+    >
+      <Input
+        label="Achievement"
+        required
+        placeholder="e.g. 1st place, Association Bible Quiz"
+        value={form.name}
+        error={nameError}
+        onChange={(e) => set({ name: e.target.value })}
+      />
+      <div className="grid grid-cols-2 gap-4">
+        <Select label="Month" value={form.month} onValueChange={(v) => set({ month: v })}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {MONTHS.map((m, i) => <SelectItem key={m} value={String(i + 1)}>{m}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select label="Year" value={form.year} onValueChange={(v) => set({ year: v })}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {years.map((y) => <SelectItem key={y} value={y}>{y}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+      <div>
+        <p className="mb-2 text-sm font-medium">Proof (certificate, photo or letter)</p>
+        <FileUploadButton purpose="achievement-proof" value={form.proofUrl} onChange={(url) => set({ proofUrl: url })} />
+        {showErrors && !form.proofUrl ? <p className="mt-1 text-xs text-danger">Upload the proof.</p> : null}
+      </div>
+      <Textarea label="Description (optional)" rows={3} value={form.description} onChange={(e) => set({ description: e.target.value })} />
+    </FormDrawer>
   );
 }

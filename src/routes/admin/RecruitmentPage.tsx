@@ -1,6 +1,6 @@
 import { Skeleton } from "@heroui/react";
 import { useEffect, useState } from "react";
-import { LuCheck, LuPencilLine, LuRefreshCw, LuTriangleAlert, LuUserCheck, LuX } from "react-icons/lu";
+import { LuCheck, LuPencilLine, LuRefreshCw, LuTriangleAlert, LuUserCheck, LuUserPlus, LuX } from "react-icons/lu";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { PageHeader } from "@/components/shared/PageHeader";
@@ -10,6 +10,7 @@ import { errorToast, successToast } from "@/components/shared/toast-notification
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Pagination } from "@/components/ui/pagination";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { BulkActionBar } from "@/features/admin/components/shared/BulkActionBar";
@@ -26,9 +27,12 @@ import {
 import { useGetChapters } from "@/lib/api/church";
 import { cn } from "@/lib/utils";
 import type { DuplicateMatch, RecruitmentRequest } from "@/types/chapter-admin";
-import { isSuperAdmin } from "@/types/user";
+import { canManageCounsellors, isSuperAdmin } from "@/types/user";
+import { AdminAddMembersDrawer } from "@/features/admin/components/members/AdminAddMembersDrawer";
 
 type Tab = "pending" | "rejected";
+
+const PAGE_SIZE = 100;
 type NoteAction = { kind: "reject" | "changes"; ids: string[] } | null;
 type MergeTarget = { request: RecruitmentRequest; match: DuplicateMatch } | null;
 
@@ -82,25 +86,50 @@ export default function RecruitmentPage() {
   const [note, setNote] = useState("");
   const [noteError, setNoteError] = useState("");
   const [mergeTarget, setMergeTarget] = useState<MergeTarget>(null);
+  const [page, setPage] = useState(1);
+  const [duplicatesOnly, setDuplicatesOnly] = useState(false);
 
   useEffect(() => {
     const t = window.setTimeout(() => setDebounced(search.trim()), 350);
     return () => window.clearTimeout(t);
   }, [search]);
 
+  // Any tab or filter change goes back to page 1.
+  const filterKey = [tab, debounced, churchId, duplicatesOnly].join("|");
+  const [lastFilterKey, setLastFilterKey] = useState(filterKey);
+  if (filterKey !== lastFilterKey) {
+    setLastFilterKey(filterKey);
+    setPage(1);
+  }
+
   const { data: churches = [] } = useGetChapters();
-  const { data: requests = [], isLoading, isError, refetch, isRefetching } = useRecruitmentRequests({
+  const { data, isLoading, isError, refetch, isRefetching } = useRecruitmentRequests({
     status: tab,
     search: debounced || undefined,
     churchId: churchId === "all" ? undefined : churchId,
+    duplicates: duplicatesOnly ? "only" : undefined,
+    page,
+    limit: PAGE_SIZE,
   });
+  const requests = data?.items ?? [];
+  const total = data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
+  // Reviewing everything on the last page can leave it empty; step back.
+  if (data && page > totalPages) setPage(totalPages);
   const approve = useApproveMembers();
   const reject = useRejectMembers();
   const requestChanges = useRequestMemberChanges();
   const merge = useMergeDuplicate();
 
   const reviewing = tab === "pending" && canReview;
-  const duplicateCount = requests.filter((r) => r.duplicates.length > 0).length;
+  // Across all pages, not just the one on screen.
+  const duplicateCount = data?.duplicateTotal ?? 0;
+
+  const toggleDuplicatesOnly = () => {
+    setDuplicatesOnly((on) => !on);
+    setSelected(new Set());
+  };
   const allSelected = requests.length > 0 && requests.every((r) => selected.has(r.id));
 
   const toggle = (id: string, on: boolean) =>
@@ -203,11 +232,11 @@ export default function RecruitmentPage() {
 
           {reviewing ? (
             <div className="flex flex-wrap gap-2 lg:justify-end">
-              <Button type="button" size="sm" variant="ghost" className="text-danger" onClick={() => setNoteAction({ kind: "reject", ids: [r.id] })}>
+              <Button type="button" size="sm" className="text-danger bg-red-100" onClick={() => setNoteAction({ kind: "reject", ids: [r.id] })} disabled={approve.isPending || requestChanges.isPending || reject.isPending}>
                 <LuX size={14} aria-hidden />
                 Reject
               </Button>
-              <Button type="button" size="sm" variant="outline" onClick={() => setNoteAction({ kind: "changes", ids: [r.id] })}>
+              <Button type="button" size="sm" variant="outline" onClick={() => setNoteAction({ kind: "changes", ids: [r.id] })} disabled={approve.isPending || requestChanges.isPending || reject.isPending}>
                 <LuPencilLine size={14} aria-hidden />
                 Request changes
               </Button>
@@ -217,6 +246,7 @@ export default function RecruitmentPage() {
                 className="bg-success text-white hover:bg-success/90"
                 onClick={() => handleApprove([r.id])}
                 loading={approve.isPending && approve.variables?.ids.includes(r.id)}
+
               >
                 <LuCheck size={14} aria-hidden />
                 Approve
@@ -257,11 +287,29 @@ export default function RecruitmentPage() {
     );
   };
 
+    const canEdit = canManageCounsellors(useCurrentUser((s) => s.user)?.role);
+
+    const [adding, setAdding] = useState(false);
+
   return (
     <div className="min-w-0 space-y-6">
       <PageHeader
         title="Recruitment board"
         description="Members added by chapters wait here until a super admin approves them. Approved members get a member ID and count in all totals."
+        actions={
+                  <>
+                    {canEdit ? (
+                      <Button
+                        type="button"
+                        className="bg-primary text-white"
+                        onClick={() => setAdding(true)}
+                      >
+                        <LuUserPlus size={16} aria-hidden />
+                        Add members
+                      </Button>
+                    ) : null}
+                  </>
+                }
       />
 
       {!canReview ? (
@@ -269,13 +317,13 @@ export default function RecruitmentPage() {
           You can view requests. Only a super admin can approve, reject or request changes.
         </p>
       ) : null}
-
       <ViewTabs
         aria-label="Request status"
-        tabs={TABS.map((t) => (t.id === tab && !isLoading ? { ...t, count: requests.length } : t))}
+        tabs={TABS.map((t) => (t.id === tab && !isLoading ? { ...t, count: total } : t))}
         value={tab}
         onChange={(id) => {
           setTab(id);
+          setDuplicatesOnly(false);
           setSelected(new Set());
         }}
       />
@@ -300,7 +348,24 @@ export default function RecruitmentPage() {
           }
           actions={
             <div className="flex items-center gap-3">
-              {duplicateCount > 0 ? <Badge variant="warning">{duplicateCount} with possible duplicates</Badge> : null}
+              {duplicateCount > 0 || duplicatesOnly ? (
+                <button
+                  type="button"
+                  onClick={toggleDuplicatesOnly}
+                  aria-pressed={duplicatesOnly}
+                  title={duplicatesOnly ? "Show all requests" : "Show only possible duplicates"}
+                  className={cn(
+                    "inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-xs font-medium text-warning outline-none transition-colors focus-visible:ring-2 focus-visible:ring-warning/50",
+                    duplicatesOnly
+                      ? "border-warning/60 bg-warning/20 hover:bg-warning/25"
+                      : "border-warning/30 bg-warning/10 hover:bg-warning/20",
+                  )}
+                >
+                  <LuTriangleAlert size={13} aria-hidden />
+                  {duplicateCount} with possible duplicates
+                  {duplicatesOnly ? <LuX size={13} aria-label="Clear filter" /> : null}
+                </button>
+              ) : null}
               {reviewing && requests.length > 0 ? (
                 <Checkbox
                   checked={allSelected}
@@ -331,6 +396,19 @@ export default function RecruitmentPage() {
               }
             />
           </div>
+        ) : requests.length === 0 && duplicatesOnly ? (
+          <div className="rounded-xl border border-border bg-surface">
+            <EmptyState
+              icon={LuCheck}
+              title="No possible duplicates left"
+              description="Every request with a possible duplicate has been reviewed."
+              action={
+                <Button type="button" variant="outline" onClick={toggleDuplicatesOnly}>
+                  Show all requests
+                </Button>
+              }
+            />
+          </div>
         ) : requests.length === 0 ? (
           <div className="rounded-xl border border-border bg-surface">
             <EmptyState
@@ -340,7 +418,25 @@ export default function RecruitmentPage() {
             />
           </div>
         ) : (
-          <ul className="space-y-3">{requests.map(renderRequest)}</ul>
+          <>
+            <ul className="space-y-3">{requests.map(renderRequest)}</ul>
+            {totalPages > 1 ? (
+              <div className="flex flex-col items-center justify-between gap-3 pt-2 sm:flex-row">
+                <p className="text-sm text-muted tabular-nums">
+                  Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, total)} of {total}
+                </p>
+                <Pagination
+                  page={page}
+                  totalPages={totalPages}
+                  onPageChange={(next) => {
+                    setPage(next);
+                    setSelected(new Set());
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
+                />
+              </div>
+            ) : null}
+          </>
         )}
       </div>
 
@@ -353,8 +449,9 @@ export default function RecruitmentPage() {
             <button
               type="button"
               onClick={() => handleApprove([...selected])}
-              disabled={approve.isPending}
+              disabled={approve.isPending || requestChanges.isPending || reject.isPending}
               className="flex h-9 items-center gap-1.5 rounded-lg bg-success px-3 font-medium text-white outline-none transition-colors hover:bg-success/90 focus-visible:ring-2 focus-visible:ring-gold/60 disabled:opacity-60"
+
             >
               <LuCheck size={15} aria-hidden />
               {approve.isPending ? "Approving…" : "Approve"}
@@ -362,7 +459,8 @@ export default function RecruitmentPage() {
             <button
               type="button"
               onClick={() => setNoteAction({ kind: "changes", ids: [...selected] })}
-              className="flex h-9 items-center gap-1.5 rounded-lg px-3 font-medium text-white/85 outline-none transition-colors hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-gold/60"
+              className="flex h-9 items-center gap-1.5 rounded-lg px-3 font-medium text-white/85 outline-none transition-colors hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-gold/60 bg-white/20"
+              disabled={approve.isPending || requestChanges.isPending || reject.isPending}
             >
               <LuPencilLine size={15} aria-hidden />
               <span className="hidden sm:inline">Request changes</span>
@@ -371,7 +469,8 @@ export default function RecruitmentPage() {
             <button
               type="button"
               onClick={() => setNoteAction({ kind: "reject", ids: [...selected] })}
-              className="flex h-9 items-center gap-1.5 rounded-lg px-3 font-medium text-[#ffb4b4] outline-none transition-colors hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-gold/60"
+              className="flex h-9 items-center gap-1.5 rounded-lg px-3 font-medium text-white/90 outline-none transition-colors hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-gold/60 bg-red-500"
+              disabled={approve.isPending || requestChanges.isPending || reject.isPending}
             >
               <LuX size={15} aria-hidden />
               Reject
@@ -426,6 +525,15 @@ export default function RecruitmentPage() {
         onClose={() => setMergeTarget(null)}
         onConfirm={handleMerge}
       />
+
+ {canEdit ? (
+        <AdminAddMembersDrawer
+          open={adding}
+          defaultChapterId={undefined}
+          onClose={() => setAdding(false)}
+        />
+      ) : null}
+
     </div>
   );
 }

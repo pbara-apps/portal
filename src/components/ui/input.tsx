@@ -38,6 +38,7 @@ function Input({ className, label, error, startContent, endContent, id, ref, ...
         fullWidth
         data-invalid={invalid || undefined}
         className={className}
+      
       />
     );
 

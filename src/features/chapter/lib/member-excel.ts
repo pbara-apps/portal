@@ -157,13 +157,20 @@ export async function readMemberWorkbook(file: File, ranks: PortalRank[]): Promi
     const draft = newDraft();
     let rankText = "";
     let dateCell: unknown = "";
+    // Some sheets name the column "Participant"; used only when Full Name is empty.
+    let participantName = "";
 
     for (const [header, value] of Object.entries(row)) {
+      if (normalizeHeader(header).startsWith("participant")) {
+        participantName = String(value).trim();
+        continue;
+      }
       const field = fieldForHeader(header);
       if (field === "rankId") rankText = String(value).trim();
       else if (field === "dateOfBirth") dateCell = value;
       else if (field) (draft[field] as string) = String(value).trim();
     }
+    if (!draft.fullName) draft.fullName = participantName;
 
     if (rankText) {
       draft.rankId = rankByName.get(rankText.toLowerCase()) ?? "";

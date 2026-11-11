@@ -1,17 +1,11 @@
 import { useEffect, useState } from "react";
 import { LuDownload, LuFileText, LuWallet } from "react-icons/lu";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
+import { FormDrawer } from "@/components/shared/FormDrawer";
 import { errorToast, successToast } from "@/components/shared/toast-notification";
+import { useRetained } from "@/hooks/useRetained";
 import { downloadReceipt } from "@/lib/finance/receipt";
 import { cn } from "@/lib/utils";
 import type { PaymentAccount } from "@/types/admin";
@@ -115,36 +109,44 @@ export default function DuesPage() {
         </ul>
       )}
 
-      <PayDialog bill={paying} account={data?.paymentAccount ?? null} onClose={() => setPaying(null)} />
+      <PayDrawer bill={paying} account={data?.paymentAccount ?? null} onClose={() => setPaying(null)} />
     </div>
   );
 }
 
-function PayDialog({ bill, account, onClose }: { bill: Bill | null; account: PaymentAccount | null; onClose: () => void }) {
+function PayDrawer({ bill, account, onClose }: { bill: Bill | null; account: PaymentAccount | null; onClose: () => void }) {
   const submit = useSubmitPayment();
+  const shown = useRetained(bill);
   const [amount, setAmount] = useState("");
   const [paidOn, setPaidOn] = useState("");
   const [reference, setReference] = useState("");
   const [proofUrl, setProofUrl] = useState<string | null>(null);
-  const payable = bill ? bill.balance - bill.pendingAmount : 0;
+  const [showErrors, setShowErrors] = useState(false);
+  const payable = shown ? shown.balance - shown.pendingAmount : 0;
 
   useEffect(() => {
     if (!bill) return;
-    setAmount(String(payable));
+    setAmount(String(bill.balance - bill.pendingAmount));
     setPaidOn(new Date().toISOString().slice(0, 10));
     setReference("");
     setProofUrl(null);
-  }, [bill, payable]);
+    setShowErrors(false);
+  }, [bill]);
 
-  if (!bill) return null;
+  if (!shown) return null;
+
+  const value = Number(amount);
+  const amountError = !Number.isFinite(value) || value <= 0
+    ? "Enter the amount you paid"
+    : value > payable
+      ? `The most you can pay now is ${naira(payable)}`
+      : undefined;
 
   const handleSubmit = async () => {
-    const value = Number(amount);
-    if (!Number.isFinite(value) || value <= 0) return errorToast("Enter the amount you paid.", "Amount");
-    if (value > payable) return errorToast(`The most you can pay now is ${naira(payable)}.`, "Amount");
-    if (!proofUrl) return errorToast("Upload the proof of payment.", "Proof needed");
+    setShowErrors(true);
+    if (amountError || !proofUrl) return;
     try {
-      await submit.mutateAsync({ billId: bill.id, amount: value, paidOn, reference: reference || null, proofUrl });
+      await submit.mutateAsync({ billId: shown.id, amount: value, paidOn, reference: reference || null, proofUrl });
       successToast("Payment sent. Finance will confirm it.", "Submitted");
       onClose();
     } catch (err) {
@@ -153,38 +155,46 @@ function PayDialog({ bill, account, onClose }: { bill: Bill | null; account: Pay
   };
 
   return (
-    <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Pay — {bill.due?.title}</DialogTitle>
-          <DialogDescription>You can pay part now and the rest later. Each payment is confirmed by finance.</DialogDescription>
-        </DialogHeader>
-        <div className="rounded-xl bg-background p-4 text-sm">
-          {account ? (
-            <>
-              <p className="text-text-muted">Pay into the association account:</p>
-              <p className="mt-1 font-semibold">{account.bankName}</p>
-              <p>{account.accountName}</p>
-              <p className="font-mono text-base">{account.accountNumber}</p>
-            </>
-          ) : (
-            <p className="text-amber-700">The association hasn't set its payment account yet. Please contact the association.</p>
-          )}
-        </div>
-        <div className="space-y-4">
-          <Input label={`Amount paid (max ${naira(payable)})`} type="number" min={1} value={amount} onChange={(e) => setAmount(e.target.value)} />
-          <Input label="Payment date" type="date" value={paidOn} onChange={(e) => setPaidOn(e.target.value)} />
-          <Input label="Bank reference (optional)" value={reference} onChange={(e) => setReference(e.target.value)} />
-          <div>
-            <p className="mb-2 text-sm font-medium">Proof of payment</p>
-            <FileUploadButton purpose="payment-proof" value={proofUrl} onChange={setProofUrl} label="Upload proof" />
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSubmit} loading={submit.isPending} disabled={!account} className="bg-primary text-white">Submit payment</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <FormDrawer
+      open={bill !== null}
+      title={`Pay — ${shown.due?.title ?? "due"}`}
+      description="You can pay part now and the rest later. Each payment is confirmed by finance."
+      onSubmit={handleSubmit}
+      onCancel={onClose}
+      submitting={submit.isPending}
+      submitDisabled={!account}
+      submitLabel="Submit payment"
+    >
+      <div className="rounded-xl bg-surface-secondary p-4 text-sm">
+        {account ? (
+          <>
+            <p className="text-muted">Pay into the association account:</p>
+            <p className="mt-1 font-semibold">{account.bankName}</p>
+            <p>{account.accountName}</p>
+            <p className="font-mono text-base">{account.accountNumber}</p>
+          </>
+        ) : (
+          <p className="text-warning">The association hasn't set its payment account yet. Please contact the association.</p>
+        )}
+      </div>
+      <Input
+        label={`Amount paid (max ${naira(payable)})`}
+        type="number"
+        min={1}
+        required
+        value={amount}
+        error={showErrors ? amountError : undefined}
+        onChange={(e) => setAmount(e.target.value)}
+      />
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Input label="Payment date" type="date" value={paidOn} onChange={(e) => setPaidOn(e.target.value)} />
+        <Input label="Bank reference (optional)" value={reference} onChange={(e) => setReference(e.target.value)} />
+      </div>
+      <div>
+        <p className="mb-2 text-sm font-medium">Proof of payment</p>
+        <FileUploadButton purpose="payment-proof" value={proofUrl} onChange={setProofUrl} label="Upload proof" />
+        {showErrors && !proofUrl ? <p className="mt-1 text-xs text-danger">Upload the proof of payment.</p> : null}
+      </div>
+    </FormDrawer>
   );
 }

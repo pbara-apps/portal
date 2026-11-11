@@ -63,17 +63,35 @@ export const useResendCounsellorPassword = () =>
 
 // ─── Recruitment Board ─────────────────────────────────────────────────────
 
-export type RecruitmentParams = { status: "pending" | "rejected"; search?: string; churchId?: string };
+export type RecruitmentParams = {
+  status: "pending" | "rejected";
+  search?: string;
+  churchId?: string;
+  /** "only" lists just the members with a possible duplicate. */
+  duplicates?: "only";
+  page?: number;
+  limit?: number;
+};
 
+/** One page of requests, the total matching the filters, and how many have possible duplicates. */
 export const useRecruitmentRequests = (params: RecruitmentParams) =>
   useQuery({
     queryKey: chapterAdminKeys.recruitment(params),
     queryFn: async () => {
       const res = await http.get("/chapter-admin/recruitment", { params });
-      return ((res.data ?? []) as (RawMember & { duplicates: DuplicateMatch[] })[]).map(
-        (raw): RecruitmentRequest => ({ ...mapMember(raw), duplicates: raw.duplicates ?? [] }),
-      );
+      const data = res.data as {
+        items: (RawMember & { duplicates: DuplicateMatch[] })[];
+        total: number;
+        duplicateTotal: number;
+      };
+      return {
+        items: data.items.map((raw): RecruitmentRequest => ({ ...mapMember(raw), duplicates: raw.duplicates ?? [] })),
+        total: data.total,
+        duplicateTotal: data.duplicateTotal ?? 0,
+      };
     },
+    // Keep the current page on screen while the next one loads.
+    placeholderData: (previous) => previous,
   });
 
 /** Members awaiting review — shown as the sidebar badge. */
@@ -234,6 +252,30 @@ export const useAdminMember = (id: string | null) =>
     queryFn: async () => {
       const res = await http.get(`/chapter-admin/members/${id}`);
       return mapMember(res.data as RawMember);
+    },
+  });
+
+/** Adds members to a chapter. They start pending, on the Recruitment Board. */
+export const useAdminAddMembers = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: { chapterId: string; members: MemberPayload[] }) => {
+      const res = await http.post("/chapter-admin/members", body);
+      return ((res.data ?? []) as RawMember[]).map(mapMember);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["chapter-admin"] }),
+  });
+};
+
+/** Uploads a member photo with the admin session; resolves with its URL. */
+export const useAdminUploadMemberPhoto = () =>
+  useMutation({
+    mutationFn: async (file: File) => {
+      const form = new FormData();
+      form.append("file", file);
+      form.append("folder", "member-photos");
+      const res = await http.post("/upload/", form);
+      return (res.data as { url: string }).url;
     },
   });
 

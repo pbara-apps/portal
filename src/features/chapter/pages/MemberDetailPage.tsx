@@ -7,11 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { useMember, useRanks } from "../api/members";
 import { MemberAvatar } from "../components/MemberAvatar";
-import { MemberEditDialog } from "../components/MemberEditDialog";
+import { canEditMember, MemberEditDrawer } from "../components/MemberEditDrawer";
 import { MemberStatusBadge } from "../components/MemberStatusBadge";
-import { RankProgressDialog } from "../components/RankProgressDialog";
+import { RankProgressDrawer } from "../components/RankProgressDrawer";
 import { RankProgressLine } from "../components/RankProgressLine";
-import { TransferDialog } from "../components/TransferDialog";
+import { TransferDrawer } from "../components/TransferDrawer";
 import { ageFrom, ageWarning, formatDate } from "../lib/member-utils";
 
 function Detail({ label, value }: { label: string; value?: string | number | null }) {
@@ -48,7 +48,7 @@ export default function MemberDetailPage() {
 
   const age = ageFrom(member.dateOfBirth);
   const warning = ageWarning(member.dateOfBirth, ranks.find((r) => r.id === member.rank?.id));
-  const canEditProgress = ["active", "pending", "rejected"].includes(member.status);
+  const canEdit = canEditMember(member);
   const attendanceText =
     attendance && attendance.held > 0
       ? `${attendance.attended} of ${attendance.held} meetings (${attendance.rate}%)`
@@ -71,9 +71,11 @@ export default function MemberDetailPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={() => setEditOpen(true)}>
-            <LuPencil size={14} /> Edit details
-          </Button>
+          {canEdit && (
+            <Button variant="outline" onClick={() => setEditOpen(true)}>
+              <LuPencil size={14} /> Edit details
+            </Button>
+          )}
           {member.status === "active" && (
             <>
               <Button variant="outline" onClick={() => setTransferOpen(true)}>
@@ -114,7 +116,7 @@ export default function MemberDetailPage() {
         <section className="rounded-2xl border border-text-dark/5 bg-surface p-5 lg:col-span-3">
           <div className="mb-5 flex items-center justify-between gap-3">
             <h2 className="text-base font-semibold text-primary">Rank progress</h2>
-            {canEditProgress && (
+            {canEdit && (
               <Button size="sm" variant="outline" onClick={() => setProgressOpen(true)} disabled={ranks.length === 0}>
                 <LuTrendingUp size={14} /> Update progress
               </Button>
@@ -128,9 +130,9 @@ export default function MemberDetailPage() {
         </section>
       </div>
 
-      <MemberEditDialog member={editOpen ? member : null} onClose={() => setEditOpen(false)} />
-      <RankProgressDialog member={member} ranks={ranks} open={progressOpen} onClose={() => setProgressOpen(false)} />
-      <TransferDialog member={member} open={transferOpen} onClose={() => setTransferOpen(false)} />
+      <MemberEditDrawer member={member} open={editOpen} onClose={() => setEditOpen(false)} />
+      <RankProgressDrawer member={member} ranks={ranks} open={progressOpen} onClose={() => setProgressOpen(false)} />
+      <TransferDrawer member={member} open={transferOpen} onClose={() => setTransferOpen(false)} />
     </div>
   );
 }

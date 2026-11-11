@@ -7,13 +7,14 @@ import { Spinner } from "@/components/ui/spinner";
 import { TemporaryPasswordDialog } from "@/components/shared/TemporaryPasswordDialog";
 import { errorToast, successToast } from "@/components/shared/toast-notification";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { useRetained } from "@/hooks/useRetained";
 import {
   useAssignOfficer,
   useOfficers,
   useRemoveOfficer,
   useResendOfficerPassword,
 } from "../api/officers";
-import { OfficerDialog, type OfficerDetails } from "../components/OfficerDialog";
+import { OfficerDrawer, type OfficerDetails } from "../components/OfficerDrawer";
 import { useChapterSession } from "../store/useChapterSession";
 import { PORTAL_ROLE_LABELS, type CredentialDelivery, type PortalAccount } from "../types";
 
@@ -39,6 +40,8 @@ function OfficersManager() {
   const remove = useRemoveOfficer();
 
   const [editTarget, setEditTarget] = useState<EditTarget | null>(null);
+  // Keeps the drawer's text while it animates closed.
+  const shownTarget = useRetained(editTarget);
   const [removeTarget, setRemoveTarget] = useState<PortalAccount | null>(null);
   const [tempPassword, setTempPassword] = useState<{ name: string; email: string; password: string } | null>(null);
 
@@ -159,16 +162,16 @@ function OfficersManager() {
         </div>
       )}
 
-      <OfficerDialog
+      <OfficerDrawer
         open={!!editTarget}
-        title={editTarget ? `${PORTAL_ROLE_LABELS[editTarget.role]} — ${editTarget.chapterName}` : ""}
+        title={shownTarget ? `${PORTAL_ROLE_LABELS[shownTarget.role]} — ${shownTarget.chapterName}` : ""}
         description={
-          editTarget?.current
+          shownTarget?.current
             ? "Pick someone else to hand this role over. The previous person will lose chapter portal access."
             : "Pick the member who holds this role. We'll email their sign-in details."
         }
-        chapterId={editTarget?.chapterId ?? ""}
-        current={editTarget?.current ?? null}
+        chapterId={shownTarget?.chapterId ?? ""}
+        current={shownTarget?.current ?? null}
         saving={assign.isPending}
         onClose={() => setEditTarget(null)}
         onSave={handleSave}

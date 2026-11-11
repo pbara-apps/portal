@@ -3,6 +3,7 @@ import { LuSearch } from "react-icons/lu";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { preventEnterSubmit } from "../lib/form-keys";
 import type { PortalMember } from "../types";
 import { MemberAvatar } from "./MemberAvatar";
 import { MemberStatusBadge } from "./MemberStatusBadge";
@@ -53,6 +54,8 @@ export function MemberPicker({
         placeholder="Search by name or member ID…"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
+        onKeyDown={preventEnterSubmit}
+        aria-label="Search members"
         startContent={<LuSearch size={16} />}
       />
       <p className="text-xs text-text-muted">

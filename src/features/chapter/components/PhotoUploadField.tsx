@@ -7,20 +7,27 @@ import { MemberAvatar } from "./MemberAvatar";
 
 const MAX_BYTES = 5 * 1024 * 1024;
 
+/** Uploads a photo and resolves with its URL (a react-query mutation fits). */
+export type PhotoUploader = { mutateAsync: (file: File) => Promise<string>; isPending: boolean };
+
 /** Optional member photo. Without one, the association logo is shown. */
 export function PhotoUploadField({
   value,
   name,
   onChange,
   compact = false,
+  uploader,
 }: {
   value: string | null;
   name: string;
   onChange: (url: string | null) => void;
   compact?: boolean;
+  /** Defaults to the chapter portal upload. */
+  uploader?: PhotoUploader;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const upload = useUploadMemberPhoto();
+  const portalUpload = useUploadMemberPhoto();
+  const upload = uploader ?? portalUpload;
 
   const handleFile = async (file?: File) => {
     if (!file) return;

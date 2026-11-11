@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { LuDownload, LuUsers } from "react-icons/lu";
+import { LuDownload, LuUserPlus, LuUsers } from "react-icons/lu";
 import * as XLSX from "xlsx";
 import { DataTable, type DataTableColumn } from "@/components/shared/DataTable";
 import { EmptyState } from "@/components/shared/EmptyState";
@@ -10,6 +10,7 @@ import { errorToast } from "@/components/shared/toast-notification";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AdminAddMembersDrawer } from "@/features/admin/components/members/AdminAddMembersDrawer";
 import { AdminMemberDrawer } from "@/features/admin/components/members/AdminMemberDrawer";
 import { MemberAvatar } from "@/features/chapter/components/MemberAvatar";
 import { ageFrom, formatDate } from "@/features/chapter/lib/member-utils";
@@ -94,6 +95,7 @@ const COLUMNS: DataTableColumn<PortalMember>[] = [
  */
 export default function MembersPage() {
   const canEdit = canManageCounsellors(useCurrentUser((s) => s.user)?.role);
+  const [adding, setAdding] = useState(false);
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
   const [churchId, setChurchId] = useState("all");
@@ -167,10 +169,22 @@ export default function MembersPage() {
         title="Members"
         description="Every approved member of the association (ambassadors and church counsellors), across all churches and chapters."
         actions={
-          <Button type="button" variant="outline" onClick={handleExport} loading={exporting}>
-            {!exporting ? <LuDownload size={16} aria-hidden /> : null}
-            Export to Excel
-          </Button>
+          <>
+            <Button type="button" variant="outline" onClick={handleExport} loading={exporting}>
+              {!exporting ? <LuDownload size={16} aria-hidden /> : null}
+              Export to Excel
+            </Button>
+            {canEdit ? (
+              <Button
+                type="button"
+                className="bg-primary text-white"
+                onClick={() => setAdding(true)}
+              >
+                <LuUserPlus size={16} aria-hidden />
+                Add members
+              </Button>
+            ) : null}
+          </>
         }
       />
 
@@ -281,6 +295,13 @@ export default function MembersPage() {
       </div>
 
       <AdminMemberDrawer memberId={openId} canEdit={canEdit} onClose={() => setOpenId(null)} />
+      {canEdit ? (
+        <AdminAddMembersDrawer
+          open={adding}
+          defaultChapterId={chapterId === "all" ? undefined : chapterId}
+          onClose={() => setAdding(false)}
+        />
+      ) : null}
     </div>
   );
 }

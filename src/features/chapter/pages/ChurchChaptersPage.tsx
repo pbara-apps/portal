@@ -3,18 +3,11 @@ import { Navigate } from "react-router-dom";
 import { LuLayers, LuPlus, LuTrash2 } from "react-icons/lu";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { errorToast, successToast } from "@/components/shared/toast-notification";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { FormDrawer } from "@/components/shared/FormDrawer";
 import { useCancelChapterRequest, useChapterOverview, useCreateChapterRequest } from "../api/chapters";
 import { useChapterMembers } from "../api/members";
 import { MemberPicker } from "../components/MemberPicker";
@@ -125,7 +118,7 @@ function ChaptersManager() {
         ))}
       </ul>
 
-      <NewChapterDialog
+      <NewChapterDrawer
         open={formOpen}
         minMembers={rules.minMembersInNewChapter}
         onClose={() => setFormOpen(false)}
@@ -144,55 +137,70 @@ function ChaptersManager() {
 }
 
 /** Form: chapter name + the active members who will move into it. */
-function NewChapterDialog({ open, minMembers, onClose }: { open: boolean; minMembers: number; onClose: () => void }) {
-  const { data: members = [], isLoading } = useChapterMembers({ view: "active" });
+function NewChapterDrawer({ open, minMembers, onClose }: { open: boolean; minMembers: number; onClose: () => void }) {
+  const { data: members = [], isLoading } = useChapterMembers({ view: "active" }, open);
   const create = useCreateChapterRequest();
   const [name, setName] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [showErrors, setShowErrors] = useState(false);
 
-  const reset = () => {
+  const close = () => {
     setName("");
     setSelected(new Set());
+    setShowErrors(false);
+    onClose();
   };
 
+  const nameError = showErrors && name.trim().length < 3 ? "Enter the new chapter's name" : undefined;
+  const tooFew = selected.size < minMembers;
+
   const handleSubmit = async () => {
-    if (name.trim().length < 3) return errorToast("Enter the new chapter's name.", "Name needed");
-    if (selected.size < minMembers) {
-      return errorToast(`Pick at least ${minMembers} members to move into the new chapter.`, "Not enough members");
-    }
+    setShowErrors(true);
+    if (name.trim().length < 3 || tooFew) return;
     try {
       await create.mutateAsync({ name: name.trim(), memberIds: [...selected] });
       successToast("Request sent. The association will review it.", "Request sent");
-      reset();
-      onClose();
+      close();
     } catch (err) {
       errorToast((err as { message?: string })?.message ?? "Unable to send request.", "Request failed");
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-h-[90vh] max-w-xl overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Request a new chapter</DialogTitle>
-          <DialogDescription>
-            Pick at least {minMembers} members to move from your existing chapters. They move only after the
-            association approves, and no chapter may be left empty.
-          </DialogDescription>
-        </DialogHeader>
-        <Input label="New chapter name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Antioch Youth Chapter" />
+    <FormDrawer
+      open={open}
+      size="lg"
+      title="Request a new chapter"
+      description={`Pick at least ${minMembers} members to move from your existing chapters. They move only after the association approves, and no chapter may be left empty.`}
+      onSubmit={handleSubmit}
+      onCancel={close}
+      submitting={create.isPending}
+      submitLabel="Send request"
+      footerStart={
+        <p className={tooFew ? "text-sm text-muted" : "text-sm text-success"}>
+          {selected.size} of at least {minMembers} members picked
+        </p>
+      }
+    >
+      <Input
+        label="New chapter name"
+        required
+        value={name}
+        error={nameError}
+        onChange={(e) => setName(e.target.value)}
+        placeholder="e.g. Antioch Youth Chapter"
+      />
+      <div>
+        <p className="mb-2 text-sm font-medium">Members moving to it</p>
         {isLoading ? (
           <div className="flex justify-center py-8"><Spinner /></div>
         ) : (
           <MemberPicker members={members} selected={selected} onChange={setSelected} showChapter />
         )}
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSubmit} loading={create.isPending} className="bg-primary text-white">
-            Send request ({selected.size})
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        {showErrors && tooFew ? (
+          <p className="mt-1 text-xs text-danger">Pick at least {minMembers} members to move into the new chapter.</p>
+        ) : null}
+      </div>
+    </FormDrawer>
   );
 }

@@ -138,8 +138,7 @@ export default function LoginPage() {
                 placeholder="you@example.com"
                 autoComplete="email"
                 error={errors.email?.message}
-                startContent={<LuMail size={16} className="text-text-muted" />}
-                
+                size="lg"
               />
 
               <Input
@@ -160,7 +159,7 @@ export default function LoginPage() {
                 placeholder="••••••••"
                 autoComplete="current-password"
                 error={errors.password?.message}
-                startContent={<LuLock size={16} className="text-text-muted" />}
+                size="lg"
                 endContent={
                   <button
                     type="button"

@@ -31,7 +31,7 @@ function compare(a: SortValue, b: SortValue): number {
  */
 export function useClientTable<T>({
   rows,
-  pageSize = 10,
+  pageSize = 15,
   searchText,
   sortValue,
   initialSort,

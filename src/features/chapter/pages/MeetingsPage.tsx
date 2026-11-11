@@ -1,19 +1,13 @@
 import { useEffect, useState } from "react";
 import { LuCalendarCheck, LuPencil, LuPlus, LuTrash2 } from "react-icons/lu";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { errorToast, successToast } from "@/components/shared/toast-notification";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { FormDrawer } from "@/components/shared/FormDrawer";
+import { useRetained } from "@/hooks/useRetained";
 import { type Meeting, useDeleteMeeting, useMeetings, useSaveMeeting } from "../api/engagement";
 import { useChapterMembers } from "../api/members";
 import { ChapterSwitcher } from "../components/ChapterSwitcher";
@@ -90,7 +84,7 @@ export default function MeetingsPage() {
         </ul>
       )}
 
-      <MeetingDialog editing={editing} onClose={() => setEditing(null)} />
+      <MeetingDrawer editing={editing} onClose={() => setEditing(null)} />
       <ConfirmDialog
         isOpen={!!deleteTarget}
         title="Delete meeting"
@@ -103,16 +97,18 @@ export default function MeetingsPage() {
   );
 }
 
-function MeetingDialog({ editing, onClose }: { editing: Meeting | "new" | null; onClose: () => void }) {
+function MeetingDrawer({ editing, onClose }: { editing: Meeting | "new" | null; onClose: () => void }) {
   const working = useWorkingChapter();
-  const chapterId = editing && editing !== "new" ? (editing.chapter?.id ?? working.chapterId) : working.chapterId;
-  const { data: members = [] } = useChapterMembers({ chapterId, view: "active" });
+  const shown = useRetained(editing);
+  const chapterId = shown && shown !== "new" ? (shown.chapter?.id ?? working.chapterId) : working.chapterId;
+  const { data: members = [] } = useChapterMembers({ chapterId, view: "active" }, Boolean(editing));
   const save = useSaveMeeting();
   const [date, setDate] = useState("");
   const [activity, setActivity] = useState("");
   const [report, setReport] = useState("");
   const [visitors, setVisitors] = useState("0");
   const [present, setPresent] = useState<Set<string>>(new Set());
+  const [showErrors, setShowErrors] = useState(false);
 
   useEffect(() => {
     if (!editing) return;
@@ -122,15 +118,17 @@ function MeetingDialog({ editing, onClose }: { editing: Meeting | "new" | null; 
     setReport(m?.report ?? "");
     setVisitors(String(m?.visitors ?? 0));
     setPresent(new Set(m?.present ?? []));
+    setShowErrors(false);
   }, [editing]);
 
-  if (!editing) return null;
+  if (!shown) return null;
 
   const handleSave = async () => {
-    if (activity.trim().length < 3) return errorToast("Describe the meeting or activity.", "Validation");
+    setShowErrors(true);
+    if (activity.trim().length < 3 || !date) return;
     try {
       await save.mutateAsync({
-        id: editing === "new" ? undefined : editing.id,
+        id: shown === "new" ? undefined : shown.id,
         chapterId,
         body: { date, activity: activity.trim(), report: report.trim() || null, presentIds: [...present], visitors: Number(visitors) || 0 },
       });
@@ -142,29 +140,41 @@ function MeetingDialog({ editing, onClose }: { editing: Meeting | "new" | null; 
   };
 
   return (
-    <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-h-[90vh] max-w-xl overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{editing === "new" ? "Record meeting" : "Edit meeting"}</DialogTitle>
-          <DialogDescription>Tick everyone who attended.</DialogDescription>
-        </DialogHeader>
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <Input label="Date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-            <Input label="Visitors" type="number" min={0} value={visitors} onChange={(e) => setVisitors(e.target.value)} />
-          </div>
-          <Input label="Meeting / activity" placeholder="e.g. Weekly meeting — Bible study" value={activity} onChange={(e) => setActivity(e.target.value)} />
-          <Textarea label="Short report (optional)" rows={3} value={report} onChange={(e) => setReport(e.target.value)} />
-          <div>
-            <p className="mb-2 text-sm font-medium">Present ({present.size} of {members.length})</p>
-            <MemberPicker members={members} selected={present} onChange={setPresent} maxHeight="16rem" />
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSave} loading={save.isPending} className="bg-primary text-white">Save</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <FormDrawer
+      open={editing !== null}
+      size="lg"
+      title={shown === "new" ? "Record meeting" : "Edit meeting"}
+      description="Tick everyone who attended."
+      onSubmit={handleSave}
+      onCancel={onClose}
+      submitting={save.isPending}
+      submitLabel={shown === "new" ? "Save meeting" : "Save changes"}
+      footerStart={<p className="text-sm text-muted">{present.size} of {members.length} present</p>}
+    >
+      <Input
+        label="Meeting / activity"
+        required
+        placeholder="e.g. Weekly meeting — Bible study"
+        value={activity}
+        error={showErrors && activity.trim().length < 3 ? "Describe the meeting or activity" : undefined}
+        onChange={(e) => setActivity(e.target.value)}
+      />
+      <div className="grid grid-cols-2 gap-4">
+        <Input
+          label="Date"
+          type="date"
+          required
+          value={date}
+          error={showErrors && !date ? "Choose the date" : undefined}
+          onChange={(e) => setDate(e.target.value)}
+        />
+        <Input label="Visitors" type="number" min={0} value={visitors} onChange={(e) => setVisitors(e.target.value)} />
+      </div>
+      <Textarea label="Short report (optional)" rows={3} value={report} onChange={(e) => setReport(e.target.value)} />
+      <div>
+        <p className="mb-2 text-sm font-medium">Who attended?</p>
+        <MemberPicker members={members} selected={present} onChange={setPresent} maxHeight="20rem" />
+      </div>
+    </FormDrawer>
   );
 }

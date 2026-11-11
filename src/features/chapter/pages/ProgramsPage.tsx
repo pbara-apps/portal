@@ -1,10 +1,11 @@
-import { Link } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { LuCalendar, LuClipboardList } from "react-icons/lu";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { useChapterRegistrations, useOpenPrograms } from "../api/registrations";
 import { ChapterSwitcher } from "../components/ChapterSwitcher";
+import { RegisterForProgramDrawer } from "../components/RegisterForProgramDrawer";
 import { formatDate } from "../lib/member-utils";
 import { useActiveChapterId } from "../store/useChapterSession";
 
@@ -29,6 +30,9 @@ export default function ProgramsPage() {
   const chapterId = useActiveChapterId();
   const { data: programs = [], isLoading } = useOpenPrograms();
   const { data: registrations = [], isLoading: loadingRegs } = useChapterRegistrations(chapterId);
+  // ?register=<program id> opens the registration drawer.
+  const [params, setParams] = useSearchParams();
+  const registering = programs.find((p) => p.id === params.get("register")) ?? null;
 
   return (
     <div className="space-y-8">
@@ -62,8 +66,12 @@ export default function ProgramsPage() {
                       <LuCalendar size={12} /> Closes {formatDate(p.registrationDeadline)}
                     </p>
                   )}
-                  <Button asChild className="mt-auto bg-primary text-white">
-                    <Link to={`/chapter/programs/${p.id}/register`}>Register members</Link>
+                  <Button
+                    type="button"
+                    className="mt-auto bg-primary text-white"
+                    onClick={() => setParams({ register: p.id })}
+                  >
+                    Register members
                   </Button>
                 </div>
               </li>
@@ -108,6 +116,8 @@ export default function ProgramsPage() {
           </ul>
         )}
       </section>
+
+      <RegisterForProgramDrawer program={registering} onClose={() => setParams({})} />
     </div>
   );
 }

@@ -118,6 +118,7 @@ export function ImageUploadField({
 
           <div className="flex flex-wrap gap-2">
             <Button
+              type="button"
               size="sm"
               variant="secondary"
               className="bg-primary/10 font-semibold text-primary"
@@ -129,6 +130,7 @@ export function ImageUploadField({
             </Button>
             {value ? (
               <Button
+                type="button"
                 size="sm"
                 variant="ghost"
                 className="text-rose-600 hover:text-rose-700"

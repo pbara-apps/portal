@@ -1,6 +1,6 @@
 import { lazy } from "react";
 import { RouterProvider as AriaRouterProvider } from "react-aria-components";
-import { createBrowserRouter, Navigate, Outlet, useHref, useNavigate } from "react-router-dom";
+import { createBrowserRouter, Navigate, Outlet, useHref, useNavigate, useParams } from "react-router-dom";
 import { RouteErrorPage } from "@/components/RouteErrorPage";
 import { SessionExpiredModal } from "@/components/SessionExpiredModal";
 import { ChapterShell } from "@/features/chapter/components/ChapterShell";
@@ -41,11 +41,9 @@ const AccountsPage = lazy(() => import("./admin/AccountsPage"));
 // Chapter portal (counsellors, presidents, secretaries)
 const ChapterDashboardPage = lazy(() => import("../features/chapter/pages/ChapterDashboardPage"));
 const ChapterMembersPage = lazy(() => import("../features/chapter/pages/ChapterMembersPage"));
-const AddMembersPage = lazy(() => import("../features/chapter/pages/AddMembersPage"));
 const ChapterOfficersPage = lazy(() => import("../features/chapter/pages/ChapterOfficersPage"));
 const MemberDetailPage = lazy(() => import("../features/chapter/pages/MemberDetailPage"));
 const ProgramsPage = lazy(() => import("../features/chapter/pages/ProgramsPage"));
-const RegisterForProgramPage = lazy(() => import("../features/chapter/pages/RegisterForProgramPage"));
 const ChapterAchievementsPage = lazy(() => import("../features/chapter/pages/AchievementsPage"));
 const ChapterTransfersPage = lazy(() => import("../features/chapter/pages/TransfersPage"));
 const ChapterAnnouncementsPage = lazy(() => import("../features/chapter/pages/AnnouncementsPage"));
@@ -57,6 +55,12 @@ const ChangePasswordPage = lazy(() => import("../features/chapter/pages/ChangePa
 const MemberHomePage = lazy(
   () => import("../features/member/pages/MemberHomePage"),
 );
+
+/** Old "register for program" links open the registration drawer on Programs. */
+function ProgramRegisterRedirect() {
+  const { id } = useParams();
+  return <Navigate to={`/chapter/programs?register=${id ?? ""}`} replace />;
+}
 
 /** Root layout. Lets HeroUI/React Aria links and menu items navigate client-side. */
 function AppRoot() {
@@ -140,7 +144,8 @@ export const router = createBrowserRouter([
         children: [
           { index: true, element: <ChapterDashboardPage /> },
           { path: "members", element: <ChapterMembersPage /> },
-          { path: "members/add", element: <AddMembersPage /> },
+          // Adding members and registering for programs now happen in drawers.
+          { path: "members/add", element: <Navigate to="/chapter/members?add=1" replace /> },
           { path: "members/:id", element: <MemberDetailPage /> },
           { path: "officers", element: <ChapterOfficersPage /> },
           { path: "chapters", element: <ChurchChaptersPage /> },
@@ -151,7 +156,7 @@ export const router = createBrowserRouter([
           { path: "meetings", element: <MeetingsPage /> },
           { path: "census", element: <CensusPage /> },
           { path: "transfers", element: <ChapterTransfersPage /> },
-          { path: "programs/:id/register", element: <RegisterForProgramPage /> },
+          { path: "programs/:id/register", element: <ProgramRegisterRedirect /> },
           { path: "change-password", element: <ChangePasswordPage /> },
         ],
       },
