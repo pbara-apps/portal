@@ -43,7 +43,7 @@ export function RichTextEditor({
   );
 
   const formats = useMemo(
-    () => ["header", "bold", "italic", "underline", "list", "bullet", "blockquote", "link"],
+    () => ["header", "bold", "italic", "underline", "list", "blockquote", "link"],
     [],
   );
 

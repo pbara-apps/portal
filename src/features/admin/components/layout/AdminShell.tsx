@@ -12,6 +12,7 @@ import { adminNotifications } from "@/lib/api/notification";
 import { useGetPendingRegistrationCount } from "@/lib/api/registration";
 import { signOutEverywhere } from "@/lib/auth/session";
 import { ROLE_LABELS } from "@/types/user";
+import { GlobalDrawer } from "../drawers/GlobalDrawer";
 import { adminAccountLinks, adminNavGroups, isNavActive } from "./nav";
 
 /** Admin area frame: the shared AppShell with admin navigation and counts. */
@@ -72,6 +73,8 @@ export function AdminShell({ children }: { children: ReactNode }) {
       }
     >
       {children}
+      {/* Create/edit drawers opened with useDrawer().openDrawer(...) from any admin page. */}
+      <GlobalDrawer />
     </AppShell>
   );
 }
