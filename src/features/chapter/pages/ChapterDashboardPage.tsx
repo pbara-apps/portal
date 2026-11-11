@@ -45,7 +45,7 @@ export default function ChapterDashboardPage() {
         actions={
           <>
             <ChapterSwitcher />
-            <Link to="/chapter/members/add" className={buttonVariants()}>
+            <Link to="/chapter/members?add=1" className={buttonVariants()}>
               <LuUserPlus size={16} aria-hidden />
               Add members
             </Link>

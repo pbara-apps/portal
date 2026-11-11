@@ -1,6 +1,11 @@
+import type { PortalMember } from "../types";
+
 /**
  * Small helpers shared by the member screens.
  */
+
+/** Members in these statuses can be edited from the chapter portal. */
+export const canEditMember = (member: PortalMember) => ["active", "pending", "rejected"].includes(member.status);
 
 /** Shown when a member has no photo. */
 export const MEMBER_PLACEHOLDER_PHOTO = "/images/ra-logo.png";

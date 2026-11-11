@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { LuDownload, LuSearch, LuTrash2, LuUserPlus, LuUsers } from "react-icons/lu";
 import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,7 @@ import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { cn } from "@/lib/utils";
 import { type MemberView, useChapterMembers, useRanks, useWithdrawMember } from "../api/members";
 import { ChapterAddMembersDrawer } from "../components/ChapterAddMembersDrawer";
+import { ChapterMemberDrawer } from "../components/ChapterMemberDrawer";
 import { ChapterSwitcher } from "../components/ChapterSwitcher";
 import { MemberAvatar } from "../components/MemberAvatar";
 import { MemberStatusBadge } from "../components/MemberStatusBadge";
@@ -69,17 +70,21 @@ export default function ChapterMembersPage() {
   const view: MemberView = searchParams.get("view") === "awaiting" ? "awaiting" : "active";
   // ?add=1 opens the Add members drawer (old /chapter/members/add links land here).
   const adding = searchParams.get("add") === "1";
-  const setAdding = (on: boolean) =>
+  const setAdding = (on: boolean) => setParam("add", on ? "1" : null);
+  // ?member=<id> opens that member's drawer (old /chapter/members/:id links land here).
+  const openMemberId = searchParams.get("member");
+  const setOpenMember = (id: string | null) => setParam("member", id);
+  function setParam(key: string, value: string | null) {
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev);
-      if (on) next.set("add", "1");
-      else next.delete("add");
+      if (value) next.set(key, value);
+      else next.delete(key);
       return next;
     });
+  }
   const chapterId = useActiveChapterId();
   const [search, setSearch] = useState("");
   const [rankId, setRankId] = useState<string>("all");
-  const navigate = useNavigate();
   const [withdrawTarget, setWithdrawTarget] = useState<PortalMember | null>(null);
 
   const { data: ranks = [] } = useRanks();
@@ -194,7 +199,11 @@ export default function ChapterMembersPage() {
               </TableHeader>
               <TableBody>
                 {members.map((m) => (
-                  <TableRow key={m.id} className="cursor-pointer hover:bg-background/60" onClick={() => navigate(`/chapter/members/${m.id}`)}>
+                  <TableRow
+                    key={m.id}
+                    className="cursor-pointer hover:bg-background/60"
+                    onClick={() => setOpenMember(m.id)}
+                  >
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <MemberAvatar photo={m.photo} name={m.fullName} size={36} />
@@ -247,6 +256,8 @@ export default function ChapterMembersPage() {
           })
         }
       />
+
+      <ChapterMemberDrawer memberId={openMemberId} onClose={() => setOpenMember(null)} />
 
       <ConfirmDialog
         isOpen={!!withdrawTarget}

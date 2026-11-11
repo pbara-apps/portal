@@ -162,7 +162,7 @@ export function AdminMemberDrawer({
   return (
     <>
       <Sheet open={!!memberId} onOpenChange={(open) => !open && close()}>
-        <SheetContent size="lg" aria-label={isLoading || !member ? "Loading member" : undefined}>
+        <SheetContent size="2xl" aria-label={isLoading || !member ? "Loading member" : undefined}>
           {isLoading || !member ? (
             <div className="space-y-4 p-6">
               <div className="flex items-center gap-4">

@@ -24,9 +24,6 @@ function toForm(member: PortalMember): FormState {
   };
 }
 
-/** Members in these statuses can be edited from the chapter portal. */
-export const canEditMember = (member: PortalMember) => ["active", "pending", "rejected"].includes(member.status);
-
 /**
  * Edit one member.
  * - Approved members: name and date of birth are locked.

@@ -12,7 +12,6 @@ import {
   LuMegaphone,
   LuShuffle,
   LuUserCog,
-  LuUserPlus,
   LuUsers,
   LuWallet,
 } from "react-icons/lu";
@@ -41,7 +40,6 @@ const NAV_GROUPS: { id: string; label: string; items: ChapterNavItem[] }[] = [
     label: "Members",
     items: [
       { label: "Members", href: "/chapter/members", icon: LuUsers },
-      { label: "Add Members", href: "/chapter/members/add", icon: LuUserPlus },
       { label: "Transfers", href: "/chapter/transfers", icon: LuShuffle },
       { label: "Census", href: "/chapter/census", icon: LuClipboardCheck },
     ],
@@ -75,12 +73,9 @@ const ACCOUNT_LINKS: ShellAccountLink[] = [
   { label: "Change password", href: "/chapter/change-password", icon: LuKeyRound },
 ];
 
-/** Which link is active. "Members" covers member pages but not "Add Members". */
+/** Which link is active. The dashboard only matches its own path. */
 function isActive(pathname: string, href: string) {
   if (href === "/chapter") return pathname === href;
-  if (href === "/chapter/members") {
-    return pathname === href || (pathname.startsWith(`${href}/`) && !pathname.startsWith(`${href}/add`));
-  }
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
