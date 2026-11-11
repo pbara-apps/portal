@@ -1,255 +1,179 @@
-import { useEffect, useState } from "react";
+import { Skeleton } from "@heroui/react";
+import { useState } from "react";
+import { LuArrowRight, LuPlus, LuTrash2 } from "react-icons/lu";
 import { Link } from "react-router-dom";
-import { Badge } from "@/components/ui/badge";
+import { Panel } from "@/components/shared/Panel";
+import { PageHeader } from "@/components/shared/PageHeader";
+import { errorToast, successToast } from "@/components/shared/toast-notification";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Spinner } from "@/components/ui/spinner";
-import { AdminPageHeader } from "@/features/admin/components/shared/AdminPageHeader";
 import { PaymentAccountSection } from "@/features/admin/components/settings/PaymentAccountSection";
-import { adminPageCx } from "@/features/admin/components/shared/adminLayout";
 import useCurrentUser from "@/hooks/useCurrentUser";
-import { useProfile } from "@/lib/api/auth";
-import {
-  useGetHeroStatsForSettings,
-  useUpdateHeroStats,
-} from "@/lib/api/settings";
-import {
-  errorToast,
-  successToast,
-} from "@/components/shared/toast-notification";
-import { ROLE_LABELS, isSuperAdmin } from "@/types/user";
+import { useGetHeroStatsForSettings, useUpdateHeroStats } from "@/lib/api/settings";
 import type { HeroStat } from "@/types";
+import { ROLE_LABELS, isSuperAdmin } from "@/types/user";
+
+const MAX_STATS = 4;
+
+/** Same numbers the API serves when nothing has been saved yet. */
+const DEFAULT_STATS: HeroStat[] = [
+  { end: 21, label: "Active Chapters", suffix: "+" },
+  { end: 500, label: "Total Ambassadors", suffix: "+" },
+  { end: 14, label: "Years of Impact", suffix: "+" },
+];
 
 export default function SettingsAdminPage() {
-  const { user } = useCurrentUser();
-  useProfile(true);
+  const user = useCurrentUser((s) => s.user);
   const superAdmin = isSuperAdmin(user?.role);
   const canManageHeroStats = user?.role === "super_admin" || user?.role === "admin";
-  const {
-    data: heroStats = [],
-    isLoading: isHeroStatsLoading,
-    isError: isHeroStatsError,
-  } = useGetHeroStatsForSettings(canManageHeroStats);
-  const updateHeroStats = useUpdateHeroStats();
-  const [editableStats, setEditableStats] = useState<HeroStat[]>([]);
-
-  useEffect(() => {
-    setEditableStats(
-      heroStats.length > 0
-        ? heroStats
-        : [
-            { end: 21, label: "Active Chapters", suffix: "+" },
-            { end: 500, label: "Total Ambassadors", suffix: "+" },
-            { end: 14, label: "Years of Impact", suffix: "+" },
-          ],
-    );
-  }, [heroStats]);
-
-  const updateStat = (
-    index: number,
-    field: keyof HeroStat,
-    value: string | number,
-  ) => {
-    setEditableStats((prev) =>
-      prev.map((item, i) =>
-        i === index
-          ? {
-              ...item,
-              [field]:
-                field === "end"
-                  ? Math.max(0, Number(value) || 0)
-                  : String(value),
-            }
-          : item,
-      ),
-    );
-  };
-
-  const addStat = () => {
-    setEditableStats((prev) => {
-      if (prev.length >= 4) return prev;
-      return [...prev, { label: "", end: 0, suffix: "+" }];
-    });
-  };
-
-  const removeStat = (index: number) => {
-    setEditableStats((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const handleSaveHeroStats = async () => {
-    const normalized = editableStats
-      .map((item) => ({
-        label: item.label.trim(),
-        end: Number(item.end),
-        suffix: item.suffix.trim() || "+",
-      }))
-      .filter((item) => item.label.length > 0);
-
-    if (normalized.length === 0) {
-      errorToast("At least one stat label is required.", "Validation");
-      return;
-    }
-
-    try {
-      await updateHeroStats.mutateAsync({ stats: normalized });
-      successToast("Hero statistics updated.");
-    } catch (err) {
-      errorToast(
-        (err as { message?: string })?.message ?? "Unable to update hero statistics.",
-        "Error",
-      );
-    }
-  };
-
-  const canSaveHeroStats =
-    canManageHeroStats &&
-    editableStats.length > 0 &&
-    editableStats.every((item) => item.label.trim().length > 0);
 
   return (
-    <div className={adminPageCx}>
-      <AdminPageHeader
-        title="Settings"
-        description="Manage your account and organization access controls."
-      />
+    <div className="min-w-0 space-y-6">
+      <PageHeader title="Settings" description="Association-wide settings for payments, the public homepage and admin access." />
 
       <PaymentAccountSection canEdit={superAdmin} />
+      <HeroStatsSection canEdit={canManageHeroStats} />
 
-      <section className="rounded-2xl border border-text-dark/[0.05] bg-surface p-4 shadow-[0_1px_2px_rgba(27,36,82,0.04)] sm:p-6">
-        <h2 className="text-base font-semibold text-primary">Your Account</h2>
-        <p className="mt-1 text-sm text-text-muted">
-          Signed in as {user?.name ?? "Admin"}
-          {user?.email ? ` (${user.email})` : ""}.
-        </p>
-        <div className="mt-4 flex flex-wrap gap-2">
-          <Badge className="bg-primary/10 text-primary">
-            {user?.role ? ROLE_LABELS[user.role] : "Admin"}
-          </Badge>
-          {user?.isFinance && <Badge variant="success">Finance officer</Badge>}
-        </div>
-        <div className="mt-5 grid gap-3 md:grid-cols-2">
-          <AccountDetail label="Full Name" value={user?.name} />
-          <AccountDetail label="Email" value={user?.email} />
-          <AccountDetail label="Phone" value={user?.phone} />
-          <AccountDetail label="Office" value={user?.officeName} />
-          <AccountDetail label="Church" value={user?.churchName} />
-          <AccountDetail label="Chapter" value={user?.chapterName} />
-          <AccountDetail
-            label="Service Year"
-            value={
-              user?.startYear
-                ? `${user.startYear}${user?.endYear ? ` - ${user.endYear}` : " - Present"}`
-                : undefined
-            }
-          />
-          <AccountDetail
-            label="Account Status"
-            value={user?.status ? user.status.toUpperCase() : undefined}
-          />
-        </div>
-      </section>
-
-      <section className="flex flex-col gap-3 rounded-2xl border border-text-dark/[0.05] bg-surface p-4 shadow-[0_1px_2px_rgba(27,36,82,0.04)] sm:flex-row sm:items-center sm:justify-between sm:p-6">
-        <div>
-          <h2 className="text-base font-semibold text-primary">Admin accounts and roles</h2>
-          <p className="mt-1 text-sm text-text-muted">
+      <Panel title="Admin access" description="Who can sign in to the admin portal, their roles and finance access.">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-muted">
+            You're signed in as <span className="font-medium text-foreground">{user?.name ?? "Admin"}</span>
+            {user?.role ? ` (${ROLE_LABELS[user.role]}${user.isFinance ? ", finance officer" : ""})` : ""}.{" "}
             {superAdmin
-              ? "Who can sign in to the admin portal, their roles and finance access are managed on the Accounts page."
-              : "Only super admins can give admin access or change roles. Contact your super admin if you need access changes."}
+              ? "Manage accounts and roles on the Accounts page."
+              : "Only super admins can give admin access or change roles."}
           </p>
-        </div>
-        {superAdmin && (
-          <Link to="/admin/accounts" className="shrink-0">
-            <Button variant="outline">Open Accounts</Button>
-          </Link>
-        )}
-      </section>
-
-      <section className="overflow-hidden rounded-2xl border border-text-dark/[0.05] bg-surface shadow-[0_1px_2px_rgba(27,36,82,0.04)]">
-        <div className="border-b border-text-dark/[0.05] px-6 py-5">
-          <h2 className="text-base font-semibold text-primary">Homepage Hero Statistics</h2>
-          <p className="mt-1 text-sm text-text-muted">
-            Control the statistic counters displayed on the hero section of the
-            public homepage.
-          </p>
-        </div>
-
-        {!canManageHeroStats ? (
-          <p className="px-6 py-10 text-sm text-text-muted">
-            Only Admins and Super Admins can manage homepage hero statistics.
-          </p>
-        ) : isHeroStatsLoading ? (
-          <div className="flex justify-center py-16">
-            <Spinner label="" />
-          </div>
-        ) : isHeroStatsError ? (
-          <p className="py-16 text-center text-sm text-rose-600">
-            Unable to load hero statistics.
-          </p>
-        ) : (
-          <div className="space-y-4 px-6 py-5">
-            {editableStats.map((item, index) => (
-              <div
-                key={`${index}-${item.label}`}
-                className="grid gap-3 rounded-xl border border-text-dark/10 p-4 md:grid-cols-2 xl:grid-cols-[1.6fr_1fr_auto_auto]"
-              >
-                <Input
-                  label="Label"
-                  placeholder="e.g. Active Chapters"
-                  value={item.label}
-                  onChange={(e) => updateStat(index, "label", e.target.value)}
-                />
-                <Input
-                  label="Value"
-                  type="number"
-                  min={0}
-                  value={String(item.end)}
-                  onChange={(e) => updateStat(index, "end", e.target.value)}
-                />
-                <Input
-                  label="Suffix"
-                  placeholder="+"
-                  value={item.suffix}
-                  onChange={(e) => updateStat(index, "suffix", e.target.value)}
-                />
-                <Button
-                  variant="ghost"
-                  className="self-end text-rose-600 hover:text-rose-700"
-                  onClick={() => removeStat(index)}
-                  disabled={editableStats.length <= 1}
-                >
-                  Remove
-                </Button>
-              </div>
-            ))}
-
-            <div className="flex flex-wrap justify-between gap-3 pt-2">
-              <Button variant="outline" onClick={addStat} disabled={editableStats.length >= 4}>
-                Add Stat
+          <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
+            <Button asChild variant="outline">
+              <Link to="/admin/profile">Your profile</Link>
+            </Button>
+            {superAdmin ? (
+              <Button asChild>
+                <Link to="/admin/accounts">
+                  Open Accounts
+                  <LuArrowRight size={15} aria-hidden />
+                </Link>
               </Button>
-              <Button
-                className="bg-primary text-white"
-                onClick={handleSaveHeroStats}
-                loading={updateHeroStats.isPending}
-                disabled={!canSaveHeroStats}
-              >
-                Save Hero Stats
-              </Button>
-            </div>
+            ) : null}
           </div>
-        )}
-      </section>
+        </div>
+      </Panel>
     </div>
   );
 }
 
-function AccountDetail({ label, value }: { label: string; value?: string }) {
+function HeroStatsSection({ canEdit }: { canEdit: boolean }) {
+  const { data: stats = [], isLoading, isError } = useGetHeroStatsForSettings(canEdit);
+
   return (
-    <div className="rounded-xl border border-text-dark/[0.07] bg-background/30 px-3 py-2.5">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-text-muted">
-        {label}
-      </p>
-      <p className="mt-1 text-sm font-medium text-text-dark">{value?.trim() || "—"}</p>
-    </div>
+    <Panel title="Homepage statistics" description="The counters in the hero section of the public homepage. Up to four.">
+      {!canEdit ? (
+        <p className="text-sm text-muted">Only admins and super admins can change the homepage statistics.</p>
+      ) : isLoading ? (
+        <div className="space-y-3">
+          {Array.from({ length: 3 }, (_, i) => (
+            <Skeleton key={i} className="h-16 rounded-lg" />
+          ))}
+        </div>
+      ) : isError ? (
+        <p className="text-sm text-danger">We couldn't load the homepage statistics. Refresh the page to try again.</p>
+      ) : (
+        <HeroStatsForm key={JSON.stringify(stats)} saved={stats} />
+      )}
+    </Panel>
+  );
+}
+
+type Row = HeroStat & { key: number };
+
+function HeroStatsForm({ saved }: { saved: HeroStat[] }) {
+  const update = useUpdateHeroStats();
+  const usingDefaults = saved.length === 0;
+  // Stable keys so typing in a label doesn't remount the row.
+  const [rows, setRows] = useState<Row[]>(() => (usingDefaults ? DEFAULT_STATS : saved).map((s, key) => ({ ...s, key })));
+  const [nextKey, setNextKey] = useState(rows.length);
+  const [errors, setErrors] = useState<Record<number, string>>({});
+
+  const change = (key: number, patch: Partial<HeroStat>) => {
+    setRows((prev) => prev.map((r) => (r.key === key ? { ...r, ...patch } : r)));
+    if (patch.label !== undefined) setErrors((e) => ({ ...e, [key]: "" }));
+  };
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const found: Record<number, string> = {};
+    for (const r of rows) if (!r.label.trim()) found[r.key] = "Enter a label, or remove this stat.";
+    setErrors(found);
+    if (Object.values(found).some(Boolean)) return;
+    try {
+      await update.mutateAsync({
+        stats: rows.map((r) => ({ label: r.label.trim(), end: Math.max(0, Number(r.end) || 0), suffix: r.suffix.trim() || "+" })),
+      });
+      successToast("Homepage statistics updated.");
+    } catch (err) {
+      errorToast((err as { message?: string })?.message ?? "Unable to update the statistics.", "Error");
+    }
+  };
+
+  return (
+    <form onSubmit={submit} noValidate className="space-y-4">
+      {usingDefaults ? (
+        <p className="text-sm text-muted">These are the built-in numbers the homepage shows until you save your own.</p>
+      ) : null}
+      <ul className="space-y-3">
+        {rows.map((r, i) => (
+          <li
+            key={r.key}
+            aria-label={`Statistic ${i + 1}`}
+            className="grid items-start gap-3 rounded-xl border border-border p-4 sm:grid-cols-[minmax(0,1fr)_8rem_5rem_auto]"
+          >
+            <Input
+              label="Label"
+              placeholder="e.g. Active Chapters"
+              value={r.label}
+              error={errors[r.key] || undefined}
+              onChange={(e) => change(r.key, { label: e.target.value })}
+            />
+            <Input
+              label="Value"
+              type="number"
+              inputMode="numeric"
+              min={0}
+              value={String(r.end)}
+              onChange={(e) => change(r.key, { end: Math.max(0, Number(e.target.value) || 0) })}
+            />
+            <Input label="Suffix" placeholder="+" maxLength={3} value={r.suffix} onChange={(e) => change(r.key, { suffix: e.target.value })} />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label={`Remove ${r.label || `statistic ${i + 1}`}`}
+              disabled={rows.length <= 1}
+              onClick={() => setRows((prev) => prev.filter((x) => x.key !== r.key))}
+              className="text-danger hover:bg-danger/[0.08] sm:mt-6"
+            >
+              <LuTrash2 size={16} aria-hidden />
+            </Button>
+          </li>
+        ))}
+      </ul>
+      <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-between">
+        <Button
+          type="button"
+          variant="outline"
+          disabled={rows.length >= MAX_STATS}
+          onClick={() => {
+            setRows((prev) => [...prev, { key: nextKey, label: "", end: 0, suffix: "+" }]);
+            setNextKey((k) => k + 1);
+          }}
+        >
+          <LuPlus size={15} aria-hidden />
+          Add statistic
+        </Button>
+        <Button type="submit" loading={update.isPending}>
+          Save statistics
+        </Button>
+      </div>
+    </form>
   );
 }

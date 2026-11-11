@@ -48,9 +48,9 @@ const entityIcons: Record<string, IconType> = {
 };
 
 const actionBubbleClass: Record<AuditAction, string> = {
-  created: "bg-violet-500 text-white",
-  updated: "bg-amber-400 text-amber-950",
-  deleted: "bg-rose-500 text-white",
+  created: "bg-success/10 text-success",
+  updated: "bg-focus/[0.08] text-focus",
+  deleted: "bg-danger/[0.08] text-danger",
 };
 
 export function getAuditIcon(log: AdminAuditEntry): IconType {
