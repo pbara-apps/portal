@@ -1,6 +1,7 @@
 import { Label, ListBox, Select as HeroSelect, Separator } from "@heroui/react";
 import * as React from "react";
 import { cn } from "@/lib/utils";
+import { FieldMessage } from "./field-message";
 
 /**
  * Select on HeroUI's Select + ListBox, keeping the app's compound API:
@@ -22,6 +23,8 @@ interface SelectProps {
   name?: string;
   /** Visible label above the field (forms). Filters use the trigger's aria-label instead. */
   label?: React.ReactNode;
+  /** Validation message shown under the field; also marks it invalid. */
+  error?: string;
   children: React.ReactNode;
 }
 
@@ -43,8 +46,9 @@ function findTriggerProps(children: React.ReactNode): SelectTriggerProps {
   return found;
 }
 
-function Select({ value, defaultValue, onValueChange, disabled, required, name, label, children }: SelectProps) {
+function Select({ value, defaultValue, onValueChange, disabled, required, name, label, error, children }: SelectProps) {
   const trigger = findTriggerProps(children);
+  const errorId = `${React.useId()}-error`;
   return (
     <HeroSelect
       value={value === undefined ? undefined : value || null}
@@ -57,11 +61,14 @@ function Select({ value, defaultValue, onValueChange, disabled, required, name, 
       name={name}
       aria-label={trigger["aria-label"]}
       aria-labelledby={trigger["aria-labelledby"]}
+      aria-describedby={error ? errorId : undefined}
+      isInvalid={Boolean(error)}
       fullWidth
       className={cn("min-w-0", label ? "gap-1.5" : null, trigger.className)}
     >
       {label ? <Label isRequired={required}>{label}</Label> : null}
       {children}
+      <FieldMessage id={errorId} message={error} />
     </HeroSelect>
   );
 }

@@ -1,130 +1,84 @@
 import dayjs from "dayjs";
 import { useMemo, useState } from "react";
-import {
-  LuClipboardList,
-  LuPencil,
-  LuPlus,
-  LuSearch,
-  LuUsers,
-  LuPower,
-} from "react-icons/lu";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import { Pagination } from "@/components/ui/pagination";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Spinner } from "@/components/ui/spinner";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  errorToast,
-  successToast,
-} from "@/components/shared/toast-notification";
-import { AdminPageHeader } from "@/features/admin/components/shared/AdminPageHeader";
-import {
-  adminFilterBarCx,
-  adminFilterSearchCx,
-  adminFilterSelectCx,
-  adminPageCx,
-  adminTableFooterCx,
-  adminTableMinCx,
-  adminTableScrollCx,
-  adminTableSectionCx,
-} from "@/features/admin/components/shared/adminLayout";
+import { useNavigate } from "react-router-dom";
+import { LuClipboardList, LuPencil, LuPlus, LuPower, LuUsers } from "react-icons/lu";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { DataTable, type DataTableColumn } from "@/components/shared/DataTable";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { PageHeader } from "@/components/shared/PageHeader";
+import { RowActions } from "@/components/shared/RowActions";
+import { StatusPill } from "@/components/shared/StatusPill";
+import { TableToolbar } from "@/components/shared/TableToolbar";
+import { errorToast, successToast } from "@/components/shared/toast-notification";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useClientTable } from "@/hooks/useClientTable";
+import useCurrentUser from "@/hooks/useCurrentUser";
 import { useDeleteProgram, useGetPrograms } from "@/lib/api/program";
 import { useGetParticipantCountsByProgram } from "@/lib/api/registration";
 import { countParticipantsByCategory } from "@/lib/registrations/participants";
-import useCurrentUser from "@/hooks/useCurrentUser";
-import { useDrawer } from "@/store/useDrawer";
-import {
-  REGISTRATION_MODE_LABELS,
-  type AdminProgram,
-  type RegistrationMode,
-} from "@/types/admin";
-import { canWriteAdminContent } from "@/types/user";
 import { cn } from "@/lib/utils";
+import { useDrawer } from "@/store/useDrawer";
+import { REGISTRATION_MODE_LABELS, type AdminProgram, type RegistrationMode } from "@/types/admin";
+import { canWriteAdminContent } from "@/types/user";
 
-const PAGE_SIZE = 10;
+type ActiveFilter = "all" | "active" | "inactive";
 
-function formatAmount(amount: number) {
-  return `₦${amount.toLocaleString("en-NG", { maximumFractionDigits: 2 })}`;
-}
+const formatAmount = (amount: number) => `₦${amount.toLocaleString("en-NG", { maximumFractionDigits: 2 })}`;
+
+const ProgramStatus = ({ p }: { p: AdminProgram }) =>
+  p.isActive ? <StatusPill tone="success" label="Active" /> : <StatusPill tone="neutral" label="Inactive" />;
+
+const searchText = (p: AdminProgram) => `${p.title} ${p.slug} ${p.category}`;
 
 export default function ProgramAdminPage() {
+  const navigate = useNavigate();
   const openDrawer = useDrawer((s) => s.openDrawer);
-  const { user } = useCurrentUser();
-  const canManage = canWriteAdminContent(user?.role);
+  const canManage = canWriteAdminContent(useCurrentUser((s) => s.user)?.role);
   const { data: programs = [], isLoading, isError, refetch } = useGetPrograms();
   const { data: participantCounts = {} } = useGetParticipantCountsByProgram();
   const deleteProgram = useDeleteProgram();
 
-  const [search, setSearch] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState<string>("all");
-  const [activeFilter, setActiveFilter] = useState<"all" | "active" | "inactive">(
-    "all",
-  );
-  const [page, setPage] = useState(1);
-  const [deactivateTarget, setDeactivateTarget] = useState<AdminProgram | null>(
-    null,
-  );
+  const [category, setCategory] = useState("all");
+  const [active, setActive] = useState<ActiveFilter>("all");
+  const [deactivateTarget, setDeactivateTarget] = useState<AdminProgram | null>(null);
 
-  const categories = useMemo(() => {
-    const set = new Set(programs.map((p) => p.category).filter(Boolean));
-    return Array.from(set).sort((a, b) => a.localeCompare(b));
-  }, [programs]);
-
+  const categories = useMemo(
+    () => Array.from(new Set(programs.map((p) => p.category).filter(Boolean))).sort((a, b) => a.localeCompare(b)),
+    [programs],
+  );
   const categoryTotals = useMemo(
     () => countParticipantsByCategory(programs, participantCounts),
     [programs, participantCounts],
   );
-
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return programs.filter((p) => {
-      if (categoryFilter !== "all" && p.category !== categoryFilter) return false;
-      if (activeFilter === "active" && !p.isActive) return false;
-      if (activeFilter === "inactive" && p.isActive) return false;
-      if (!q) return true;
-      return (
-        p.title.toLowerCase().includes(q) ||
-        p.slug.toLowerCase().includes(q) ||
-        p.category.toLowerCase().includes(q)
-      );
-    });
-  }, [programs, search, categoryFilter, activeFilter]);
-
-  const pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const pageItems = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const totalParticipants = Object.values(participantCounts).reduce((sum, n) => sum + n, 0);
   const activeCount = programs.filter((p) => p.isActive).length;
-  const totalParticipants = useMemo(
-    () =>
-      Object.values(participantCounts).reduce((sum, count) => sum + count, 0),
-    [participantCounts],
-  );
 
-  const openParticipants = (program: AdminProgram) => {
-    openDrawer("view-program-participants", {
-      body: program,
-    });
+  const table = useClientTable({
+    rows: programs.filter(
+      (p) =>
+        (category === "all" || p.category === category) &&
+        (active === "all" || (active === "active") === p.isActive),
+    ),
+    searchText,
+    sortValue: (p, column) =>
+      ({
+        category: p.category,
+        amount: p.amount,
+        participants: participantCounts[p.id] ?? 0,
+        created: p.createdAt ? new Date(p.createdAt).getTime() : null,
+      })[column] ?? p.title,
+    resetKey: `${category}|${active}`,
+  });
+  const filtering = table.query.trim() !== "" || category !== "all" || active !== "all";
+
+  const openCreate = () => openDrawer("create-program");
+  const openEdit = (p: AdminProgram) => openDrawer("edit-program", { body: p });
+  const openParticipants = (p: AdminProgram) => openDrawer("view-program-participants", { body: p });
+  const clearFilters = () => {
+    table.setQuery("");
+    setCategory("all");
+    setActive("all");
   };
 
   const handleDeactivate = async () => {
@@ -134,317 +88,224 @@ export default function ProgramAdminPage() {
       successToast("Program deactivated.");
       setDeactivateTarget(null);
     } catch (err) {
-      errorToast(
-        (err as { message?: string })?.message ?? "Deactivate failed.",
-        "Error",
-      );
+      errorToast((err as { message?: string })?.message ?? "Deactivate failed.", "Error");
     }
   };
 
+  const columns: DataTableColumn<AdminProgram>[] = [
+    {
+      id: "title",
+      header: "Program",
+      sortable: true,
+      isRowHeader: true,
+      cell: (p) => (
+        <div className="min-w-0">
+          <p className="truncate font-medium text-foreground">{p.title}</p>
+          <p className="truncate font-mono text-[11px] text-muted">{p.slug}</p>
+        </div>
+      ),
+    },
+    { id: "category", header: "Category", sortable: true, hideBelow: "lg", cell: (p) => <span className="whitespace-nowrap">{p.category}</span> },
+    {
+      id: "amount",
+      header: "Fee",
+      sortable: true,
+      align: "end",
+      cell: (p) => <span className="font-medium tabular-nums">{formatAmount(p.amount)}</span>,
+    },
+    {
+      id: "mode",
+      header: "Mode",
+      hideBelow: "xl",
+      cell: (p) => <span className="whitespace-nowrap text-muted">{REGISTRATION_MODE_LABELS[p.registrationMode as RegistrationMode]}</span>,
+    },
+    {
+      id: "participants",
+      header: "Participants",
+      sortable: true,
+      align: "end",
+      cell: (p) => (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => openParticipants(p)}
+          aria-label={`${participantCounts[p.id] ?? 0} participants in ${p.title}`}
+          className="h-7 gap-1.5 px-2 tabular-nums text-focus hover:bg-focus/[0.08]"
+        >
+          <LuUsers size={13} aria-hidden />
+          {participantCounts[p.id] ?? 0}
+        </Button>
+      ),
+    },
+    { id: "status", header: "Status", className: "w-28", cell: (p) => <ProgramStatus p={p} /> },
+    {
+      id: "created",
+      header: "Created",
+      sortable: true,
+      hideBelow: "xl",
+      cell: (p) => <span className="whitespace-nowrap text-muted">{p.createdAt ? dayjs(p.createdAt).format("MMM D, YYYY") : "—"}</span>,
+    },
+  ];
+
   return (
-    <div className={adminPageCx}>
-      <AdminPageHeader
+    <div className="min-w-0 space-y-6">
+      <PageHeader
         title="Programs"
-        description="Manage registration categories, fees, and payment details."
-        actionLabel="Create Program"
-        onAction={() => openDrawer("create-program")}
-        actionDisabled={!canManage}
-        actionDisabledText="Your role does not permit program updates."
-        stats={
-          <>
-            <Badge className="bg-primary/10 text-primary">
-              {programs.length} programs
-            </Badge>
-            <Badge variant="success">{activeCount} active</Badge>
-            <Badge variant="secondary">
-              {totalParticipants} participants
-            </Badge>
-          </>
+        description="Registration categories, fees and payment details."
+        meta={
+          !isLoading && !isError ? (
+            <p className="text-sm text-muted">
+              <span className="font-medium tabular-nums text-foreground">{activeCount}</span> of {programs.length} active ·{" "}
+              <span className="font-medium tabular-nums text-foreground">{totalParticipants}</span> participants
+            </p>
+          ) : null
+        }
+        actions={
+          canManage ? (
+            <Button type="button" onClick={openCreate}>
+              <LuPlus size={16} aria-hidden />
+              New program
+            </Button>
+          ) : null
         }
       />
 
       {categoryTotals.length > 0 ? (
-        <section className="flex flex-wrap gap-2">
-          {categoryTotals.map((item) => (
-            <button
-              key={item.category}
-              type="button"
-              onClick={() => {
-                setCategoryFilter(item.category);
-                setPage(1);
-              }}
-              className={cn(
-                "rounded-full border px-3 py-1.5 text-left text-xs transition-colors",
-                categoryFilter === item.category
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-text-dark/10 bg-surface text-text-muted hover:border-primary/30 hover:text-primary",
-              )}
-            >
-              <span className="font-semibold">{item.category}</span>
-              <span className="mx-1.5 text-text-muted/70">·</span>
-              <span>
-                {item.participants} participant
-                {item.participants === 1 ? "" : "s"}
-              </span>
-            </button>
-          ))}
-        </section>
+        <div role="group" aria-label="Participants by category" className="flex flex-wrap gap-2">
+          {categoryTotals.map((item) => {
+            const selected = category === item.category;
+            return (
+              <button
+                key={item.category}
+                type="button"
+                aria-pressed={selected}
+                onClick={() => setCategory(selected ? "all" : item.category)}
+                className={cn(
+                  "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs outline-none transition-colors focus-visible:ring-2 focus-visible:ring-focus",
+                  selected
+                    ? "border-focus/40 bg-focus/[0.08] text-focus"
+                    : "border-border bg-surface text-muted hover:border-foreground/20 hover:text-foreground",
+                )}
+              >
+                <span className="font-medium">{item.category}</span>
+                <span className="tabular-nums">
+                  {item.participants} participant{item.participants === 1 ? "" : "s"}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       ) : null}
 
-      <section className={adminFilterBarCx}>
-        <div className={adminFilterSearchCx}>
-          <Input
-            placeholder="Search title, slug, category…"
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
-            startContent={<LuSearch size={16} className="text-text-muted" />}
-          />
-        </div>
-        <Select
-          value={categoryFilter}
-          onValueChange={(v) => {
-            setCategoryFilter(v);
-            setPage(1);
-          }}
-        >
-          <SelectTrigger className={adminFilterSelectCx}>
-            <SelectValue placeholder="All Categories" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Categories</SelectItem>
-            {categories.map((c) => (
-              <SelectItem key={c} value={c}>
-                {c}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select
-          value={activeFilter}
-          onValueChange={(v) => {
-            setActiveFilter(v as typeof activeFilter);
-            setPage(1);
-          }}
-        >
-          <SelectTrigger className={adminFilterSelectCx}>
-            <SelectValue placeholder="All" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="inactive">Inactive</SelectItem>
-          </SelectContent>
-        </Select>
-      </section>
+      <div className="space-y-3">
+        <TableToolbar
+          search={{ value: table.query, onChange: table.setQuery, placeholder: "Search title, slug, category…" }}
+          filters={
+            <>
+              <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger aria-label="Category">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All categories</SelectItem>
+                  {categories.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={active} onValueChange={(v) => setActive(v as ActiveFilter)}>
+                <SelectTrigger aria-label="Status">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All statuses</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+            </>
+          }
+        />
 
-      <section className={adminTableSectionCx}>
-        {isLoading ? (
-          <div className="flex flex-col items-center gap-3 py-20">
-            <Spinner label="Loading programs…" />
-          </div>
-        ) : isError ? (
-          <div className="flex flex-col items-center gap-4 py-20 text-center">
-            <p className="text-sm text-rose-600">Unable to load programs.</p>
-            <Button size="sm" onClick={() => refetch()}>
-              Retry
-            </Button>
-          </div>
-        ) : (
-          <>
-            <div className={adminTableScrollCx}>
-              <Table className={adminTableMinCx}>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>TITLE</TableHead>
-                    <TableHead>CATEGORY</TableHead>
-                    <TableHead>AMOUNT</TableHead>
-                    <TableHead>MODE</TableHead>
-                    <TableHead className="text-center">PARTICIPANTS</TableHead>
-                    <TableHead className="text-center">STATUS</TableHead>
-                    <TableHead>CREATED</TableHead>
-                    <TableHead className="text-right">ACTIONS</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {pageItems.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={8}>
-                        <div className="flex flex-col items-center gap-3 py-16 text-center">
-                          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/[0.06] text-primary">
-                            <LuClipboardList size={20} />
-                          </div>
-                          <p className="text-sm font-semibold text-text-dark">
-                            No programs yet
-                          </p>
-                          <Button
-                            size="sm"
-                            className="bg-primary text-white"
-                            onClick={() => openDrawer("create-program")}
-                            disabled={!canManage}
-                          >
-                            <LuPlus size={14} />
-                            Create Program
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    pageItems.map((program) => {
-                      const count = participantCounts[program.id] ?? 0;
-                      return (
-                        <TableRow
-                          key={program.id}
-                          className="cursor-pointer hover:bg-background/60"
-                          onClick={() => {
-                            if (canManage)
-                              openDrawer("edit-program", { body: program });
-                          }}
-                        >
-                          <TableCell>
-                            <div>
-                              <p className="text-sm font-semibold text-primary">
-                                {program.title}
-                              </p>
-                              <p className="font-mono text-[11px] text-text-muted">
-                                {program.slug}
-                              </p>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <span className="text-sm text-text-dark">
-                              {program.category}
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            <span className="text-sm font-medium text-text-dark">
-                              {formatAmount(program.amount)}
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            <span className="text-sm text-text-muted">
-                              {
-                                REGISTRATION_MODE_LABELS[
-                                  program.registrationMode as RegistrationMode
-                                ]
-                              }
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex justify-center">
-                              <button
-                                type="button"
-                                className="inline-flex items-center gap-1.5 rounded-full bg-primary/8 px-2.5 py-1 text-xs font-semibold text-primary transition-colors hover:bg-primary/15"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  openParticipants(program);
-                                }}
-                              >
-                                <LuUsers size={13} />
-                                {count}
-                              </button>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex justify-center">
-                              <Badge
-                                className={cn(
-                                  "ring-1 px-2 text-[10px] font-bold uppercase tracking-[0.08em]",
-                                  program.isActive
-                                    ? "bg-emerald-100 text-emerald-700 ring-emerald-200/60"
-                                    : "bg-rose-100 text-rose-700 ring-rose-200/60",
-                                )}
-                              >
-                                {program.isActive ? "Active" : "Inactive"}
-                              </Badge>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <span className="text-xs text-text-muted">
-                              {program.createdAt
-                                ? dayjs(program.createdAt).format("MMM D, YYYY")
-                                : "—"}
-                            </span>
-                          </TableCell>
-                          <TableCell onClick={(e) => e.stopPropagation()}>
-                            <div className="flex justify-end">
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    aria-label="Open actions"
-                                    className="text-text-muted"
-                                  >
-                                    ⋮
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem
-                                    disabled={!canManage}
-                                    onClick={() =>
-                                      openDrawer("edit-program", {
-                                        body: program,
-                                      })
-                                    }
-                                  >
-                                    <LuPencil size={14} />
-                                    Edit program
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={() => openParticipants(program)}
-                                  >
-                                    <LuUsers size={14} />
-                                    View registered participants
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem href={`/admin/registrations?programId=${program.id}`}>
-                                    <LuClipboardList size={14} />
-                                    View registrations
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    disabled={!canManage || !program.isActive}
-                                    className="text-rose-600 focus:text-rose-600"
-                                    onClick={() => {
-                                      if (!canManage || !program.isActive)
-                                        return;
-                                      setDeactivateTarget(program);
-                                    }}
-                                  >
-                                    <LuPower size={14} />
-                                    Deactivate
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-
-            <div className={adminTableFooterCx}>
-              <p className="text-xs text-text-muted">
-                {filtered.length} program{filtered.length === 1 ? "" : "s"}
+        <DataTable
+          aria-label="Programs"
+          columns={columns}
+          rows={table.pageRows}
+          getRowId={(p) => p.id}
+          isLoading={isLoading}
+          isError={isError}
+          errorMessage="We couldn't load programs."
+          onRetry={() => refetch()}
+          sort={table.sort}
+          onSortChange={table.setSort}
+          onRowAction={canManage ? openEdit : openParticipants}
+          rowActions={(p) => (
+            <RowActions
+              label={`Actions for ${p.title}`}
+              actions={[
+                {
+                  label: "View registrations",
+                  icon: LuClipboardList,
+                  onAction: () => navigate(`/admin/registrations?programId=${p.id}`),
+                },
+                canManage && { label: "Edit program", icon: LuPencil, tone: "accent", onAction: () => openEdit(p) },
+                canManage &&
+                  p.isActive && { label: "Deactivate", icon: LuPower, danger: true, onAction: () => setDeactivateTarget(p) },
+              ]}
+            />
+          )}
+          renderCard={(p) => (
+            <div className="space-y-1.5">
+              <div className="flex items-start justify-between gap-3">
+                <p className="min-w-0 font-medium text-foreground">{p.title}</p>
+                <ProgramStatus p={p} />
+              </div>
+              <p className="text-xs text-muted">
+                {p.category} · <span className="tabular-nums">{formatAmount(p.amount)}</span> ·{" "}
+                <span className="tabular-nums">{participantCounts[p.id] ?? 0}</span> participants
               </p>
-              <Pagination
-                page={page}
-                totalPages={pages}
-                onPageChange={setPage}
-              />
             </div>
-          </>
-        )}
-      </section>
+          )}
+          emptyState={
+            filtering ? (
+              <EmptyState
+                icon={LuClipboardList}
+                title="No programs match your filters"
+                action={
+                  <Button type="button" size="sm" variant="outline" onClick={clearFilters}>
+                    Clear filters
+                  </Button>
+                }
+              />
+            ) : (
+              <EmptyState
+                icon={LuClipboardList}
+                title="No programs yet"
+                description="Programs set the fee and form for each registration category."
+                action={
+                  canManage ? (
+                    <Button type="button" size="sm" onClick={openCreate}>
+                      <LuPlus size={14} aria-hidden />
+                      New program
+                    </Button>
+                  ) : undefined
+                }
+              />
+            )
+          }
+          summary={`${table.total} program${table.total === 1 ? "" : "s"}`}
+          pagination={{ page: table.page, totalPages: table.totalPages, onPageChange: table.setPage }}
+          minWidth={820}
+        />
+      </div>
 
       <ConfirmDialog
         isOpen={!!deactivateTarget}
-        title="Deactivate program"
-        message={`Deactivate “${deactivateTarget?.title ?? "this program"}”? It will be hidden from public registration.`}
+        title="Deactivate program?"
+        message={`“${deactivateTarget?.title ?? "This program"}” will be hidden from public registration.`}
         confirmLabel="Deactivate"
         loading={deleteProgram.isPending}
         onClose={() => setDeactivateTarget(null)}

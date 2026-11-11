@@ -85,7 +85,7 @@ function SheetFooter({ className, ...props }: React.HTMLAttributes<HTMLDivElemen
   return (
     <Drawer.Footer
       className={cn(
-        "flex shrink-0 flex-col-reverse gap-2 border-t border-separator bg-surface py-4 sm:flex-row sm:justify-end",
+        "flex shrink-0 flex-col-reverse items-stretch gap-2 border-t border-separator bg-surface py-4 sm:flex-row sm:items-center sm:justify-end",
         PANEL_X,
         className,
       )}

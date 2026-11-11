@@ -37,7 +37,7 @@ import {
   errorToast,
   successToast,
 } from "@/components/shared/toast-notification";
-import { RegistrationStatusChip } from "@/features/admin/components/registrations/RegistrationDetailPanel";
+import { RegistrationStatusChip } from "@/features/admin/components/registrations/RegistrationStatusChip";
 import { DrawerFormShell } from "@/features/admin/components/shared/DrawerFormShell";
 import {
   exportParticipantsExcel,

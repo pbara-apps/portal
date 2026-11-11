@@ -69,7 +69,7 @@ export function FormDrawerContent({
       <SheetBody className={cn("space-y-5", bodyClassName)}>{children}</SheetBody>
       <SheetFooter className={cn(footerStart && "sm:justify-between")}>
         {footerStart ? <div className="flex flex-col gap-2 sm:flex-row">{footerStart}</div> : null}
-        <div className="flex flex-col-reverse gap-2 sm:flex-row">
+        <div className="flex flex-col-reverse gap-2 sm:flex-row [&>*]:w-full sm:[&>*]:w-auto">
           <Button type="button" variant="ghost" onClick={onCancel} disabled={submitting}>
             {cancelLabel}
           </Button>
