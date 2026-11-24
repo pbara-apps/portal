@@ -229,6 +229,19 @@ export const NEWS_CATEGORIES = [
   "Drill & Discipline",
 ] as const;
 
+/**
+ * Gallery categories. The public media page filters by these, and its links
+ * use the slugged form (e.g. "Community Mission" → `/media?category=community-mission`).
+ */
+export const GALLERY_CATEGORIES = [
+  "General",
+  "Parade",
+  "Sport",
+  "Community Mission",
+  "Ceremony",
+  "Leadership",
+] as const;
+
 export const EVENT_CATEGORIES = [
   "Golden Ambassador",
   "Training",

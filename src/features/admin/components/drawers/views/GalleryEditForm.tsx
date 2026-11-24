@@ -14,6 +14,7 @@ import {
   errorToast,
   successToast,
 } from "@/components/shared/toast-notification";
+import { GalleryCategorySelect } from "@/features/admin/components/shared/GalleryCategorySelect";
 import { ImageUploadField } from "@/features/admin/components/shared/ImageUploadField";
 import { useUpdateGalleryItem } from "@/lib/api/gallery";
 import type { AdminGalleryItem, GalleryFormPayload } from "@/types/admin";
@@ -89,10 +90,9 @@ export function GalleryEditForm({ initial, onClose }: GalleryEditFormProps) {
           value={form.alt ?? ""}
           onChange={(e) => setForm((f) => ({ ...f, alt: e.target.value }))}
         />
-        <Input
-          label="Category"
+        <GalleryCategorySelect
           value={form.category ?? ""}
-          onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
+          onChange={(category) => setForm((f) => ({ ...f, category }))}
         />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-2">

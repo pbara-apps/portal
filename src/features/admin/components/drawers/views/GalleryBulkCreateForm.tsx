@@ -17,6 +17,7 @@ import {
   errorToast,
   successToast,
 } from "@/components/shared/toast-notification";
+import { GalleryCategorySelect } from "@/features/admin/components/shared/GalleryCategorySelect";
 import { MultiMediaUploadZone } from "@/features/admin/components/shared/MultiMediaUploadZone";
 import { useCreateGalleryBulk } from "@/lib/api/gallery";
 import { useUploadMedia } from "@/lib/api/upload";
@@ -234,10 +235,9 @@ export function GalleryBulkCreateForm({ onClose }: GalleryBulkCreateFormProps) {
             Shared defaults
           </p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Input
-              label="Category"
+            <GalleryCategorySelect
               value={shared.category}
-              onChange={(e) => setShared((s) => ({ ...s, category: e.target.value }))}
+              onChange={(category) => setShared((s) => ({ ...s, category }))}
             />
             <Input
               type="number"
